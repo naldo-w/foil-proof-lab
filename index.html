@@ -181,6 +181,7 @@ button{cursor:pointer}
 .table{position:absolute;inset:0;transform-style:flat;transform-origin:50% 50%} /* flat：卡片依疊放順序繪製，不做逐像素深度交錯，微傾時不會穿模 */
 .slot{position:absolute;transform-style:preserve-3d}
 .fxs.merged{position:absolute;inset:0;pointer-events:none}
+.fx.fast .f-paper,.fx.fast .f-brush,.fx.fast .i-grain{display:none} /* 快速預覽：略過紙紋與髮絲紋 */
 .fxs.merged .fx{position:absolute;inset:0}
 .slot .card{position:relative;width:100%;max-width:none;pointer-events:none;box-shadow:var(--sh,none);transform:none}
 .chip .lay{font-family:var(--sans);font-size:11px}
@@ -440,6 +441,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="presets" id="sizePresets"></div>
         <div class="row three" style="margin-top:8px"><label>自訂 px</label><input type="number" id="sW" min="200" max="6000" step="10"><input type="number" id="sH" min="200" max="6000" step="10"></div>
         <div class="row two"><label>匯出倍率</label><select id="sExport"><option value="1">1×（原尺寸）</option><option value="2">2×（Retina）</option></select></div>
+        <div class="row two"><label>預覽品質</label><select id="sQuality"><option value="fast">快速（略過壓痕／挖空／紙紋，匯出時自動完整）</option><option value="full">完整（所見即所得，較慢）</option></select></div>
       </div>
       <div class="sec">
         <div class="sec-h">排列 <button class="btn small ghost" id="sShuffle" title="換一組隨機">🎲 換一組</button></div>
@@ -753,7 +755,7 @@ function loadSVG(text, name){
   $('#card').style.setProperty('--ar', `${W}/${H}`);
   fitCard();
   indexShapes();
-  maskCache = {};
+  clearMasks();
   const n = Object.keys(shapes).length;
   $('#fileinfo').innerHTML = `<em>${esc(name)}</em> · viewBox ${fmt(W)} × ${fmt(H)} · ${n} 個可見元素 · ${svgRoot.querySelectorAll('g').length} 個群組 · ${(text.length/1024).toFixed(0)} KB`;
   $('#fileNote').textContent = `${name}（${fmt(W)} × ${fmt(H)} px，比例 ${(W/H).toFixed(3)}）`;
@@ -904,7 +906,41 @@ function layerSVG(keep, color, gap){
   let changed=true; while(changed){ changed=false; clone.querySelectorAll('g').forEach(g=>{ if(!g.children.length){ g.remove(); changed=true; } }); }
   return clone;
 }
-const toURI = el => `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(el))}")`;
+/* 遮罩用 blob: URL（沒有 data: URL 的長度上限——多張卡合併的遮罩動輒 2MB 以上，data: 會整張失效變成一大片未遮罩的箔面）；
+   匯出時再把 blob: 換回 data:（foreignObject 內拿不到 blob）。 */
+const blobMap = new Map();
+function svgBlobURL(str){ const u=URL.createObjectURL(new Blob([str],{type:'image/svg+xml;charset=utf-8'})); blobMap.set(u,str); return u; }
+const toURI = el => `url("${svgBlobURL(new XMLSerializer().serializeToString(el))}")`;
+function clearMasks(){ for(const u of blobMap.keys()) URL.revokeObjectURL(u); blobMap.clear(); maskCache={}; }
+function inlineBlobs(html){ return html.replace(/blob:[^"'&)\s]+/g, u=>{ const str=blobMap.get(u); return str ? 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(str) : u; }); }
+/* 匯出前：把 clone 裡每個效果層的向量遮罩（可能好幾 MB）先點陣化成 PNG data URL——
+   foreignObject 內超過約 2MB 的 data: 影像會直接失效，整層箔面就會沒遮罩地蓋滿畫面。 */
+const loadImg = url => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('mask load')); i.src=url; });
+async function maskPNG(urls, cw, ch){
+  const cv=document.createElement('canvas'); cv.width=Math.max(1,Math.round(cw)); cv.height=Math.max(1,Math.round(ch)); const ctx=cv.getContext('2d');
+  for(let i=0;i<urls.length;i++){ const img=await loadImg(urls[i]); ctx.globalCompositeOperation = i===0 ? 'source-over' : 'destination-out'; ctx.drawImage(img,0,0,cv.width,cv.height); }
+  return cv.toDataURL('image/png');
+}
+async function rasterizeMasks(rootClone, k, singleW, singleH){
+  const cache=new Map();
+  for(const fx of rootClone.querySelectorAll('.fx')){
+    const grab=v=>[...(v||'').matchAll(/url\("?([^")]+)"?\)/g)].map(m=>m[1]);
+    const own=grab(fx.style.getPropertyValue('--own')), mask=grab(fx.style.getPropertyValue('--mask'));
+    if(!own.length && !mask.length) continue;
+    let cw,ch; const slot=fx.closest('.slot');
+    if(slot){ cw=parseFloat(slot.style.width)*k; ch=parseFloat(slot.style.height)*k; }
+    else if(fx.closest('.fxs.merged')){ cw=S.scene.W*k; ch=S.scene.H*k; }
+    else { cw=singleW; ch=singleH; }
+    const lim=4096; const sc=Math.min(1, lim/Math.max(cw,ch)); cw*=sc; ch*=sc;
+    const key=u=>u.join('|')+'@'+cw+'x'+ch;
+    const get=async urls=>{ const kk=key(urls); if(!cache.has(kk)) cache.set(kk, await maskPNG(urls,cw,ch)); return cache.get(kk); };
+    if(mask.length){ fx.style.setProperty('--mask', `url("${await get(mask)}")`); fx.classList.remove('ko'); }
+    if(own.length){ fx.style.setProperty('--own', `url("${await get(own)}")`); }
+  }
+  // 底圖 SVG：已指派（隱藏）的圖形不用帶進匯出檔，省掉每張卡一份完整 SVG
+  rootClone.querySelectorAll('.base svg .is-assigned').forEach(n=>n.remove());
+  let changed=true; while(changed){ changed=false; rootClone.querySelectorAll('.base svg g').forEach(g=>{ if(!g.children.length){ g.remove(); changed=true; } }); }
+}
 function buildMask(L, eff=effLayer, vk=''){
   return maskCache[vk+L.id] ||= toURI(layerSVG(k=>eff[k]===L.id, '#fff', 0));
 }
@@ -934,8 +970,8 @@ function renderFxInto(host, layers, eff, vk, paper){
   });
 }
 /* 依工法 + 疊加加工組出效果 DOM（由下而上：壓痕外緣 → 上色層 → 表面 UV） */
-function fxDOM(L){
-  const rim=(rev)=>`<div class="f-rim dk${rev?' rev':''}"><div class="m rim"></div></div><div class="f-rim lt${rev?' rev':''}"><div class="m rim"></div></div>`;
+function fxDOM(L, fast=false){
+  const rim=(rev)=> fast ? '' : `<div class="f-rim dk${rev?' rev':''}"><div class="m rim"></div></div><div class="f-rim lt${rev?' rev':''}"><div class="m rim"></div></div>`;
   let h='';
   const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress' || L.relief==='deboss';
   const raised = L.relief==='emboss' || L.puff || L.uv==='raised' || L.proc==='screen';
@@ -947,7 +983,7 @@ function fxDOM(L){
   else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div><div class="i-grain"></div>`
-      +(L.puff?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
+      +(L.puff&&!fast?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
       +'<div class="i-glare"></div></div>';
   }
   if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
@@ -1102,17 +1138,17 @@ function renderLayerList(){
     d.querySelector('.vis').addEventListener('click', ()=>{ L.visible=!L.visible; renderFx(); save(); });
     d.querySelector('.up').addEventListener('click', ()=>{ if(i>0){ S.layers.splice(i,1); S.layers.splice(i-1,0,L); renderFx(); save(); } });
     d.querySelector('.dn').addEventListener('click', ()=>{ if(i<S.layers.length-1){ S.layers.splice(i,1); S.layers.splice(i+1,0,L); renderFx(); save(); } });
-    d.querySelector('.del').addEventListener('click', ()=>{ S.layers.splice(i,1); for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; if(S.active===L.id) S.active=S.layers[0]?.id; maskCache={}; renderFx(); save(); toast(`已刪除「${L.name}」`); });
-    d.querySelector('.clr').addEventListener('click', ()=>{ for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; maskCache={}; renderFx(); save(); });
-    d.querySelector('.proc').addEventListener('change', e=>{ L._prevProc=L.proc; setProc(L,e.target.value); maskCache={}; renderFx(); save(); });
-    d.querySelectorAll('.cchip').forEach(b=>b.addEventListener('click', ()=>{ applyColorPreset(L,b.dataset.k); maskCache={}; renderFx(); save(); }));
+    d.querySelector('.del').addEventListener('click', ()=>{ S.layers.splice(i,1); for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; if(S.active===L.id) S.active=S.layers[0]?.id; clearMasks(); renderFx(); save(); toast(`已刪除「${L.name}」`); });
+    d.querySelector('.clr').addEventListener('click', ()=>{ for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; clearMasks(); renderFx(); save(); });
+    d.querySelector('.proc').addEventListener('change', e=>{ L._prevProc=L.proc; setProc(L,e.target.value); clearMasks(); renderFx(); save(); });
+    d.querySelectorAll('.cchip').forEach(b=>b.addEventListener('click', ()=>{ applyColorPreset(L,b.dataset.k); clearMasks(); renderFx(); save(); }));
     d.querySelectorAll('[data-p]').forEach(inp=>{
       inp.addEventListener('input', e=>{
         const p=inp.dataset.p; L[p] = inp.type==='range'?+inp.value:(inp.type==='checkbox'?inp.checked:inp.value);
         if(p==='tint'){ delete L.cname; }
         const structural = inp.type==='checkbox' || inp.tagName==='SELECT' && ['sub','relief','uv'].includes(p) || p==='tint' && false;
         syncType(L); if(!L.named) L.name=autoName(L);
-        if(structural){ maskCache={}; renderFx(); save(); return; }
+        if(structural){ clearMasks(); renderFx(); save(); return; }
         if(inp.type==='range') inp.parentElement.querySelector('.val').textContent = fmtParam(p,L[p]);
         if(inp.type==='color'){ inp.parentElement.querySelector('.hex').textContent=L[p]; d.querySelector('.name').value=L.name; d.querySelectorAll('.cchip').forEach(x=>x.classList.remove('on')); }
         styleFx(null,L); d.querySelector('.sw').style.setProperty('--c',L.tint||'#888'); save();
@@ -1172,11 +1208,11 @@ function renderChips(){
     const all = L && keys.every(k=>S.assign[k]===L.id);
     const b=document.createElement('button'); b.className='chip'+(all?' on':''); b.innerHTML=`<span class="sw" style="background:${c}"></span>${c}<span class="n">×${keys.length}</span>`;
     b.title = all?'取消此顏色的指派':'把此顏色的所有元素指派到目前圖層';
-    b.addEventListener('click', ()=>{ if(!L) return toast('先選一個圖層'); keys.forEach(k=>{ if(all) delete S.assign[k]; else S.assign[k]=L.id; }); maskCache={}; renderFx(); save(); toast(all?`已取消 ${keys.length} 個元素`:`${keys.length} 個 ${c} 元素 → ${L.name}`); });
+    b.addEventListener('click', ()=>{ if(!L) return toast('先選一個圖層'); keys.forEach(k=>{ if(all) delete S.assign[k]; else S.assign[k]=L.id; }); clearMasks(); renderFx(); save(); toast(all?`已取消 ${keys.length} 個元素`:`${keys.length} 個 ${c} 元素 → ${L.name}`); });
     host.appendChild(b);
   });
   const b=document.createElement('button'); b.className='chip'; b.innerHTML=`<span class="sw" style="background:linear-gradient(45deg,#888,#eee)"></span>整份 SVG`;
-  b.addEventListener('click', ()=>{ if(!L) return; S.assign['0']=L.id; maskCache={}; renderFx(); save(); toast(`整份 → ${L.name}`); });
+  b.addEventListener('click', ()=>{ if(!L) return; S.assign['0']=L.id; clearMasks(); renderFx(); save(); toast(`整份 → ${L.name}`); });
   host.appendChild(b);
   const lh=$('#layerChips'); lh.innerHTML='';
   const groups=layerGroups();
@@ -1215,7 +1251,7 @@ function assignKey(k, el){
   const L=activeLayer(); if(!L) return toast('先在「效果圖層」選一個圖層');
   if(S.assign[k]===L.id){ delete S.assign[k]; toast(`已取消指派`); }
   else { S.assign[k]=L.id; toast(`${describe(el)} → ${L.name}`); }
-  treeSel=k; maskCache={}; renderFx(); save();
+  treeSel=k; clearMasks(); renderFx(); save();
 }
 function describe(el){ const id=groupName(el); return id?`「${id}」`:(el.tagName==='g'?`群組（${el.querySelectorAll(SHAPES).length} 個元素）`:el.tagName); }
 
@@ -1327,7 +1363,7 @@ function koNote(){ const [W]=S.vb||[1000]; const pct=(S.koGap/W*100).toFixed(2);
 $('#btnAddLayer').addEventListener('click', ()=>{ const L=newLayer('foil-silver'); S.active=L.id; renderFx(); save(); });
 $('#btnExpand').addEventListener('click', ()=>{ svgRoot.querySelectorAll('g').forEach(g=>treeOpen.set(g.getAttribute('data-k'),true)); renderTree(); });
 $('#btnCollapse').addEventListener('click', ()=>{ treeOpen.clear(); svgRoot.querySelectorAll('g').forEach(g=>treeOpen.set(g.getAttribute('data-k'),false)); renderTree(); });
-$('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayers(); maskCache={}; applyPaper(); renderFx(); save(); toast('已重新偵測顏色並建立圖層'); });
+$('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayers(); clearMasks(); applyPaper(); renderFx(); save(); toast('已重新偵測顏色並建立圖層'); });
 $('#btnSample').addEventListener('click', ()=>{ start($('#sampleSvg').textContent, SAMPLE_NAME, true); });
 $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=''; });
 function readFile(f){ if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg 檔'); const r=new FileReader(); r.onload=()=>start(r.result,f.name,true); r.readAsText(f); }
@@ -1347,20 +1383,24 @@ function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStora
 let dlCap=null; try{ window.claude?.use?.('downloads').then(d=>{ dlCap=d; }).catch(()=>{}); }catch(e){}
 $('#btnExport').addEventListener('click', async ()=>{
   toast('正在合成…');
+  const wasFast = viewMode==='scene' && (S.scene.quality||'fast')==='fast';
+  if(wasFast){ renderQuality='full'; renderScene(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }
   try{
     let w,h,inner,fname;
     if(viewMode==='scene'){
       const C=S.scene, k=+C.exportScale; w=Math.round(C.W*k); h=Math.round(C.H*k);
       const clone=$('#scene').cloneNode(true); clone.id=''; clone.style.transform=`scale(${k})`; clone.style.boxShadow='none';
+      await rasterizeMasks(clone, k);
       inner=new XMLSerializer().serializeToString(clone); fname=`${(S.name||'proof').replace(/\.svg$/i,'')}-mockup-${C.W}x${C.H}${k>1?'@2x':''}.png`;
     } else {
       const [W,H]=S.vb; const scale = Math.min(2, 2600/W); w=Math.round(W*scale); h=Math.round(H*scale);
       const clone=card.cloneNode(true);
       clone.style.transform='none'; clone.style.width=w+'px'; clone.style.height=h+'px'; clone.style.aspectRatio='auto'; clone.style.boxShadow='none'; clone.style.maxWidth='none';
+      await rasterizeMasks(clone, 1, w, h);
       inner=new XMLSerializer().serializeToString(clone); fname=(S.name||'proof').replace(/\.svg$/i,'')+'-proof.png';
     }
     const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
-    const html=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${w}px;height:${h}px;background:transparent;overflow:hidden"><style>${css}</style>${inner}</div></foreignObject></svg>`;
+    const html=inlineBlobs(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${w}px;height:${h}px;background:transparent;overflow:hidden"><style>${css}</style>${inner}</div></foreignObject></svg>`);
     const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(html); // data: URI（blob: 會讓 canvas 被標記為 tainted）
     const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('瀏覽器拒絕合成（Safari 對 foreignObject + mask 支援不完整，請改用 Chrome 或直接截圖）')); img.src=url; });
     const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
@@ -1374,6 +1414,7 @@ $('#btnExport').addEventListener('click', async ()=>{
     $('#modalCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); toast('已複製 PNG'); }catch(e){ toast('剪貼簿寫入被拒絕'); } };
     $('#modal').classList.add('on');
   }catch(e){ toast(e.message||'匯出失敗'); }
+  if(wasFast){ renderQuality='fast'; renderScene(); }
 });
 /* 分版 SVG：由下而上每個效果一個具名 <g>，上層圖形外擴後用 <mask> 挖空下層 */
 function prefixIds(str, pre){
@@ -1471,7 +1512,7 @@ function buildMergedMask(keep, gap, keyBase, slots, idxs){
     body+=`<g mask="url(#o${i})" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"><svg x="${(sl.x-sl.w/2).toFixed(2)}" y="${(sl.y-sl.h/2).toFixed(2)}" width="${sl.w.toFixed(2)}" height="${sl.h.toFixed(2)}" viewBox="${vb}" preserveAspectRatio="none" xml:space="preserve" style="${rootStyle}">${prefixIds(inner,'s'+i+'_')}</svg></g>`;
   });
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${C.W} ${C.H}" width="${C.W}" height="${C.H}"><defs>${defs}</defs>${body}</svg>`;
-  return maskCache[key]=`url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+  return maskCache[key]=`url("${svgBlobURL(svg)}")`;
 }
 function buildMergedFx(host, pool, slotOwner, slots){
   host.innerHTML='';
@@ -1483,12 +1524,13 @@ function buildMergedFx(host, pool, slotOwner, slots){
       if(L.type==='hide' || !L.visible || !L._count) return;
       const d=document.createElement('div'); d.className='fx fx-'+L.type; d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
       const own=buildMergedMask(k=>eff[k]===L.id, 0, pe.vk+L.id, slots, idxs);
+      const fast = renderQuality==='fast' && (S.scene.quality||'fast')==='fast';
       let ko=null; const above=layersAbove(L, layers);
-      if(above.length && S.koGap>0 && L.knockout!==false){ const ids=new Set(above.map(x=>x.id)); ko=buildMergedMask(k=>ids.has(eff[k]), S.koGap, pe.vk+'ko:'+L.id+':'+above.map(x=>x.id).join(','), slots, idxs); }
+      if(!fast && above.length && S.koGap>0 && L.knockout!==false){ const ids=new Set(above.map(x=>x.id)); ko=buildMergedMask(k=>ids.has(eff[k]), S.koGap, pe.vk+'ko:'+L.id+':'+above.map(x=>x.id).join(','), slots, idxs); }
       d.style.setProperty('--own', own); d.style.setProperty('--mask', ko?`${own}, ${ko}`:own); d.classList.toggle('ko', !!ko);
       // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
       const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
-      d.innerHTML=fxDOM(L); host.appendChild(d); styleFx(d,L,pe.paper);
+      d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); host.appendChild(d); styleFx(d,L,pe.paper);
     });
   });
 }
@@ -1501,8 +1543,8 @@ function renderVariantList(){
       <button class="ib load" title="把這個版本載入成目前設定來編輯">載入</button><button class="ib upd" title="用目前設定覆蓋這個版本">更新</button><button class="ib del" title="刪除">✕</button>`;
     row.querySelector('input[type=checkbox]').addEventListener('change',e=>{ v.use=e.target.checked; sceneChanged(true); });
     row.querySelector('.vname').addEventListener('change',e=>{ v.name=e.target.value; save(); });
-    row.querySelector('.load').addEventListener('click',()=>{ S.paper=deep(v.paper); S.layers=deep(v.layers); S.active=S.layers.find(l=>l.type!=='hide')?.id; maskCache={}; applyPaper(); renderFx(); save(); toast(`已載入版本「${v.name}」`); });
-    row.querySelector('.upd').addEventListener('click',()=>{ const nv=snapshotVariant(v.name); v.paper=nv.paper; v.layers=nv.layers; maskCache={}; sceneChanged(true); toast(`版本「${v.name}」已更新`); });
+    row.querySelector('.load').addEventListener('click',()=>{ S.paper=deep(v.paper); S.layers=deep(v.layers); S.active=S.layers.find(l=>l.type!=='hide')?.id; clearMasks(); applyPaper(); renderFx(); save(); toast(`已載入版本「${v.name}」`); });
+    row.querySelector('.upd').addEventListener('click',()=>{ const nv=snapshotVariant(v.name); v.paper=nv.paper; v.layers=nv.layers; clearMasks(); sceneChanged(true); toast(`版本「${v.name}」已更新`); });
     row.querySelector('.del').addEventListener('click',()=>{ S.variants.splice(i,1); sceneChanged(true); });
     host.appendChild(row);
   });
@@ -1513,7 +1555,7 @@ $('#sMix').addEventListener('change',e=>{ S.scene.mix=e.target.value; sceneChang
 $('#sIncCur').addEventListener('change',e=>{ S.scene.includeCurrent=e.target.checked; sceneChanged(true); });
 
 /* ---------- scene (mockup) ---------- */
-let viewMode='single', sceneDirty=true;
+let viewMode='single', sceneDirty=true, renderQuality='fast'; // 版面預覽預設「快速」：略過壓痕／圓頂濾鏡、挖空與紙紋；匯出時自動切完整
 function mulberry(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 function layoutSlots(){
   const C=S.scene, [vw,vh]=S.vb, ar=vw/vh, W=C.W, H=C.H;
@@ -1638,7 +1680,7 @@ $('#viewmode').addEventListener('click', e=>{ const b=e.target.closest('button')
 function syncSceneControls(){
   const C=S.scene;
   $('#sizePresets').innerHTML=''; SIZE_PRESETS.forEach(([v,n])=>{ const [w,h]=v.split('x').map(Number); const b=document.createElement('button'); b.textContent=`${n} ${w}×${h}`; b.classList.toggle('on',C.W===w&&C.H===h); b.addEventListener('click',()=>{ C.W=w; C.H=h; sceneChanged(true); }); $('#sizePresets').appendChild(b); });
-  $('#sW').value=C.W; $('#sH').value=C.H; $('#sExport').value=C.exportScale; $('#sLayout').value=C.layout;
+  $('#sW').value=C.W; $('#sH').value=C.H; $('#sExport').value=C.exportScale; $('#sQuality').value=C.quality||'fast'; $('#sLayout').value=C.layout;
   setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
@@ -1652,6 +1694,7 @@ function syncSceneControls(){
 function sceneChanged(structural){ syncSceneControls(); if(viewMode==='scene'){ if(structural) renderScene(); else { applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); } } else sceneDirty=true; $('#btnExport').textContent = viewMode==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG'; save(); }
 [['#sW','W',true],['#sH','H',true]].forEach(([sel,p])=>$(sel).addEventListener('change',e=>{ const v=Math.max(200,Math.min(6000,+e.target.value||1080)); S.scene[p]=v; sceneChanged(true); }));
 $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value; save(); });
+$('#sQuality').addEventListener('change',e=>{ S.scene.quality=e.target.value; sceneChanged(true); });
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
@@ -1669,7 +1712,7 @@ function start(svgText, name, fresh){
   if(!loadSVG(svgText,name)) return;
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
   setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyStageBg();
-  applyPaper(); maskCache={}; renderFx(); syncSceneControls(); setViewMode(viewMode); save();
+  applyPaper(); clearMasks(); renderFx(); syncSceneControls(); setViewMode(viewMode); save();
   if(fresh) toast(`已載入 ${name}，自動建立 ${S.layers.length} 個效果圖層`);
 }
 const saved=load();
