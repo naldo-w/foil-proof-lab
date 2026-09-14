@@ -1426,13 +1426,14 @@ function buildMergedMask(keep, gap, keyBase, slots, idxs){
   const key='mg:'+keyBase+':'+gap+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1),s.pivot||''].join(',')).join(';')+':'+idxs.join(',');
   if(maskCache[key]) return maskCache[key];
   const root=layerSVG(keep,'#fff',gap); const vb=root.getAttribute('viewBox');
-  const sym=`<symbol id="c" viewBox="${vb}" style="${esc(root.getAttribute('style')||'')}">${innerXML(root)}</symbol>`;
-  // 每張卡只畫「沒被後放的卡蓋住」的部分（遮擋遮罩），交疊鋪法才不會讓下面那張的效果浮到上面
-  let defs=sym, body='';
+  // 每張卡一份完整的內嵌 <svg>（不用 symbol/use：帶字距座標表的 <text> 在 use 裡某些瀏覽器會錯位），id 依卡片加前綴避免衝突
+  const inner=innerXML(root); const rootStyle=esc(root.getAttribute('style')||'');
+  let defs='', body='';
   idxs.forEach(i=>{
     const sl=slots[i], pv=slotPivot(sl), above=slots.slice(i+1);
+    // 每張卡只畫「沒被後放的卡蓋住」的部分（遮擋遮罩），交疊鋪法才不會讓下面那張的效果浮到上面
     defs+=`<mask id="o${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="${C.W}" height="${C.H}"><rect x="0" y="0" width="${C.W}" height="${C.H}" fill="#fff"/>${above.map(a=>slotRectSVG(a,'#000')).join('')}</mask>`;
-    body+=`<g mask="url(#o${i})"><use href="#c" xlink:href="#c" x="${(sl.x-sl.w/2).toFixed(2)}" y="${(sl.y-sl.h/2).toFixed(2)}" width="${sl.w.toFixed(2)}" height="${sl.h.toFixed(2)}" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"/></g>`;
+    body+=`<g mask="url(#o${i})" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"><svg x="${(sl.x-sl.w/2).toFixed(2)}" y="${(sl.y-sl.h/2).toFixed(2)}" width="${sl.w.toFixed(2)}" height="${sl.h.toFixed(2)}" viewBox="${vb}" preserveAspectRatio="none" xml:space="preserve" style="${rootStyle}">${prefixIds(inner,'s'+i+'_')}</svg></g>`;
   });
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${C.W} ${C.H}" width="${C.W}" height="${C.H}"><defs>${defs}</defs>${body}</svg>`;
   return maskCache[key]=`url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
