@@ -73,12 +73,11 @@ button{cursor:pointer}
 .m>div{position:absolute;inset:-2px}
 .m.foil,.m.ink{isolation:isolate}
 .fx.hidden{display:none}
-/* 燙印壓痕：反向遮罩 + drop-shadow → 影子只落在圖形內側 */
-.f-inner{inset:0!important;filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1.5px) rgba(0,0,0,.65));opacity:var(--dop,1)}
-.f-inner.hi{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1.5px) rgba(255,255,255,.55));opacity:calc(var(--dop,1)*.8)}
-.f-inner .inv{position:absolute;inset:0;background:#000;
-  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
-  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+/* 燙印壓痕：在箔面「外圍」的紙面上壓出一圈明暗——未遮罩的父層做 drop-shadow，影子從遮罩子層外緣溢出；箔面本身不受影響 */
+.f-rim{position:absolute;inset:0;opacity:var(--dop,1)}
+.f-rim.dk{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1px) rgba(0,0,0,.6))}
+.f-rim.lt{filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1px) rgba(255,255,255,.45))}
+.m.rim{background:#000}
 
 /* foil */
 .m.foil .f-base{background-image:var(--grad);background-size:280% 280%;background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
@@ -89,7 +88,8 @@ button{cursor:pointer}
   background-image:linear-gradient(115deg,transparent 0%,#ff8a80 14%,#ffd54f 26%,#69f0ae 38%,#40c4ff 50%,#b388ff 62%,#ff80ab 74%,transparent 90%);
   background-size:220% 220%;background-position:calc(100% - var(--px)) calc(100% - var(--py))}
 .m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.35 + .65*var(--hov)));mix-blend-mode:overlay;
-  background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,var(--ga,.55)) 0%,rgba(255,255,255,calc(var(--ga,.55)*.4)) 22%,rgba(60,60,60,.18) 60%,rgba(0,0,0,var(--gd,.35)) 100%)}
+  background:radial-gradient(farthest-corner circle at var(--px) var(--py),var(--g1,rgba(255,255,255,.55)) 0%,var(--g2,rgba(255,255,255,.22)) 22%,rgba(60,60,60,.14) 60%,rgba(0,0,0,var(--gd,.35)) 100%)}
+.m.foil{filter:saturate(var(--sat,1))}
 /* ink */
 .m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
 .m.ink .i-fill{background:var(--tint)}
@@ -477,14 +477,14 @@ const LS_KEY = 'foil-proof-v1';
 const SAMPLE_NAME = 'sample-card.svg';
 
 const PRESETS = {
-  'foil-silver':{label:'燙銀',type:'foil',tint:'#c9cacf',bright:.5,contrast:.45,holo:.12,brush:.35,gloss:.6,depth:1},
-  'foil-gold':{label:'燙金',type:'foil',contrast:.45,depth:1,tint:'#d3a84a',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-red':{label:'燙紅',type:'foil',contrast:.45,depth:1,tint:'#c41e2a',bright:.5,holo:.06,brush:.25,gloss:.8},
-  'foil-rose':{label:'燙玫瑰金',type:'foil',contrast:.45,depth:1,tint:'#d9a091',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-copper':{label:'燙古銅',type:'foil',contrast:.45,depth:1,tint:'#b87333',bright:.5,holo:.05,brush:.4,gloss:.7},
-  'foil-blue':{label:'燙藍',type:'foil',contrast:.45,depth:1,tint:'#2f56b5',bright:.5,holo:.1,brush:.25,gloss:.8},
-  'foil-black':{label:'燙黑（鏡面）',type:'foil',contrast:.45,depth:1,tint:'#2b2b30',bright:.4,holo:.04,brush:.15,gloss:.95},
-  'foil-holo':{label:'全息銀',type:'foil',contrast:.45,depth:1,tint:'#d6d6dc',bright:.6,holo:.85,brush:.1,gloss:.8},
+  'foil-silver':{label:'燙銀',type:'foil',tint:'#c9cacf',bright:.5,contrast:.45,sat:1,holo:.12,brush:.3,gloss:.6,depth:1},
+  'foil-gold':{label:'燙金',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d3a84a',bright:.55,holo:.08,brush:.3,gloss:.75},
+  'foil-red':{label:'燙紅',type:'foil',contrast:.45,depth:1,sat:1.25,tint:'#d1202c',bright:.5,holo:.06,brush:.25,gloss:.8},
+  'foil-rose':{label:'燙玫瑰金',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d9a091',bright:.55,holo:.08,brush:.3,gloss:.75},
+  'foil-copper':{label:'燙古銅',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#b87333',bright:.5,holo:.05,brush:.4,gloss:.7},
+  'foil-blue':{label:'燙藍',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#2f56b5',bright:.5,holo:.1,brush:.25,gloss:.8},
+  'foil-black':{label:'燙黑（鏡面）',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#2b2b30',bright:.4,holo:.04,brush:.15,gloss:.95},
+  'foil-holo':{label:'全息銀',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d6d6dc',bright:.6,holo:.85,brush:.1,gloss:.8},
   'ink-red':{label:'印紅（專色）',type:'ink',tint:'#e0261c',opacity:.96,blend:'normal',gloss:.08},
   'ink-black':{label:'印墨',type:'ink',tint:'#161616',opacity:1,blend:'multiply',gloss:.05},
   'ink-white':{label:'白墨',type:'ink',tint:'#f3f1ec',opacity:.9,blend:'normal',gloss:.06},
@@ -560,8 +560,15 @@ function hsl(h){ const [r,g,b]=rgb(h).map(v=>v/255); const mx=Math.max(r,g,b),mn
 function guessPreset(h){ const {h:hu,s,l}=hsl(h);
   if(l<.12) return 'ink-black'; if(l>.9&&s<.2) return 'ink-white'; if(s<.18) return 'foil-silver';
   if(hu<22||hu>335) return 'foil-red'; if(hu<65) return 'foil-gold'; return 'ink-custom'; }
+function hslhex(h,s,l){ s=Math.max(0,Math.min(1,s)); l=Math.max(0,Math.min(1,l)); const k=n=>(n+h/30)%12; const a=s*Math.min(l,1-l); const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1)); return hex(f(0)*255,f(8)*255,f(4)*255); }
+/* 箔面漸層：亮部沿色相提高明度而不是混白，才不會把紅箔洗成粉紅、金箔洗成米色 */
+function foilShades(tint, c=.45){
+  const {h,s,l}=hsl(tint); const up=(t)=>l+(1-l)*t, dn=(t)=>l*(1-t);
+  return { dark:hslhex(h,s*1.05,dn(.45+c*.3)), deep:hslhex(h,s*1.05,dn(.22+c*.2)), mid:tint,
+           light:hslhex(h,s,up(.22+c*.22)), spec:hslhex(h,s*.85,up(.42+c*.25)), hi:hslhex(h,s*.8,up(.58)) };
+}
 function foilGradient(tint, c=.45){
-  const dark=mix(tint,'#000000',.2+c*.45), mid=tint, light=mix(tint,'#ffffff',.18+c*.4), spec=mix(tint,'#ffffff',.42+c*.4), deep=mix(tint,'#000000',.1+c*.3);
+  const {dark,deep,mid,light,spec}=foilShades(tint,c);
   return `linear-gradient(112deg,${dark} 0%,${deep} 10%,${mid} 24%,${light} 36%,${spec} 41%,${light} 46%,${mid} 58%,${deep} 70%,${dark} 78%,${mid} 90%,${light} 100%)`;
 }
 function noiseURI(opts){
@@ -689,7 +696,7 @@ function renderFx(){
     d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
     const own=buildMask(L), ko=buildKnockout(L);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
-    if(L.type==='foil') d.innerHTML='<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div><div class="f-inner"><div class="inv"></div></div><div class="f-inner hi"><div class="inv"></div></div></div>';
+    if(L.type==='foil') d.innerHTML='<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
     else if(L.type==='ink') d.innerHTML='<div class="m ink"><div class="i-fill"></div><div class="i-grain"></div><div class="i-glare"></div></div>';
     else if(L.type==='uv') d.innerHTML='<div class="m uv"><div class="u-edge"></div><div class="u-glare"></div></div>';
     else if(L.type==='relief') d.innerHTML='<div class="m r-dark"></div><div class="m r-light"></div><div class="m r-face"></div>';
@@ -704,9 +711,11 @@ function styleFx(d,L){
     const c = L.contrast ?? .45, dp = L.depth ?? 1;
     st.setProperty('--grad', foilGradient(L.tint, c));
     st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
-    st.setProperty('--ga', (0.25+c*0.6).toFixed(3)); st.setProperty('--gd', (0.12+c*0.5).toFixed(3));
+    const hi=rgb(foilShades(L.tint,c).hi), ga=0.25+c*0.6;
+    st.setProperty('--g1', `rgba(${hi.join(',')},${ga.toFixed(3)})`); st.setProperty('--g2', `rgba(${hi.join(',')},${(ga*.4).toFixed(3)})`); st.setProperty('--gd', (0.12+c*0.5).toFixed(3));
+    st.setProperty('--sat', (L.sat ?? 1.15).toFixed(2));
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
-    st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*1.4+0.3).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2));
+    st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.7+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2));
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.type==='ink'){
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.blend); st.setProperty('--gloss', L.gloss);
@@ -802,12 +811,12 @@ function renderLayerList(){
     });
   });
 }
-function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; return Math.round(v*100)+'%'; }
+function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; if(p==='sat') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 function paramRows(L){
   const r=(label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
   const c=(label)=>`<div class="row two"><label>${label}</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span></div></div>`;
   const ko=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
-  if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01)+ko;
+  if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+`<p class="note" style="margin:-2px 0 6px">壓痕只作用在箔面外圍的紙上（左上暗、右下亮），箔面顏色不受影響。</p>`+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01)+ko;
   if(L.type==='ink') return ko+c('油墨色')+r('濃度','opacity',0,1,.01)+`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`+r('光澤','gloss',0,.5,.01);
   if(L.type==='uv') return r('光澤','gloss',0,1,.01);
   if(L.type==='relief') return r('深度','depth',.5,4,.1);
