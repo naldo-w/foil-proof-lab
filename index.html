@@ -90,6 +90,45 @@ button{cursor:pointer}
 .m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.35 + .65*var(--hov)));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),var(--g1,rgba(255,255,255,.55)) 0%,var(--g2,rgba(255,255,255,.22)) 22%,rgba(60,60,60,.14) 60%,rgba(0,0,0,var(--gd,.35)) 100%)}
 .m.foil{filter:saturate(var(--sat,1))}
+/* 雷射層：疊在金屬底色上的彩虹／亮粉／星空，隨光源位移 */
+.m.foil .h-rain{mix-blend-mode:color-dodge;opacity:var(--holo,.8);display:none}
+.holo-lines .h-rain:not(.b){display:block;background-image:repeating-linear-gradient(115deg,#ff0a54 0,#ff8c00 calc(var(--hs,1)*7px),#ffef00 calc(var(--hs,1)*14px),#2bff6f calc(var(--hs,1)*21px),#00d4ff calc(var(--hs,1)*28px),#8a5cff calc(var(--hs,1)*35px),#ff0a54 calc(var(--hs,1)*42px));background-size:200% 200%;background-position:var(--px) var(--py);filter:blur(.3px) saturate(1.4) brightness(.74)}
+.holo-rainbow .h-rain:not(.b){display:block;background-image:linear-gradient(115deg,transparent 0%,#ff0a54 14%,#ff8c00 26%,#ffef00 38%,#2bff6f 50%,#00d4ff 62%,#8a5cff 74%,#ff0a54 86%,transparent 100%);background-size:calc(var(--hs,1)*260%) calc(var(--hs,1)*260%);background-position:var(--px) var(--py);filter:saturate(1.3) brightness(.85)}
+.holo-glitter .h-rain{display:block;background-image:var(--glit);background-size:calc(var(--hs,1)*120px) calc(var(--hs,1)*120px);background-position:calc(var(--px)*1.8) calc(var(--py)*1.2);filter:brightness(1.05)}
+.holo-glitter .h-rain.b{background-position:calc(var(--px)*-1.3) calc(var(--py)*-0.8);opacity:calc(var(--holo,.8)*.7);filter:hue-rotate(90deg)}
+.holo-cosmos .h-rain:not(.b){display:block;background-image:var(--cosmos);background-size:calc(var(--hs,1)*400px) calc(var(--hs,1)*400px);background-position:calc(var(--px)*.6) calc(var(--py)*.6);filter:saturate(1.6) brightness(.9)}
+.holo-cosmos .h-rain.b{display:block;background-image:var(--glit);background-size:calc(var(--hs,1)*160px) calc(var(--hs,1)*160px);background-position:calc(var(--px)*-1.2) calc(var(--py)*-1.2);opacity:calc(var(--holo,.8)*.5)}
+.holo-cracked .h-rain:not(.b){display:block;background-image:var(--crack);background-size:calc(var(--hs,1)*300px) calc(var(--hs,1)*300px);background-position:calc(var(--px)*.7) calc(var(--py)*.7);filter:saturate(1.5) brightness(.85)}
+/* 珍珠箔：粉彩虹彩以 overlay 疊在近白底上；透明雷射膜：沒有金屬底，只有彩虹 */
+.holo-pearl .h-rain:not(.b){display:block;mix-blend-mode:overlay;filter:none;background-image:linear-gradient(115deg,#ffb8d9 0%,#fff0a8 18%,#b8ffd9 36%,#b8e4ff 54%,#dcc6ff 72%,#ffb8d9 90%);background-size:calc(var(--hs,1)*300%) calc(var(--hs,1)*300%);background-position:var(--px) var(--py)}
+.holo-clear .f-base,.holo-clear .f-paper,.holo-clear .f-brush{display:none}
+.holo-clear .h-rain:not(.b){display:block;mix-blend-mode:screen;filter:blur(.3px) saturate(1.3) brightness(.7);background-image:repeating-linear-gradient(115deg,#ff0a54 0,#ff8c00 calc(var(--hs,1)*7px),#ffef00 calc(var(--hs,1)*14px),#2bff6f calc(var(--hs,1)*21px),#00d4ff calc(var(--hs,1)*28px),#8a5cff calc(var(--hs,1)*35px),#ff0a54 calc(var(--hs,1)*42px));background-size:200% 200%;background-position:var(--px) var(--py)}
+.holo-clear .f-glare{mix-blend-mode:screen}
+/* UV 變化 */
+.m.uv.uv-matte .u-glare{display:none}
+.m.uv.uv-matte .u-edge{opacity:1;mix-blend-mode:multiply;background-image:var(--ptexg);background-size:160px 160px;background-color:rgba(0,0,0,.10)}
+.m.uv.uv-frost .u-edge{opacity:.9;mix-blend-mode:normal;background-image:var(--ptexg);background-size:120px 120px;background-color:rgba(255,255,255,.22)}
+.m.uv.uv-frost .u-glare{opacity:calc(var(--gloss,.35)*.6)}
+.m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
+.m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--gloss,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
+.f-rim.rev.dk{filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1px) rgba(0,0,0,.5))}
+.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1px) rgba(255,255,255,.7))}
+/* 發泡印花：外緣立體陰影 + 內側圓頂明暗（反向遮罩 drop-shadow）+ 霧面顆粒 */
+.i-dome{position:absolute;inset:0!important;opacity:var(--dop,1)}
+.i-dome.sh{filter:drop-shadow(calc(-1*var(--dd,1.6px)) calc(-1*var(--dd,1.6px)) var(--db,2.7px) rgba(0,0,0,.42))}
+.i-dome.hi{filter:drop-shadow(var(--dd,1.6px) var(--dd,1.6px) var(--db,2.7px) rgba(255,255,255,.5))}
+.i-dome .inv{position:absolute;inset:0;background:#000;
+  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
+  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.m.ink.puff .i-grain{background-image:var(--ptexg);background-size:90px 90px;mix-blend-mode:soft-light}
+.m.ink.puff .i-glare{mix-blend-mode:soft-light}
+.m.ink.flock .i-grain{background-image:var(--ptexg);background-size:70px 70px;mix-blend-mode:soft-light}
+.m.ink.flock{filter:saturate(.9) brightness(.9)}
+.m.ink.flock .i-glare{display:none}
+/* 螢光墨：飽和拉高 + 外緣微光 */
+.m.ink.fluo{filter:saturate(1.4) brightness(1.06)}
+.f-rim.glow{filter:drop-shadow(0 0 3px var(--tint)) drop-shadow(0 0 8px var(--tint));opacity:.45}
+.f-rim.glow .m.rim{background:var(--tint)}
 /* ink */
 .m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
 .m.ink .i-fill{background:var(--tint)}
@@ -476,23 +515,76 @@ const NONRENDER = 'defs,clipPath,mask,pattern,symbol,marker,linearGradient,radia
 const LS_KEY = 'foil-proof-v1';
 const SAMPLE_NAME = 'sample-card.svg';
 
+const F = (label,tint,o={}) => Object.assign({label,group:'燙箔',type:'foil',tint,bright:.5,contrast:.45,sat:1.15,holo:.06,brush:.28,gloss:.7,depth:1},o);
+const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
+const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.96,blend:'normal',gloss:.08},o);
 const PRESETS = {
-  'foil-silver':{label:'燙銀',type:'foil',tint:'#c9cacf',bright:.5,contrast:.45,sat:1,holo:.12,brush:.3,gloss:.6,depth:1},
-  'foil-gold':{label:'燙金',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d3a84a',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-red':{label:'燙紅',type:'foil',contrast:.45,depth:1,sat:1.25,tint:'#d1202c',bright:.5,holo:.06,brush:.25,gloss:.8},
-  'foil-rose':{label:'燙玫瑰金',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d9a091',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-copper':{label:'燙古銅',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#b87333',bright:.5,holo:.05,brush:.4,gloss:.7},
-  'foil-blue':{label:'燙藍',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#2f56b5',bright:.5,holo:.1,brush:.25,gloss:.8},
-  'foil-black':{label:'燙黑（鏡面）',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#2b2b30',bright:.4,holo:.04,brush:.15,gloss:.95},
-  'foil-holo':{label:'全息銀',type:'foil',contrast:.45,depth:1,sat:1.15,tint:'#d6d6dc',bright:.6,holo:.85,brush:.1,gloss:.8},
-  'ink-red':{label:'印紅（專色）',type:'ink',tint:'#e0261c',opacity:.96,blend:'normal',gloss:.08},
-  'ink-black':{label:'印墨',type:'ink',tint:'#161616',opacity:1,blend:'multiply',gloss:.05},
-  'ink-white':{label:'白墨',type:'ink',tint:'#f3f1ec',opacity:.9,blend:'normal',gloss:.06},
-  'ink-custom':{label:'自訂油墨',type:'ink',tint:'#3a7d5c',opacity:.95,blend:'multiply',gloss:.06},
-  'uv':{label:'局部上光',type:'uv',gloss:.8},
-  'deboss':{label:'打凹',type:'relief',depth:1.5,dir:-1},
-  'emboss':{label:'打凸',type:'relief',depth:1.5,dir:1},
-  'hide':{label:'不印',type:'hide'},
+  /* 燙箔 */
+  'foil-silver': F('燙銀','#c9cacf',{sat:1,holo:.12,brush:.3,gloss:.6}),
+  'foil-gold':   F('燙金','#d3a84a',{bright:.55,holo:.08,gloss:.75}),
+  'foil-champagne':F('燙香檳金','#d9c39a',{bright:.55,holo:.06,gloss:.7}),
+  'foil-rose':   F('燙玫瑰金','#d9a091',{bright:.55,holo:.08,gloss:.75}),
+  'foil-copper': F('燙古銅','#b87333',{holo:.05,brush:.4}),
+  'foil-red':    F('燙紅','#d1202c',{sat:1.25,gloss:.8,brush:.25}),
+  'foil-orange': F('燙橘','#e0581c',{sat:1.2,gloss:.8}),
+  'foil-pink':   F('燙粉','#e56a9a',{sat:1.2,gloss:.8}),
+  'foil-purple': F('燙紫','#5b2d8e',{sat:1.2,gloss:.8}),
+  'foil-blue':   F('燙藍','#2f56b5',{holo:.1,gloss:.8}),
+  'foil-teal':   F('燙湖水綠','#1f8f8a',{gloss:.8}),
+  'foil-green':  F('燙綠','#1f7a4d',{gloss:.8}),
+  'foil-white':  F('燙白','#f2f2f4',{sat:1,holo:.04,contrast:.3,gloss:.6}),
+  'foil-black':  F('燙黑（鏡面）','#2b2b30',{sat:1,bright:.4,holo:.04,brush:.15,gloss:.95}),
+  'foil-matte-silver':F('燙霧銀','#b9bbc2',{sat:1,contrast:.2,holo:.02,brush:.7,gloss:.3,bright:.45}),
+  'foil-matte-gold':  F('燙霧金','#c9a75a',{contrast:.2,holo:.02,brush:.7,gloss:.3,bright:.5}),
+  /* 燙雷射（參考 pokemon-cards-css 的 holo / rainbow / cosmos / glitter） */
+  'holo-lines':   H('雷射銀（線條）','lines','#cfd0d6'),
+  'holo-lines-gold':H('雷射金（線條）','lines','#d8b25a',{sat:1.15}),
+  'holo-rainbow': H('彩虹雷射','rainbow','#dcdce2',{holo:.9,hscale:1.2}),
+  'holo-glitter': H('碎片雷射（亮粉）','glitter','#c9c9cf',{holo:.85,hscale:1}),
+  'holo-cosmos':  H('星空雷射（宇宙）','cosmos','#aeb2c2',{holo:.9,hscale:1,bright:.45}),
+  'holo-cracked': H('碎冰雷射','cracked','#d0d2da',{holo:.8,hscale:1}),
+  'holo-pearl':   H('珍珠箔','pearl','#f1eff0',{holo:.5,sat:1,contrast:.3,gloss:.55,brush:.05,hscale:1.4}),
+  'holo-pearl-pink':H('珍珠粉箔','pearl','#f3d9e0',{holo:.5,sat:1.05,contrast:.3,gloss:.55,brush:.05,hscale:1.4}),
+  'holo-clear':   H('透明雷射膜（疊在印刷上）','clear','#ffffff',{holo:.55,contrast:.3,gloss:.5,brush:0,depth:0,noKnock:true}),
+  /* 油墨 */
+  'ink-red':   I('印紅（一般紅墨）','油墨','#e0261c'),
+  'ink-black': I('印墨','油墨','#161616',{opacity:1,blend:'multiply',gloss:.05}),
+  'ink-white': I('白墨','油墨','#f3f1ec',{opacity:.9,gloss:.06}),
+  'ink-custom':I('自訂油墨','油墨','#3a7d5c',{opacity:.95,blend:'multiply',gloss:.06}),
+  /* 專色（色號為近似參考值） */
+  'spot-185':  I('專色紅 185C','專色','#e4002b'),
+  'spot-021':  I('專色橘 021C','專色','#fe5000'),
+  'spot-yellow':I('專色黃 Yellow C','專色','#fedd00'),
+  'spot-354':  I('專色綠 354C','專色','#00b140'),
+  'spot-process-blue':I('專色藍 Process Blue C','專色','#0085ca'),
+  'spot-reflex':I('專色藍 Reflex Blue C','專色','#001489'),
+  'spot-2685': I('專色紫 2685C','專色','#56018d'),
+  'spot-black6':I('專色黑 Black 6C','專色','#101820'),
+  'spot-wg7':  I('專色暖灰 Warm Gray 7C','專色','#968c83'),
+  'spot-cg9':  I('專色冷灰 Cool Gray 9C','專色','#75787b'),
+  'spot-877':  I('專色金屬銀 877C','專色','#8a8d8f',{gloss:.25}),
+  'spot-871':  I('專色金屬金 871C','專色','#85714d',{gloss:.25}),
+  /* 螢光色 */
+  'fluo-806':  I('螢光粉 806C','螢光色','#ff3eb5',{fluo:true,opacity:1}),
+  'fluo-805':  I('螢光紅 805C','螢光色','#ff7276',{fluo:true,opacity:1}),
+  'fluo-811':  I('螢光橘 811C','螢光色','#ff6a39',{fluo:true,opacity:1}),
+  'fluo-803':  I('螢光黃 803C','螢光色','#ffe900',{fluo:true,opacity:1}),
+  'fluo-802':  I('螢光綠 802C','螢光色','#44d62c',{fluo:true,opacity:1}),
+  'fluo-801':  I('螢光藍 801C','螢光色','#009ace',{fluo:true,opacity:1}),
+  /* 特殊工藝 */
+  'puff-white':I('發泡印花（白）','特殊工藝','#f4f1ea',{puff:true,opacity:1,depth:2,gloss:.06,blend:'normal'}),
+  'puff-black':I('發泡印花（黑）','特殊工藝','#1c1b1a',{puff:true,opacity:1,depth:2,gloss:.06,blend:'normal'}),
+  'puff-custom':I('發泡印花（自訂色）','特殊工藝','#e34d5a',{puff:true,opacity:1,depth:2,gloss:.06,blend:'normal'}),
+  'flock':     I('植絨（絨毛）','特殊工藝','#7a1f2b',{flock:true,opacity:1,depth:1,gloss:0,blend:'normal'}),
+  /* 表面處理 */
+  'uv':        {label:'局部上光（亮面 UV）',group:'表面處理',type:'uv',sub:'gloss',gloss:.8},
+  'uv-matte':  {label:'局部霧面（霧 UV）',group:'表面處理',type:'uv',sub:'matte',gloss:.15},
+  'uv-frost':  {label:'磨砂 UV',group:'表面處理',type:'uv',sub:'frost',gloss:.35},
+  'uv-raised': {label:'立體 UV（厚版／水晶膠）',group:'表面處理',type:'uv',sub:'raised',gloss:.95,depth:1.5},
+  'uv-glitter':{label:'亮粉 UV',group:'表面處理',type:'uv',sub:'glitter',gloss:.6},
+  'deboss':{label:'打凹',group:'表面處理',type:'relief',depth:1.5,dir:-1},
+  'emboss':{label:'打凸',group:'表面處理',type:'relief',depth:1.5,dir:1},
+  'hide':  {label:'不印',group:'其他',type:'hide'},
 };
 const PAPER_SWATCHES = [['#121214','黑卡'],['#1c2230','深藍'],['#1e2b24','墨綠'],['#5b1f1f','酒紅'],['#c9a26b','牛皮'],['#eee6d3','米白'],['#f4f3ef','象牙白'],['#fbfbfb','白卡']];
 
@@ -542,6 +634,10 @@ function grainURI(op){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"/><feFuncG type="linear" slope="2.2" intercept="-0.6"/><feFuncB type="linear" slope="2.2" intercept="-0.6"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)" opacity="${op.toFixed(3)}"/></svg>`;
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 }
+/* 雷射用貼圖（固定，產生一次） */
+const GLITTER = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="11" stitchTiles="stitch"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncG type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncB type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+const COSMOS = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><filter id="c" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency="0.012" numOctaves="3" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="4"/><feComponentTransfer><feFuncR type="linear" slope="1.8" intercept="-0.35"/><feFuncG type="linear" slope="1.8" intercept="-0.35"/><feFuncB type="linear" slope="1.8" intercept="-0.35"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#c)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+const CRACK = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="k" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="saturate" values="3"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncG type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncB type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#k)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 function paperBlend(P){ if(P.blend!=='auto') return P.blend; return hsl(P.color).l<.35 ? 'hard-light' : 'overlay'; }
 
 /* ---------- color helpers ---------- */
@@ -637,9 +733,9 @@ function autoLayers(){
 }
 function newLayer(preset, name){
   const p = PRESETS[preset]; const L = Object.assign({id:'L'+(uid++), name:name||p.label, preset, visible:true, blend:'normal', opacity:1, knockout:true}, p);
-  delete L.label; S.layers.unshift(L); return L;
+  delete L.label; delete L.group; S.layers.unshift(L); return L;
 }
-function applyPreset(L, preset){ const p=PRESETS[preset]; Object.assign(L, p, {preset}); delete L.label; }
+function applyPreset(L, preset){ const p=PRESETS[preset]; delete L.sub; delete L.fluo; delete L.noKnock; delete L.puff; delete L.flock; Object.assign(L, p, {preset}); delete L.label; delete L.group; }
 
 /* ---------- effective layer / masks ---------- */
 function computeEffective(){
@@ -676,7 +772,7 @@ function buildMask(L){
   return maskCache[L.id] ||= toURI(layerSVG(k=>effLayer[k]===L.id, '#fff', 0));
 }
 /* 上層（列表中在 L 之前、會印出的圖層）圖形外擴 gap 後的遮罩；沒有上層圖形時回傳 null */
-function layersAbove(L){ const i=S.layers.indexOf(L); return S.layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='ink') && x.visible && x._count); }
+function layersAbove(L){ const i=S.layers.indexOf(L); return S.layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='holo'||x.type==='ink') && !x.noKnock && x.visible && x._count); }
 function buildKnockout(L){
   const above=layersAbove(L); if(!above.length || !(S.koGap>0) || L.knockout===false) return null;
   const key='ko:'+L.id+':'+S.koGap+':'+above.map(x=>x.id).join(',');
@@ -697,8 +793,16 @@ function renderFx(){
     const own=buildMask(L), ko=buildKnockout(L);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
     if(L.type==='foil') d.innerHTML='<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
-    else if(L.type==='ink') d.innerHTML='<div class="m ink"><div class="i-fill"></div><div class="i-grain"></div><div class="i-glare"></div></div>';
-    else if(L.type==='uv') d.innerHTML='<div class="m uv"><div class="u-edge"></div><div class="u-glare"></div></div>';
+    else if(L.type==='holo') d.innerHTML=`<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
+    else if(L.type==='ink'){
+      const raised = L.puff||L.flock;
+      d.innerHTML=(L.fluo?'<div class="f-rim glow"><div class="m rim"></div></div>':'')
+        +(raised?'<div class="f-rim dk rev"><div class="m rim"></div></div><div class="f-rim lt rev"><div class="m rim"></div></div>':'')
+        +`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}"><div class="i-fill"></div><div class="i-grain"></div>`
+        +(L.puff?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
+        +`<div class="i-glare"></div></div>`;
+    }
+    else if(L.type==='uv') d.innerHTML=(L.sub==='raised'?'<div class="f-rim dk rev"><div class="m rim"></div></div><div class="f-rim lt rev"><div class="m rim"></div></div>':'')+`<div class="m uv uv-${L.sub||'gloss'}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
     else if(L.type==='relief') d.innerHTML='<div class="m r-dark"></div><div class="m r-light"></div><div class="m r-face"></div>';
     fxs.appendChild(d); styleFx(d,L);
   });
@@ -707,8 +811,9 @@ function renderFx(){
 function styleFx(d,L){
   if(!d){ document.querySelectorAll(`.fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L)); return; }
   const st = d.style;
-  if(L.type==='foil'){
+  if(L.type==='foil' || L.type==='holo'){
     const c = L.contrast ?? .45, dp = L.depth ?? 1;
+    if(L.type==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); }
     st.setProperty('--grad', foilGradient(L.tint, c));
     st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
     const hi=rgb(foilShades(L.tint,c).hi), ga=0.25+c*0.6;
@@ -718,9 +823,11 @@ function styleFx(d,L){
     st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.7+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2));
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.type==='ink'){
-    st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.blend); st.setProperty('--gloss', L.gloss);
-    st.setProperty('--grain-ink', (S.paper.strength*.85).toFixed(3));
-  } else if(L.type==='uv'){ st.setProperty('--gloss', L.gloss); }
+    st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.fluo?'normal':L.blend); st.setProperty('--gloss', L.gloss);
+    st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (S.paper.strength*.85).toFixed(3)));
+    if(L.puff||L.flock){ const dp=L.depth ?? 2; st.setProperty('--dd', (dp*0.8).toFixed(2)+'px'); st.setProperty('--db', (dp*1.2+0.3).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp/1.5).toFixed(2)); st.setProperty('--ptexg', grainURI(.8)); }
+  } else if(L.type==='uv'){ st.setProperty('--gloss', L.gloss); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6));
+    const dp=L.depth ?? 1.5; st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.8+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2)); }
   else if(L.type==='relief'){
     const d0 = L.depth*L.dir; st.setProperty('--dx', d0+'px'); st.setProperty('--dy', d0+'px');
     st.setProperty('--face', L.dir<0 ? mix(S.paper.color,'#000000',.12) : mix(S.paper.color,'#ffffff',.06));
@@ -774,8 +881,10 @@ function renderLayerList(){
   const host=$('#layerList'); host.innerHTML='';
   S.layers.forEach((L,i)=>{
     const d=document.createElement('div'); d.className='layer'+(L.id===S.active?' active':''); d.dataset.id=L.id;
-    const swClass = L.type==='foil'?'':L.type;
-    const opts = Object.entries(PRESETS).map(([k,p])=>`<option value="${k}"${k===L.preset?' selected':''}>${p.label}</option>`).join('');
+    const swClass = (L.type==='foil'||L.type==='holo')?'':L.type;
+    let opts='', grp='';
+    Object.entries(PRESETS).forEach(([k,p])=>{ if(p.group!==grp){ if(grp) opts+='</optgroup>'; opts+=`<optgroup label="${p.group}">`; grp=p.group; } opts+=`<option value="${k}"${k===L.preset?' selected':''}>${p.label}</option>`; });
+    opts+='</optgroup>';
     d.innerHTML = `<div class="layer-h">
       <span class="sw ${swClass}" style="--c:${L.tint||(L.type==='relief'?S.paper.color:'#888')}"></span>
       <input class="name" value="${esc(L.name)}" spellcheck="false">
@@ -811,14 +920,17 @@ function renderLayerList(){
     });
   });
 }
-function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; if(p==='sat') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 function paramRows(L){
   const r=(label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
   const c=(label)=>`<div class="row two"><label>${label}</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span></div></div>`;
   const ko=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
   if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+`<p class="note" style="margin:-2px 0 6px">壓痕只作用在箔面外圍的紙上（左上暗、右下亮），箔面顏色不受影響。</p>`+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01)+ko;
+  if(L.type==='holo') return c('底色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05)+ko;
+  if(L.type==='ink' && (L.puff||L.flock)) return ko+c(L.flock?'絨毛色':'發泡色')+r('濃度','opacity',0,1,.01)+r('厚度','depth',0,4,.05)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">${L.flock?'植絨：絨毛吸光、無反光，邊緣略微隆起。':'發泡印花：加熱後隆起的厚墨，邊緣圓潤、霧面；厚度越大隆起越明顯。'}</p>`;
+  if(L.type==='ink' && L.fluo) return ko+c('螢光色')+r('濃度','opacity',0,1,.01)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">螢光墨為不透明覆蓋並帶微微發光；螢幕無法真正呈現螢光，此為近似。</p>`;
   if(L.type==='ink') return ko+c('油墨色')+r('濃度','opacity',0,1,.01)+`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`+r('光澤','gloss',0,.5,.01);
-  if(L.type==='uv') return r('光澤','gloss',0,1,.01);
+  if(L.type==='uv') return r('光澤','gloss',0,1,.01)+(L.sub==='raised'?r('厚度','depth',0,3,.05):'')+`<p class="note" style="margin:-2px 0 6px">${({gloss:'透明亮膜，只改變反光不改變顏色。',matte:'消光膜，讓該區域比周圍更霧、略暗。',frost:'帶細砂質感的半透明霧膜。',raised:'厚塗透明膠，邊緣有立體高光與陰影。',glitter:'透明膠內含亮粉，隨光線閃爍。'})[L.sub||'gloss']}</p>`;
   if(L.type==='relief') return r('深度','depth',.5,4,.1);
   return '<p class="note">此圖層的元素不會印出（例如底色矩形、輔助線）。</p>';
 }
@@ -1019,7 +1131,7 @@ function exportSVG(){
     return prefixIds(innerXML(g), id+'_');
   };
   printed.forEach((L,i)=>{
-    const above=printed.slice(i+1).filter(x=>x.type!=='uv' && x.type!=='relief');
+    const above=printed.slice(i+1).filter(x=>x.type!=='uv' && x.type!=='relief' && !x.noKnock);
     let maskAttr='';
     if(L.knockout!==false && S.koGap>0 && above.length){
       const ids=new Set(above.map(x=>x.id));
