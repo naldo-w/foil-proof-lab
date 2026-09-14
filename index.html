@@ -166,7 +166,7 @@ button{cursor:pointer}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
 .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse calc(70% * var(--gsz,1)) calc(60% * var(--gsz,1)) at var(--lx,50%) var(--ly,40%),rgba(255,255,255,var(--glow,.3)),transparent 70%);pointer-events:none}
 .scene .floor{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.35) 100%);pointer-events:none}
-.table{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 50%}
+.table{position:absolute;inset:0;transform-style:flat;transform-origin:50% 50%} /* flat：卡片依疊放順序繪製，不做逐像素深度交錯，微傾時不會穿模 */
 .slot{position:absolute;transform-style:preserve-3d}
 .slot .card{position:relative;width:100%;max-width:none;pointer-events:none;box-shadow:var(--sh,none);transform:none}
 .chip .lay{font-family:var(--sans);font-size:11px}
@@ -479,10 +479,11 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       </div>
       <div class="sec">
         <div class="sec-h">卡片與桌面</div>
+        <div class="row"><label>紙厚</label><input type="range" id="sThick" min="0" max="6" step="0.5"><span class="val"></span></div>
         <div class="row"><label>離地高度</label><input type="range" id="sElev" min="0" max="40" step="1"><span class="val"></span></div>
         <div class="row"><label>投影</label><input type="range" id="sShadow" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>卡片微傾</label><input type="range" id="sTilt" min="0" max="8" step="0.5"><span class="val"></span></div>
-        <p class="note">離地高度越高：影子離卡片越遠、越糊、越淡（像卡片墊在東西上）。0 = 貼平桌面，只剩貼邊的薄影。「卡片微傾」讓每張卡有跟種子走的隨機小角度，反光相位各自不同。</p>
+        <p class="note">紙厚：卡片下緣露出實心紙邊，交疊時後放的卡會依厚度一層層墊高；卡片依疊放順序繪製，微傾也不會互相穿透。離地高度越高：影子離卡片越遠、越糊、越淡（像卡片墊在東西上）。0 = 貼平桌面，只剩貼邊的薄影。「卡片微傾」讓每張卡有跟種子走的隨機小角度，反光相位各自不同。</p>
       </div>
     </div>
   </aside>
@@ -638,7 +639,7 @@ let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
 const VIEW_PRESETS=[['正上方',0,0],['俯 30°',30,0],['俯 45°',45,0],['左前 45°',45,-35],['右前 45°',45,35],['等角',55,45],['低角 65°',65,0]];
 const SCENE_BG=[['#2a2a2e','深灰'],['#141416','黑'],['#6b6b70','中灰'],['#c9c4bb','暖灰'],['#e9e4da','米白'],['#f5f5f5','白'],['#1f2a3a','深藍'],['#3d2f2a','深棕']];
-const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lightDist:1,lsize:1,intensity:1,elev:8,tilt:2,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
+const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lightDist:1,lsize:1,intensity:1,elev:8,thick:2,tilt:2,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
@@ -1338,7 +1339,7 @@ function renderScene(){
   const pool=variantPool(); const rnd=mulberry(C.seed*131+7);
   slots.forEach((sl,i)=>{
     const d=document.createElement('div'); d.className='slot';
-    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`translateZ(${(C.elev??8)}px) rotate(${sl.r}deg) rotateX(${(sl.tx*(C.tilt??2)).toFixed(2)}deg) rotateY(${(sl.ty*(C.tilt??2)).toFixed(2)}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
+    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`translateZ(${((C.elev??8)+i*(C.thick??2)).toFixed(1)}px) rotate(${sl.r}deg) rotateX(${(sl.tx*(C.tilt??2)).toFixed(2)}deg) rotateY(${(sl.ty*(C.tilt??2)).toFixed(2)}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
     const pick = pool.length===1 ? pool[0] : (C.mix==='random' ? pool[Math.floor(rnd()*pool.length)] : pool[i%pool.length]);
     const c=pick.el.cloneNode(true); c.title=pick.name;
     d.appendChild(c); tb.appendChild(d);
@@ -1367,7 +1368,10 @@ function applySceneLight(px,py,hov){
     // 投影：方向背光、長度隨離地高度與燈的高度、軟硬隨燈的大小
     const len=(4+elev*3)/dist, ox=(sl.x-Lx)/C.W*len*C.shadow*2, oy=(sl.y-Ly)/C.H*len*C.shadow*2+elev*.6*C.shadow;
     const bl=(2+elev*1.2)*(0.5+lsz*0.8)*(0.5+C.shadow*.5), a=Math.max(.08,(.6-elev*.008)*C.shadow/(0.7+lsz*0.3));
-    c.style.setProperty('--sh',`${ox.toFixed(1)}px ${oy.toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elev*.15).toFixed(1)}px ${(2+elev*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`);
+    // 紙厚：卡片下緣露出一條實心的紙邊（顏色 = 紙色壓暗），厚度越大越明顯
+    const th=C.thick??2, pc=(c.querySelector('.paper')?.style.getPropertyValue('--paper')||'#888').trim(), edge=mix(pc.startsWith('#')&&pc.length===7?pc:'#888888','#000000',.42);
+    const edgeSh = th>0 ? `0 ${(th*.9).toFixed(1)}px 0 0 ${edge}, ` : '';
+    c.style.setProperty('--sh',`${edgeSh}${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elev*.15+th).toFixed(1)}px ${(2+elev*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`);
   });
 }
 function fitScene(){
@@ -1392,7 +1396,7 @@ function syncSceneControls(){
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
-  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
+  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
   const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
@@ -1407,6 +1411,7 @@ $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.rando
 [['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','lx'],['#sLy','ly'],['#sDist','lightDist'],['#sSize','lsize'],['#sInt','intensity'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
 $('#sTilt').addEventListener('input',e=>{ S.scene.tilt=+e.target.value; sceneChanged(true); });
 $('#sElev').addEventListener('input',e=>{ S.scene.elev=+e.target.value; sceneChanged(true); });
+$('#sThick').addEventListener('input',e=>{ S.scene.thick=+e.target.value; sceneChanged(true); });
 $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(false); });
 
 /* ---------- boot ---------- */
