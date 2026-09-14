@@ -53,8 +53,10 @@ button{cursor:pointer}
 .stage-hint{position:absolute;bottom:12px;left:12px;z-index:5;font:11px var(--mono);color:var(--faint);letter-spacing:.04em}
 .stage-hint b{color:var(--muted);font-weight:500}
 
-.card-wrap{position:absolute;inset:0;display:grid;place-items:center;perspective:1400px;padding:56px 40px 40px}
-.card{position:relative;width:var(--w,800px);aspect-ratio:var(--ar,2/1);max-width:100%;
+.card-wrap{position:absolute;inset:0;display:grid;place-items:center;perspective:1400px;padding:56px 40px 40px;overflow:visible}
+.stage.panning{cursor:grabbing}
+.stage.panning *{cursor:grabbing!important}
+.card{position:relative;width:var(--w,800px);aspect-ratio:var(--ar,2/1);flex:none;
   border-radius:var(--radius,4px);overflow:hidden;
   transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transform-style:preserve-3d;
   box-shadow:0 30px 60px -20px rgba(0,0,0,.8),0 8px 18px -8px rgba(0,0,0,.6);
@@ -149,9 +151,6 @@ button{cursor:pointer}
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%)}
 .paper-vignette{background:radial-gradient(ellipse at 50% 50%,transparent 60%,rgba(0,0,0,.18) 100%);pointer-events:none}
 
-.pickbox{position:absolute;z-index:6;pointer-events:none;border:1px dashed var(--accent);background:rgba(201,169,110,.08);border-radius:2px;opacity:0;transition:opacity .15s}
-.pickbox.on{opacity:1}
-.pickbox .tag{position:absolute;left:-1px;top:-22px;font:11px var(--mono);background:var(--accent);color:var(--accent-ink);padding:2px 6px;border-radius:3px;white-space:nowrap}
 
 .stage-tools.right{left:auto;right:12px}
 .scenewrap{position:absolute;inset:0;display:grid;place-items:center;padding:56px 40px 40px}
@@ -312,12 +311,13 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 
   <main class="stage" id="stage">
     <div class="stage-tools">
-      <span class="lbl">點選畫面指派 →</span>
-      <div class="seg" id="pickmode">
-        <button data-m="element">元素</button>
-        <button data-m="group" class="on">群組</button>
-        <button data-m="layer">圖層</button>
-        <button data-m="color">同色</button>
+      <span class="lbl">縮放</span>
+      <div class="seg" id="zoomtools">
+        <button data-z="out" title="縮小">−</button>
+        <button data-z="readout" id="zoomReadout" title="雙擊輸入" style="min-width:56px;font-family:var(--mono)">100%</button>
+        <button data-z="in" title="放大">＋</button>
+        <button data-z="100" title="1:1 實際像素">100%</button>
+        <button data-z="fit" title="填滿視窗">填滿</button>
       </div>
       <span class="lbl" id="activeLbl"></span>
     </div>
@@ -332,8 +332,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
     </div>
     <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="glow"></div><div class="table" id="table"></div><div class="floor"></div></div><div class="light-handle" id="lightHandle" title="拖曳設定光源位置"><span></span></div></div></div>
     <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
-    <div class="pickbox" id="pickbox"><span class="tag"></span></div>
-    <div class="stage-hint">移動滑鼠 = 改變光線角度 · 點擊元素 = 指派到<b>目前圖層</b>（再點一次取消） · 右上「版面 Mockup」可平鋪多張並匯出 IG 尺寸</div>
+    <div class="stage-hint">移動滑鼠 = 改變光線角度 · 滾輪 = 縮放 · 拖曳 = 平移 · 指派效果請用右側「效果圖層」的顏色／圖層 chip 或「結構」樹</div>
     <div class="drop">放開以載入 SVG</div>
   </main>
 
@@ -925,12 +924,47 @@ function applyPaper(){
 }
 function setRange(sel,v,f){ const i=$(sel); i.value=v; i.parentElement.querySelector('.val').textContent = f(v); }
 const PCT=v=>Math.round(v*100)+'%';
-function fitCard(){
-  const st=$('#stage').getBoundingClientRect(); const [W,H]=S.vb||[2,1];
-  const availW = st.width-80, availH = st.height-96;
-  const w = Math.max(200, Math.min(availW, availH*W/H));
-  $('#card').style.setProperty('--w', w+'px');
+/* ---------- 縮放與平移（單張與版面共用） ---------- */
+const view={mode:'fit', zoom:1, pan:{x:0,y:0}};
+function fitZoom(){
+  const st=$('#stage').getBoundingClientRect();
+  if(viewMode==='scene'){ const C=S.scene; return Math.min((st.width-80)/C.W,(st.height-100)/C.H); }
+  const [W,H]=S.vb||[2,1]; return Math.min((st.width-80)/W,(st.height-96)/H);
 }
+function applyZoom(){
+  if(!S||!S.vb) return;
+  if(view.mode==='fit'){ view.zoom=fitZoom(); view.pan.x=0; view.pan.y=0; }
+  const z=view.zoom, t=`translate(${view.pan.x.toFixed(1)}px,${view.pan.y.toFixed(1)}px)`;
+  $('#card').style.setProperty('--w', (S.vb[0]*z)+'px'); $('#cardwrap').style.transform=t;
+  if(viewMode==='scene'){ const C=S.scene; $('#scene').style.transform=`scale(${z})`; Object.assign($('#scenebox').style,{width:(C.W*z)+'px',height:(C.H*z)+'px'}); $('#scenewrap').style.transform=t; }
+  $('#zoomReadout').textContent=Math.round(z*100)+'%';
+}
+function setZoom(nz, cx=0, cy=0){ // 以 stage 中心為原點的座標 (cx,cy) 保持不動
+  nz=Math.max(.05,Math.min(8,nz)); const k=nz/view.zoom;
+  view.pan.x = cx-(cx-view.pan.x)*k; view.pan.y = cy-(cy-view.pan.y)*k; view.zoom=nz; view.mode='custom'; applyZoom();
+}
+function fitCard(){ applyZoom(); }
+function fitScene(){ applyZoom(); }
+$('#zoomtools').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; const z=b.dataset.z;
+  if(z==='fit'){ view.mode='fit'; applyZoom(); } else if(z==='100'){ setZoom(1); } else if(z==='in'){ setZoom(view.zoom*1.25); } else if(z==='out'){ setZoom(view.zoom/1.25); } });
+$('#zoomReadout').addEventListener('dblclick', ()=>{ const v=prompt('縮放百分比', Math.round(view.zoom*100)); const n=parseFloat(v); if(!isNaN(n)&&n>0) setZoom(n/100); });
+$('#stage').addEventListener('wheel', e=>{
+  e.preventDefault(); const r=$('#stage').getBoundingClientRect(); const cx=e.clientX-r.left-r.width/2, cy=e.clientY-r.top-r.height/2;
+  const f=Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0018)); setZoom(view.zoom*f, cx, cy);
+}, {passive:false});
+/* 平移：單張模式左鍵拖曳；版面模式左鍵拖曳是光源，改用中鍵或 Alt/空白鍵+拖曳 */
+let panDrag=null, spaceDown=false;
+document.addEventListener('keydown', e=>{ if(e.code==='Space' && !e.target.matches('input,textarea,select')) spaceDown=true; });
+document.addEventListener('keyup', e=>{ if(e.code==='Space') spaceDown=false; });
+$('#stage').addEventListener('pointerdown', e=>{
+  if(e.target.closest('.stage-tools')) return;
+  const wantPan = e.button===1 || (e.button===0 && (e.altKey || spaceDown || viewMode!=='scene'));
+  if(!wantPan) return;
+  panDrag={x:e.clientX,y:e.clientY,px:view.pan.x,py:view.pan.y}; $('#stage').classList.add('panning'); try{ $('#stage').setPointerCapture(e.pointerId); }catch(x){} e.preventDefault();
+}, true);
+$('#stage').addEventListener('pointermove', e=>{ if(!panDrag) return; const dx=e.clientX-panDrag.x, dy=e.clientY-panDrag.y; if(Math.hypot(dx,dy)<2) return; view.pan.x=panDrag.px+dx; view.pan.y=panDrag.py+dy; view.mode='custom'; applyZoom(); });
+const endPan=()=>{ if(!panDrag) return; panDrag=null; $('#stage').classList.remove('panning'); };
+$('#stage').addEventListener('pointerup', endPan); $('#stage').addEventListener('pointercancel', endPan);
 
 /* ---------- panel: layers ---------- */
 function renderLayerList(){
@@ -1048,33 +1082,6 @@ function assignKey(k, el){
 }
 function describe(el){ const id=groupName(el); return id?`「${id}」`:(el.tagName==='g'?`群組（${el.querySelectorAll(SHAPES).length} 個元素）`:el.tagName); }
 
-/* ---------- canvas picking ---------- */
-function pickTarget(t){
-  const shape = t.closest && t.closest(SHAPES); if(!shape || !shapes[shape.getAttribute('data-k')]) return null;
-  if(S.pickMode==='element') return shape;
-  if(S.pickMode==='group'){ const g=shape.parentElement; return (g && g.tagName==='g') ? g : shape; }
-  if(S.pickMode==='layer'){ let g=shape.parentElement; while(g && g!==svgRoot){ if(isLayerGroup(g)) return g; g=g.parentElement; } return shape; }
-  return shape;
-}
-const base=$('#base'), pickbox=$('#pickbox');
-base.addEventListener('mousemove', e=>{
-  const t=pickTarget(e.target); if(!t){ pickbox.classList.remove('on'); return; }
-  const r=t.getBoundingClientRect(), s=$('#stage').getBoundingClientRect();
-  Object.assign(pickbox.style,{left:(r.left-s.left)+'px',top:(r.top-s.top)+'px',width:r.width+'px',height:r.height+'px'});
-  const k=t.getAttribute('data-k'); const eff = t.tagName==='g' ? S.assign[k] : effLayer[k]; const L=S.layers.find(l=>l.id===eff);
-  let label = describe(t); if(S.pickMode==='color'){ const s=shapes[t.getAttribute('data-k')]; label = `同色 ${s.fill||s.stroke}`; }
-  pickbox.querySelector('.tag').textContent = label + (L?` · ${L.name}`:' · 原色');
-  pickbox.classList.add('on');
-});
-base.addEventListener('mouseleave', ()=>pickbox.classList.remove('on'));
-base.addEventListener('click', e=>{
-  const t=pickTarget(e.target); if(!t) return;
-  const L=activeLayer(); if(!L) return toast('先在「效果圖層」選一個圖層');
-  if(S.pickMode==='color'){ const s=shapes[t.getAttribute('data-k')]; const c=s.fill||s.stroke; const keys=colorIndex[c]||[]; const all=keys.every(k=>S.assign[k]===L.id);
-    keys.forEach(k=>{ if(all) delete S.assign[k]; else S.assign[k]=L.id; }); maskCache={}; renderFx(); save(); toast(all?'已取消':`${keys.length} 個 ${c} 元素 → ${L.name}`); return; }
-  assignKey(t.getAttribute('data-k'), t);
-});
-$('#pickmode').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; S.pickMode=b.dataset.m; $('#pickmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); save(); });
 
 /* ---------- pointer / tilt ---------- */
 const card=$('#card'), stage=$('#stage'), wrap=$('#cardwrap');
@@ -1094,7 +1101,7 @@ stage.addEventListener('pointermove', e=>{
   hovering=true; lastMove=performance.now();
 });
 stage.addEventListener('pointerdown', e=>{
-  if(viewMode!=='scene' || e.button!==0 || e.target.closest('.stage-tools')) return;
+  if(viewMode!=='scene' || e.button!==0 || e.altKey || spaceDown || e.target.closest('.stage-tools')) return;
   lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} sceneLightFrom(e); e.preventDefault();
 });
 const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; stage.classList.remove('dragging-light'); save(); };
@@ -1382,10 +1389,11 @@ function fitScene(){
 function setViewMode(v){
   viewMode=v; $('#viewmode').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   $('#cardwrap').style.display = v==='scene'?'none':''; $('#scenewrap').hidden = v!=='scene';
-  $('#stage').querySelector('.stage-tools:not(.right)').style.visibility = v==='scene'?'hidden':'';
   $('#btnExport').textContent = v==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG';
-  $('.stage-hint').innerHTML = v==='scene' ? '在畫布上<b>按住拖曳</b>移動光源 · 放開即固定 · 匯出會用目前光源位置' : '移動滑鼠 = 改變光線角度 · 點擊元素 = 指派到<b>目前圖層</b>（再點一次取消） · 右上「版面 Mockup」可平鋪多張並匯出 IG 尺寸';
-  if(v==='scene' && sceneDirty) renderScene(); else if(v==='scene') { applySceneView(); fitScene(); }
+  $('.stage-hint').innerHTML = v==='scene' ? '在畫布上<b>按住拖曳</b>移動光源 · 滾輪 = 縮放 · 中鍵或 Alt+拖曳 = 平移 · 匯出會用目前光源位置' : '移動滑鼠 = 改變光線角度 · 滾輪 = 縮放 · 拖曳 = 平移 · 指派效果請用右側「效果圖層」的顏色／圖層 chip 或「結構」樹';
+  view.mode='fit';
+  if(v==='scene' && sceneDirty) renderScene(); else if(v==='scene') { applySceneView(); }
+  applyZoom();
 }
 $('#viewmode').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setViewMode(b.dataset.v); });
 function syncSceneControls(){
@@ -1422,7 +1430,6 @@ function start(svgText, name, fresh){
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
   setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyStageBg();
   applyPaper(); maskCache={}; renderFx(); syncSceneControls(); setViewMode(viewMode); save();
-  $('#pickmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.m===S.pickMode));
   if(fresh) toast(`已載入 ${name}，自動建立 ${S.layers.length} 個效果圖層`);
 }
 const saved=load();
