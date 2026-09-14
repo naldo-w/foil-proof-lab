@@ -929,7 +929,7 @@ async function rasterizeMasks(rootClone, k, singleW, singleH){
     if(!own.length && !mask.length) continue;
     let cw,ch; const slot=fx.closest('.slot');
     if(slot){ cw=parseFloat(slot.style.width)*k; ch=parseFloat(slot.style.height)*k; }
-    else if(fx.closest('.fxs.merged')){ cw=S.scene.W*k; ch=S.scene.H*k; }
+    else if(fx.closest('.fxs.merged')){ const hostEl=fx.closest('.fxs.merged'); cw=parseFloat(hostEl.style.width)*k; ch=parseFloat(hostEl.style.height)*k; }
     else { cw=singleW; ch=singleH; }
     const lim=4096; const sc=Math.min(1, lim/Math.max(cw,ch)); cw*=sc; ch*=sc;
     const key=u=>u.join('|')+'@'+cw+'x'+ch;
@@ -1497,9 +1497,16 @@ function variantPool(){
 /* ---------- 合併光場：整個版面每個效果圖層只做一張遮罩（symbol + N 個 use），一盞燈連續掃過所有卡 ---------- */
 function slotPivot(sl){ const m=(sl.pivot||'50% 50%').split(/\s+/).map(parseFloat); return {x: sl.x-sl.w/2+sl.w*m[0]/100, y: sl.y-sl.h/2+sl.h*m[1]/100}; }
 function slotRectSVG(sl, fill, grow=0){ const pv=slotPivot(sl); return `<rect x="${(sl.x-sl.w/2-grow).toFixed(2)}" y="${(sl.y-sl.h/2-grow).toFixed(2)}" width="${(sl.w+2*grow).toFixed(2)}" height="${(sl.h+2*grow).toFixed(2)}" fill="${fill}" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"/>`; }
+/* 合併層的範圍：所有卡片（含旋轉後的外接框）與畫布的聯集——透視或出血時卡片會落在畫布外，遮罩若只有畫布大小那些卡就會沒內容 */
+function slotsExtent(slots){
+  const C=S.scene; let minX=0,minY=0,maxX=C.W,maxY=C.H;
+  slots.forEach(sl=>{ const r=Math.hypot(sl.w,sl.h)/2+4; const pv=slotPivot(sl); const d=Math.hypot(sl.x-pv.x,sl.y-pv.y);
+    minX=Math.min(minX,sl.x-r-d); minY=Math.min(minY,sl.y-r-d); maxX=Math.max(maxX,sl.x+r+d); maxY=Math.max(maxY,sl.y+r+d); });
+  return {minX:Math.floor(minX),minY:Math.floor(minY),w:Math.ceil(maxX-minX),h:Math.ceil(maxY-minY)};
+}
 function buildMergedMask(keep, gap, keyBase, slots, idxs){
-  const C=S.scene;
-  const key='mg:'+keyBase+':'+gap+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1),s.pivot||''].join(',')).join(';')+':'+idxs.join(',');
+  const C=S.scene, E=slotsExtent(slots);
+  const key='mg:'+keyBase+':'+gap+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1),s.pivot||''].join(',')).join(';')+':'+idxs.join(',')+':'+[E.minX,E.minY,E.w,E.h].join(',');
   if(maskCache[key]) return maskCache[key];
   const root=layerSVG(keep,'#fff',gap); const vb=(root.getAttribute('viewBox')||'0 0 1000 700').trim().split(/[\s,]+/).map(Number);
   const vx=vb[0]||0, vy=vb[1]||0, vw=vb[2]||1, vh=vb[3]||1;
@@ -1510,11 +1517,11 @@ function buildMergedMask(keep, gap, keyBase, slots, idxs){
   idxs.forEach(i=>{
     const sl=slots[i], pv=slotPivot(sl), above=slots.slice(i+1); const sx=sl.w/vw, sy=sl.h/vh;
     // 每張卡只畫「沒被後放的卡蓋住」的部分（遮擋遮罩），交疊鋪法才不會讓下面那張的效果浮到上面
-    defs+=`<mask id="o${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="${C.W}" height="${C.H}"><rect x="0" y="0" width="${C.W}" height="${C.H}" fill="#fff"/>${above.map(a=>slotRectSVG(a,'#000')).join('')}</mask>`;
+    defs+=`<mask id="o${i}" maskUnits="userSpaceOnUse" x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}"><rect x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}" fill="#fff"/>${above.map(a=>slotRectSVG(a,'#000')).join('')}</mask>`;
     defs+=`<clipPath id="cp${i}" clipPathUnits="userSpaceOnUse"><rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"/></clipPath>`;
     body+=`<g mask="url(#o${i})"><g transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)}) translate(${(sl.x-sl.w/2).toFixed(2)} ${(sl.y-sl.h/2).toFixed(2)}) scale(${sx.toFixed(6)} ${sy.toFixed(6)}) translate(${-vx} ${-vy})" clip-path="url(#cp${i})">${prefixIds(inner,'s'+i+'_')}</g></g>`;
   });
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" viewBox="0 0 ${C.W} ${C.H}" width="${C.W}" height="${C.H}" style="${rootStyle}"><defs>${defs}</defs>${body}</svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" viewBox="${E.minX} ${E.minY} ${E.w} ${E.h}" width="${E.w}" height="${E.h}" style="${rootStyle}"><defs>${defs}</defs>${body}</svg>`;
   return maskCache[key]=`url("${svgBlobURL(svg)}")`;
 }
 function buildMergedFx(host, pool, slotOwner, slots){
@@ -1616,6 +1623,7 @@ function renderScene(){
   });
   if(merged){
     const host=document.createElement('div'); host.className='fxs merged'; host.style.zIndex=slots.length+2;
+    const E=slotsExtent(slots); tb._ext=E; Object.assign(host.style,{inset:'auto',left:E.minX+'px',top:E.minY+'px',width:E.w+'px',height:E.h+'px'});
     buildMergedFx(host, pool, owner, slots);
     tb.appendChild(host);
   }
@@ -1643,7 +1651,8 @@ function applySceneLight(px,py,hov){
   const merged=!!tb._merged;
   const R=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); const gsz=R/(1.2*C.W); // 高光半徑（桌面 px）與合併層的 --gsz（相對桌面）
   if(merged){ const host=tb.querySelector('.fxs.merged'); if(host){
-    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',(P.x/C.W*100).toFixed(2)+'%'); d.style.setProperty('--py',(P.y/C.H*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',gsz.toFixed(2)); });
+    const E=tb._ext||{minX:0,minY:0,w:C.W,h:C.H};
+    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); });
   } }
   [...tb.querySelectorAll(':scope > .slot')].forEach((d,i)=>{
     const sl=slots[i]; if(!sl) return; const c=d.firstElementChild;
