@@ -1404,7 +1404,8 @@ function readFile(f){ if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); if(ev==='drop'||e.target===stage) stage.classList.remove('dragging'); }));
 stage.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) readFile(f); });
 
-let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2200); }
+let toastT; function toast(m,sticky){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); if(!sticky) toastT=setTimeout(()=>t.classList.remove('on'),2200); }
+function toastOff(){ $('#toast').classList.remove('on'); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmt(n){ return Number.isInteger(n)?n:n.toFixed(1); }
 
@@ -1414,17 +1415,71 @@ function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStora
 
 /* ---------- export ---------- */
 let dlCap=null; try{ window.claude?.use?.('downloads').then(d=>{ dlCap=d; }).catch(()=>{}); }catch(e){}
+/* HTML 片段 → foreignObject → <img>（data: URI；blob: 會讓 canvas 被標記為 tainted） */
+async function renderHTMLImage(inner,w,h){
+  const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  const html=inlineBlobs(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${w}px;height:${h}px;background:transparent;overflow:hidden"><style>${css}</style>${inner}</div></foreignObject></svg>`);
+  const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(html);
+  const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('瀏覽器拒絕合成（Safari 對 foreignObject + mask 支援不完整，請改用 Chrome 或直接截圖）')); img.src=url; });
+  return img;
+}
+/* 版面匯出分兩段：Chrome 在 foreignObject 裡對「3D 變換祖先 + 遮罩子孫」會整個畫錯位，
+   所以 (A) 先把桌面以平視（無 3D）畫成一張高解析度圖，(B) 再用 WebGL 依目前視角矩陣做透視貼圖。 */
+async function exportScene3D(k){
+  const C=S.scene, tb=$('#table'); const E0=tb._ext||{minX:0,minY:0,w:C.W,h:C.H};
+  // 只畫相機看得到的桌面區域：把畫布四角反投影到桌面，取外接框（再限制在卡片範圍外擴 1.5 個畫布內）
+  let vx0=Infinity,vy0=Infinity,vx1=-Infinity,vy1=-Infinity;
+  [[0,0],[C.W,0],[0,C.H],[C.W,C.H],[C.W/2,0],[C.W/2,C.H],[0,C.H/2],[C.W,C.H/2]].forEach(([sx,sy])=>{ const q=screenToTable(sx,sy,0); if(isFinite(q.x)&&isFinite(q.y)){ vx0=Math.min(vx0,q.x); vy0=Math.min(vy0,q.y); vx1=Math.max(vx1,q.x); vy1=Math.max(vy1,q.y); } });
+  const lim=1.5; vx0=Math.max(vx0,E0.minX-lim*C.W); vy0=Math.max(vy0,E0.minY-lim*C.H); vx1=Math.min(vx1,E0.minX+E0.w+lim*C.W); vy1=Math.min(vy1,E0.minY+E0.h+lim*C.H);
+  if(!(vx1>vx0&&vy1>vy0)){ vx0=E0.minX-C.W*.6; vy0=E0.minY-C.H*.6; vx1=E0.minX+E0.w+C.W*.6; vy1=E0.minY+E0.h+C.H*.6; }
+  const E={minX:Math.floor(vx0)-8, minY:Math.floor(vy0)-8, w:Math.ceil(vx1-vx0)+16, h:Math.ceil(vy1-vy0)+16};
+  const maxTex=Math.min(8192,(()=>{ try{ const g=document.createElement('canvas').getContext('webgl'); return g?g.getParameter(g.MAX_TEXTURE_SIZE):4096; }catch(e){ return 4096; } })());
+  const sA=Math.max(.5, Math.min(k*1.5, maxTex/Math.max(E.w,E.h))); // 近處卡片會被透視放大，多給 1.5× 解析度
+  // (A) 平視渲染：桌面平移到範圍原點，光斑／衰減／色偏層改成以畫布為基準的固定尺寸
+  const clone=$('#scene').cloneNode(true); clone.id=''; clone.style.transform=`scale(${sA})`; clone.style.width=E.w+'px'; clone.style.height=E.h+'px'; clone.style.boxShadow='none';
+  clone.querySelector('.floor')?.remove(); clone.querySelectorAll('.light-svg,.light-handle').forEach(n=>n.remove());
+  const tbl=clone.querySelector('.table'); tbl.style.transform=`translate(${-E.minX}px,${-E.minY}px)`; tbl.style.transformOrigin='0 0'; tbl.style.width=C.W+'px'; tbl.style.height=C.H+'px'; tbl.style.inset='auto'; tbl.style.left='0'; tbl.style.top='0';
+  clone.querySelectorAll('.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
+  await rasterizeMasks(clone, sA);
+  const aw=Math.round(E.w*sA), ah=Math.round(E.h*sA);
+  const imgA0=await renderHTMLImage(new XMLSerializer().serializeToString(clone), aw, ah);
+  const imgA=document.createElement('canvas'); imgA.width=aw; imgA.height=ah; imgA.getContext('2d').drawImage(imgA0,0,0,aw,ah); // 先落到 2D canvas 再當貼圖
+  // (B) WebGL 透視貼圖
+  const w=Math.round(C.W*k), h=Math.round(C.H*k);
+  const gcv=document.createElement('canvas'); gcv.width=w; gcv.height=h;
+  const gl=gcv.getContext('webgl',{premultipliedAlpha:true,preserveDrawingBuffer:true});
+  if(!gl) throw new Error('此瀏覽器沒有 WebGL，無法做透視匯出');
+  const vs=`attribute vec4 p; attribute vec2 t; varying vec2 v; void main(){ gl_Position=p; v=t; }`;
+  const fs=`precision mediump float; varying vec2 v; uniform sampler2D s; void main(){ gl_FragColor=texture2D(s,v); }`;
+  const mk=(type,src)=>{ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
+  const prog=gl.createProgram(); gl.attachShader(prog,mk(gl.VERTEX_SHADER,vs)); gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,fs)); gl.linkProgram(prog); gl.useProgram(prog);
+  const M=tableMatrix(); // 目前視角（含 perspective、俯角、方位、整體旋轉、縮放、位移）
+  const corner=(x,y,u,vv)=>{ const q=M.transformPoint(new DOMPoint(x-C.W/2,y-C.H/2,0)); return [2*q.x/C.W, -2*q.y/C.H, 0, q.w, u, vv]; };
+  const X0=E.minX, Y0=E.minY, X1=E.minX+E.w, Y1=E.minY+E.h;
+  const verts=new Float32Array([...corner(X0,Y0,0,0), ...corner(X1,Y0,1,0), ...corner(X0,Y1,0,1), ...corner(X1,Y1,1,1)]);
+  const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf); gl.bufferData(gl.ARRAY_BUFFER,verts,gl.STATIC_DRAW);
+  const ap=gl.getAttribLocation(prog,'p'), at=gl.getAttribLocation(prog,'t');
+  gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap,4,gl.FLOAT,false,24,0); gl.enableVertexAttribArray(at); gl.vertexAttribPointer(at,2,gl.FLOAT,false,24,16);
+  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,imgA);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.viewport(0,0,w,h); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  // 合成：背景色 → 透視後的桌面 → 暗角
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const ctx=cv.getContext('2d');
+  ctx.fillStyle=C.bg; ctx.fillRect(0,0,w,h); ctx.drawImage(gcv,0,0);
+  if(C.vig>0){ const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.hypot(w,h)/2); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(.6,'rgba(0,0,0,0)'); g.addColorStop(1,`rgba(0,0,0,${(.35*C.vig).toFixed(2)})`); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); }
+  return cv;
+}
 $('#btnExport').addEventListener('click', async ()=>{
-  toast('正在合成…');
+  toast('正在合成…（版面越多張越久，請稍候）', true);
   const wasFast = viewMode==='scene' && (S.scene.quality||'fast')==='fast';
   if(wasFast){ renderQuality='full'; renderScene(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }
   try{
-    let w,h,inner,fname;
+    let w,h,inner,fname,cv;
     if(viewMode==='scene'){
       const C=S.scene, k=+C.exportScale; w=Math.round(C.W*k); h=Math.round(C.H*k);
-      const clone=$('#scene').cloneNode(true); clone.id=''; clone.style.transform=`scale(${k})`; clone.style.boxShadow='none';
-      await rasterizeMasks(clone, k);
-      inner=new XMLSerializer().serializeToString(clone); fname=`${(S.name||'proof').replace(/\.svg$/i,'')}-mockup-${C.W}x${C.H}${k>1?'@2x':''}.png`;
+      cv=await exportScene3D(k); fname=`${(S.name||'proof').replace(/\.svg$/i,'')}-mockup-${C.W}x${C.H}${k>1?'@2x':''}.png`;
     } else {
       const [W,H]=S.vb; const scale = Math.min(2, 2600/W); w=Math.round(W*scale); h=Math.round(H*scale);
       const clone=card.cloneNode(true);
@@ -1432,11 +1487,7 @@ $('#btnExport').addEventListener('click', async ()=>{
       await rasterizeMasks(clone, 1, w, h);
       inner=new XMLSerializer().serializeToString(clone); fname=(S.name||'proof').replace(/\.svg$/i,'')+'-proof.png';
     }
-    const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
-    const html=inlineBlobs(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${w}px;height:${h}px;background:transparent;overflow:hidden"><style>${css}</style>${inner}</div></foreignObject></svg>`);
-    const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(html); // data: URI（blob: 會讓 canvas 被標記為 tainted）
-    const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('瀏覽器拒絕合成（Safari 對 foreignObject + mask 支援不完整，請改用 Chrome 或直接截圖）')); img.src=url; });
-    const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+    if(!cv){ const img=await renderHTMLImage(inner,w,h); cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); }
     const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
     const purl=URL.createObjectURL(blob);
     $('#modalImg').src=purl; $('#modalMsg').textContent=`${w} × ${h} px · ${fname}`;
@@ -1445,7 +1496,7 @@ $('#btnExport').addEventListener('click', async ()=>{
       const a=document.createElement('a'); a.href=purl; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
     };
     $('#modalCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); toast('已複製 PNG'); }catch(e){ toast('剪貼簿寫入被拒絕'); } };
-    $('#modal').classList.add('on');
+    $('#modal').classList.add('on'); toastOff();
   }catch(e){ toast(e.message||'匯出失敗'); }
   if(wasFast){ renderQuality='fast'; renderScene(); }
 });
