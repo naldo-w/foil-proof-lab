@@ -548,7 +548,7 @@ function indexShapes(){
   svgRoot.querySelectorAll(SHAPES).forEach(el=>{
     if(el.closest(NONRENDER)) return;
     const cs = getComputedStyle(el);
-    const fill = toHex(cs.fill), stroke = toHex(cs.stroke);
+    const fill = (el.tagName==='line'||el.tagName==='polyline') ? null : toHex(cs.fill), stroke = toHex(cs.stroke); // line 類元素沒有可填色的面積
     if(!fill && !stroke && el.tagName!=='image' && el.tagName!=='use') return;
     const key = el.getAttribute('data-k');
     shapes[key] = {el, fill, stroke, tag:el.tagName};
