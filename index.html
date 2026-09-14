@@ -495,6 +495,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h">光源</div>
         <div class="row two"><label>光場算法</label><select id="sLightMode"><option value="merged">合併：整個版面一個連續光場（建議）</option><option value="separate">各卡獨立：每張卡各自相位、微傾、抬高</option></select></div>
         <p class="note" id="sLightModeNote"></p>
+        <div class="row two"><label>反光位置</label><select id="sSpec"><option value="focus">跟隨焦點（燈照到哪、反光在哪，依視角偏移）</option><option value="lamp">鏡面幾何（由燈的實際位置與相機決定）</option></select></div>
         <div class="row"><label>強度</label><input type="range" id="sInt" min="0.2" max="2" step="0.01"><span class="val"></span></div>
         <div class="row"><label>燈 X</label><input type="range" id="sLx" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
         <div class="row"><label>燈 Y</label><input type="range" id="sLy" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
@@ -503,7 +504,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row two"><label></label><button class="btn small ghost" id="sTcenter">焦點回到中心</button></div>
         <div class="row"><label>Z（高度）</label><input type="range" id="sDist" min="0.15" max="3" step="0.05"><span class="val"></span></div>
         <div class="row"><label>大小</label><input type="range" id="sSize" min="0.2" max="3" step="0.05"><span class="val"></span></div>
-        <p class="note">燈預設照向畫布中心（焦點 = 十字把手）；光斑與亮度衰減以焦點為中心，鏡面高光仍由燈的位置與相機決定。真 3D 模型：燈是桌面上方的一點（X／Y 是它在桌面上的落點，可在畫布<b>按住拖曳</b>；Z 是離桌高度 = Z × 0.6 × 畫布寬）。相機在透視原點。鏡面高光落在「相機 → 燈的鏡像」與桌面的交點（畫布上的小圓點），所以俯角、方位、整體旋轉都會真的改變哪張卡吃到高光；光斑與影子以燈的落點（大圓點）為準。大小 = 燈的面積：小燈高光銳利、影子硬；大燈反光帶寬、影子軟。</p>
+        <p class="note">燈 → 焦點 → 反光區 → 視角：燈照向焦點（十字），焦點那塊被照亮；相機看到的反光區是「被照亮的那塊」經桌面鏡射後的位置，所以會落在焦點附近、隨俯角往相機方向偏（白圈）。真 3D 模型：燈是桌面上方的一點（X／Y 是它在桌面上的落點，可在畫布<b>按住拖曳</b>；Z 是離桌高度 = Z × 0.6 × 畫布寬）。相機在透視原點。鏡面高光落在「相機 → 燈的鏡像」與桌面的交點（畫布上的小圓點），所以俯角、方位、整體旋轉都會真的改變哪張卡吃到高光；光斑與影子以燈的落點（大圓點）為準。大小 = 燈的面積：小燈高光銳利、影子硬；大燈反光帶寬、影子軟。</p>
       </div>
       <div class="sec">
         <div class="sec-h">卡片與桌面</div>
@@ -1295,8 +1296,12 @@ function lightModel(gx,gy){
   const C=S.scene; const G={x:gx*C.W, y:gy*C.H}; const h=Math.max(40,(C.lightDist??1)*0.6*C.W);
   let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:C.W/2,y:C.H/2,z:C.fov||2200}; }
   const t = cam.z>1 ? cam.z/(cam.z+h) : 1;
-  const P={x:cam.x+t*(G.x-cam.x), y:cam.y+t*(G.y-cam.y)};
   const T={x:(C.tx??.5)*C.W, y:(C.ty??.5)*C.H}; // 焦點：燈照向的桌面點（光斑與衰減以它為中心）
+  /* 反光區：燈 → 焦點 → 桌面反射 → 相機。
+     「跟隨焦點」：把燈照亮的那塊當成發光面（等於燈在焦點正上方），反射點 = 相機到該發光面鏡像的連線與桌面的交點，
+     所以反光區落在焦點附近、依視角往相機方向偏；「鏡面幾何」：改用燈的實際位置做鏡像（燈偏一邊時反光區就跟著偏）。 */
+  const src = (C.specMode||'focus')==='focus' ? T : G;
+  const P={x:cam.x+t*(src.x-cam.x), y:cam.y+t*(src.y-cam.y)};
   return {G,h,cam,P,T};
 }
 let dragWhat='light';
@@ -1659,9 +1664,9 @@ function applySceneLight(px,py,hov){
   const T=lightModel(px,py).T; const sG=tableToScreen(G.x,G.y,0), sL=tableToScreen(G.x,G.y,h), sP=tableToScreen(P.x,P.y,0), sT=tableToScreen(T.x,T.y,0);
   const hd=$('#lightHandle'); if(hd){ hd.style.left=(sL.x/C.W*100).toFixed(2)+'%'; hd.style.top=(sL.y/C.H*100).toFixed(2)+'%'; }
   const svg=$('#lightSvg'); if(svg){ svg.setAttribute('viewBox',`0 0 ${C.W} ${C.H}`);
-    const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(3,C.W*.005));
+    const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(6,C.W*.008));
     const fs=Math.max(11,C.W*.014); const lbl=(id,x,y,t)=>{ const e=$(id); e.setAttribute('x',x); e.setAttribute('y',y); e.setAttribute('font-size',fs); e.textContent=t; };
-    lbl('#lblL',sL.x+C.W*.02,sL.y-C.W*.012,'燈'); lbl('#lblP',sP.x+C.W*.012,sP.y+fs*.35,'高光'); lbl('#lblT',sT.x+C.W*.025,sT.y-C.W*.012,'焦點');
+    lbl('#lblL',sL.x+C.W*.02,sL.y-C.W*.012,'燈'); lbl('#lblP',sP.x+C.W*.015,sP.y+fs*.35,'反光區'); lbl('#lblT',sT.x+C.W*.025,sT.y-C.W*.012,'焦點');
     const bm=$('#lightBeam'); bm.setAttribute('x1',sL.x); bm.setAttribute('y1',sL.y); bm.setAttribute('x2',sT.x); bm.setAttribute('y2',sT.y);
     const tg=$('#lightT'), tr=Math.max(8,C.W*.016); const tc=tg.querySelector('circle'); tc.setAttribute('cx',sT.x); tc.setAttribute('cy',sT.y); tc.setAttribute('r',tr);
     const [l1,l2]=tg.querySelectorAll('line'); l1.setAttribute('x1',sT.x-tr*1.6); l1.setAttribute('x2',sT.x+tr*1.6); l1.setAttribute('y1',sT.y); l1.setAttribute('y2',sT.y); l2.setAttribute('x1',sT.x); l2.setAttribute('x2',sT.x); l2.setAttribute('y1',sT.y-tr*1.6); l2.setAttribute('y2',sT.y+tr*1.6); }
@@ -1717,7 +1722,7 @@ function syncSceneControls(){
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
-  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.gx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); $('#sLightMode').value=C.lightMode||'merged'; $('#sLightModeNote').textContent=(C.lightMode||'merged')==='merged' ? '合併：同一效果圖層在所有卡片上只算一張遮罩（symbol + use），反光帶與光斑連續掃過整個版面，交疊處以遮擋遮罩處理；此模式不做卡片微傾與 Z 軸抬高。' : '各卡獨立：每張卡各自複製效果層，可微傾與抬高，但同一盞燈下每張的反光相位是各自近似的。'; setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
+  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.gx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); $('#sLightMode').value=C.lightMode||'merged'; $('#sSpec').value=C.specMode||'focus'; $('#sLightModeNote').textContent=(C.lightMode||'merged')==='merged' ? '合併：同一效果圖層在所有卡片上只算一張遮罩（symbol + use），反光帶與光斑連續掃過整個版面，交疊處以遮擋遮罩處理；此模式不做卡片微傾與 Z 軸抬高。' : '各卡獨立：每張卡各自複製效果層，可微傾與抬高，但同一盞燈下每張的反光相位是各自近似的。'; setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
   const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
@@ -1732,6 +1737,7 @@ $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.rando
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
 [['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','gx'],['#sLy','gy'],['#sTx','tx'],['#sTy','ty'],['#sDist','lightDist'],['#sSize','lsize'],['#sInt','intensity'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
 $('#sTilt').addEventListener('input',e=>{ S.scene.tilt=+e.target.value; sceneChanged(true); });
+$('#sSpec').addEventListener('change',e=>{ S.scene.specMode=e.target.value; sceneChanged(false); });
 $('#sTcenter').addEventListener('click',()=>{ S.scene.tx=.5; S.scene.ty=.5; sceneChanged(false); });
 $('#sLightMode').addEventListener('change',e=>{ S.scene.lightMode=e.target.value; sceneChanged(true); });
 $('#sElev').addEventListener('input',e=>{ S.scene.elev=+e.target.value; sceneChanged(true); });
