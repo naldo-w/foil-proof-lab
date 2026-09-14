@@ -60,10 +60,7 @@ button{cursor:pointer}
   box-shadow:0 30px 60px -20px rgba(0,0,0,.8),0 8px 18px -8px rgba(0,0,0,.6);
   --px:50%;--py:50%;--hov:0;--mx:0;--my:0}
 .card>*{position:absolute;inset:0}
-.paper{background-color:var(--paper,#111);background-blend-mode:soft-light;background-size:var(--tex-size,220px) var(--tex-size,220px)}
-.paper.laid{background-image:var(--tex),repeating-linear-gradient(180deg,rgba(255,255,255,.07) 0 1px,transparent 1px 5px)}
-.paper.linen{background-image:var(--tex),repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 1px,transparent 1px 4px)}
-.paper.smooth,.paper.rough,.paper.kraft{background-image:var(--tex)}
+.paper{background-color:var(--paper,#111)} /* background-image / size / blend 由 applyPaper() 逐層寫入 */
 .base{width:100%;height:100%}
 .base svg{width:100%;height:100%;display:block}
 .base svg .is-assigned{opacity:0!important}
@@ -87,7 +84,8 @@ button{cursor:pointer}
 /* ink */
 .fx-ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
 .fx-ink .i-fill{background:var(--tint)}
-.fx-ink .i-grain{background-image:var(--inktex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:var(--grain-ink,.5)}
+.fx-ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
+.fx-foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:var(--ptex-foil,.2)}
 .fx-ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
@@ -293,15 +291,21 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       <div class="sec">
         <div class="sec-h">紙質</div>
         <div class="row two"><label>質地</label>
-          <select id="pTex">
-            <option value="smooth">細滑（銅版／雪銅）</option>
-            <option value="rough">粗面（象牙卡／美術紙）</option>
-            <option value="laid">直紋（萊妮／條紋紙）</option>
-            <option value="linen">布紋（麻布紋）</option>
-            <option value="kraft">纖維（牛皮／再生紙）</option>
-          </select></div>
+          <select id="pTex"></select></div>
+        <p class="note" id="pTexNote"></p>
+        <div class="row"><label>紋理強度</label><input type="range" id="pStrength" min="0" max="1" step="0.01"><span class="val"></span></div>
+        <div class="row"><label>凹凸深度</label><input type="range" id="pRelief" min="0" max="3" step="0.05"><span class="val"></span></div>
         <div class="row"><label>顆粒</label><input type="range" id="pGrain" min="0" max="1" step="0.01"><span class="val"></span></div>
-        <div class="row"><label>紋理尺寸</label><input type="range" id="pScale" min="0.4" max="3" step="0.05"><span class="val"></span></div>
+        <div class="row"><label>紋理尺寸</label><input type="range" id="pScale" min="0.3" max="4" step="0.05"><span class="val"></span></div>
+        <div class="row"><label>光源角度</label><input type="range" id="pAz" min="0" max="360" step="5"><span class="val"></span></div>
+        <div class="row two"><label>混合</label><select id="pBlend">
+          <option value="auto">自動（依紙色深淺）</option>
+          <option value="overlay">覆蓋 overlay</option>
+          <option value="soft-light">柔光 soft-light</option>
+          <option value="hard-light">強光 hard-light</option>
+          <option value="multiply">色彩增值 multiply</option>
+          <option value="screen">濾色 screen</option>
+        </select></div>
         <div class="row"><label>紙面光澤</label><input type="range" id="pGloss" min="0" max="1" step="0.01"><span class="val"></span></div>
       </div>
       <div class="sec">
@@ -490,7 +494,41 @@ const defaultScene = () => ({W:1080,H:1350,exportScale:1,layout:'grid',cols:2,ro
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
-const defaultPaper = () => ({color:'#121214',texture:'smooth',grain:.35,scale:1,gloss:.3,tilt:12,radius:6,auto:true});
+const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.6,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true});
+/* 紙質目錄：bf = feTurbulence baseFrequency、oct = 八度、relief = 預設凹凸、grain = 預設顆粒、lines = 疊加的條紋、speck = 斑點式凹凸 */
+const PAPERS = {
+  coated:   {label:'銅版紙（光滑）',        group:'塗佈', bf:'1.3', oct:1, relief:.35, grain:.12, gloss:.5, note:'表面幾乎無紋，反光強；適合一般彩色印刷與燙金。'},
+  matte:    {label:'雪銅／霧面卡',          group:'塗佈', bf:'.9',  oct:2, relief:.7,  grain:.3,  gloss:.25, note:'細微磨砂顆粒，反光收斂。'},
+  pearl:    {label:'珠光紙',                group:'塗佈', bf:'1.1', oct:2, relief:.5,  grain:.2,  gloss:.75, note:'細緻紋理加上明顯的珠光反射。'},
+  ivory:    {label:'象牙卡／美術紙',        group:'非塗佈', bf:'.45', oct:3, relief:1.6, grain:.25, gloss:.2, note:'典型的名片／卡片用紙，微凹凸的毛面。'},
+  eggshell: {label:'蛋殼紋',                group:'非塗佈', bf:'.22', oct:2, relief:2.6, grain:.2,  gloss:.2, type:'turbulence', note:'圓潤的小凹坑，像蛋殼表面。'},
+  coldpress:{label:'水彩紙（冷壓粗紋）',    group:'非塗佈', bf:'.16', oct:4, relief:3.4, grain:.4,  gloss:.1, note:'粗糙起伏明顯，燙箔會沿紋理起伏。'},
+  vellum:   {label:'仿羊皮／雲彩紙',        group:'非塗佈', bf:'.08 .3', oct:3, relief:1.4, grain:.25, gloss:.25, note:'雲狀的不規則深淺與纖維流向。'},
+  laid:     {label:'萊妮紙（橫直紋）',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.16}], note:'等距的細橫紋，古典信紙質感。'},
+  ribbed:   {label:'條紋紙（粗直紋）',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.25, gloss:.2, lines:[{dir:90,period:10,str:.24}], note:'明顯的直向凹凸條紋。'},
+  linen:    {label:'麻布紋',                group:'壓紋', bf:'.8',  oct:2, relief:1.0, grain:.3,  gloss:.2, lines:[{dir:0,period:4,str:.13},{dir:90,period:4,str:.13}], note:'十字交織的布紋壓印。'},
+  leather:  {label:'皮紋（荔枝紋）',        group:'壓紋', bf:'.07', oct:3, relief:4.5, grain:.15, gloss:.35, type:'turbulence', note:'大顆不規則的皮革壓紋。'},
+  hammer:   {label:'鎚目紋',                group:'壓紋', bf:'.05', oct:1, relief:5,   grain:.2,  gloss:.3, type:'turbulence', note:'像敲打過的金屬面，大而圓的凹陷。'},
+  kraft:    {label:'牛皮紙（纖維）',        group:'再生／特殊', bf:'.5 .05', oct:3, relief:1.5, grain:.4, gloss:.1, note:'橫向拉長的纖維紋理。'},
+  recycled: {label:'再生紙（斑點）',        group:'再生／特殊', bf:'.5',  oct:3, relief:1.2, grain:.35, gloss:.1, speck:true, note:'散布的深色纖維斑點。'},
+  felt:     {label:'毛氈紙',                group:'再生／特殊', bf:'.3',  oct:4, relief:2.2, grain:.5, gloss:.05, note:'鬆軟不規則的毛面，吸光。'},
+};
+const TEX_MIGRATE={smooth:'matte',rough:'ivory'};
+/* 凹凸紋理：feTurbulence 當高度圖 → feDiffuseLighting 打光 → 重新置中到中灰，讓 overlay/soft-light 在平坦處不改變紙色 */
+function reliefURI(P){
+  const t=PAPERS[P.texture]||PAPERS.ivory, size=256, elev=55;
+  const surf=(t.relief*P.relief*2.2).toFixed(2), az=P.az;
+  const flat=Math.sin(elev*Math.PI/180); const slope=1.15, intercept=(0.5-flat*slope).toFixed(3);
+  const speck = t.speck ? '<feComponentTransfer in="n" result="n2"><feFuncA type="discrete" tableValues="0 0 0 0 0 0.6 1"/></feComponentTransfer>' : '';
+  const src = t.speck ? 'n2' : 'n';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><filter id="f" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="${t.type||'fractalNoise'}" baseFrequency="${t.bf}" numOctaves="${t.oct}" seed="5" stitchTiles="stitch" result="n"/>${speck}<feDiffuseLighting in="${src}" surfaceScale="${surf}" diffuseConstant="1" lighting-color="#fff" result="l"><feDistantLight azimuth="${az}" elevation="${elev}"/></feDiffuseLighting><feComponentTransfer in="l"><feFuncR type="linear" slope="${slope}" intercept="${intercept}"/><feFuncG type="linear" slope="${slope}" intercept="${intercept}"/><feFuncB type="linear" slope="${slope}" intercept="${intercept}"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#f)"/></svg>`;
+  return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+function grainURI(op){
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"/><feFuncG type="linear" slope="2.2" intercept="-0.6"/><feFuncB type="linear" slope="2.2" intercept="-0.6"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)" opacity="${op.toFixed(3)}"/></svg>`;
+  return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+function paperBlend(P){ if(P.blend!=='auto') return P.blend; return hsl(P.color).l<.35 ? 'hard-light' : 'overlay'; }
 
 /* ---------- color helpers ---------- */
 function toHex(c){
@@ -517,7 +555,6 @@ function noiseURI(opts){
   const s = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><filter id="n" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="${bf}" numOctaves="${oct}" stitchTiles="stitch" seed="7"/><feColorMatrix type="saturate" values="${sat}"/></filter><rect width="100%" height="100%" filter="url(#n)" opacity="${op}"/></svg>`;
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}")`;
 }
-const TEX = { smooth:{bf:'0.95',oct:2,k:.6}, rough:{bf:'0.32',oct:4,k:1}, laid:{bf:'0.7',oct:2,k:.7}, linen:{bf:'0.8',oct:2,k:.6}, kraft:{bf:'0.55 0.06',oct:3,k:.9} };
 
 /* ---------- load SVG ---------- */
 function loadSVG(text, name){
@@ -623,7 +660,7 @@ function renderFx(){
     const d = document.createElement('div');
     d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
     d.style.setProperty('--mask', buildMask(L));
-    if(L.type==='foil') d.innerHTML='<div class="f-base"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>';
+    if(L.type==='foil') d.innerHTML='<div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>';
     else if(L.type==='ink') d.innerHTML='<div class="i-fill"></div><div class="i-grain"></div><div class="i-glare"></div>';
     else if(L.type==='uv') d.innerHTML='<div class="u-edge"></div><div class="u-glare"></div>';
     else if(L.type==='relief') d.innerHTML='<div class="r-dark"></div><div class="r-light"></div><div class="r-face"></div>';
@@ -641,8 +678,7 @@ function styleFx(d,L){
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.type==='ink'){
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.blend); st.setProperty('--gloss', L.gloss);
-    const t = TEX[S.paper.texture]; st.setProperty('--inktex', noiseURI({bf:t.bf,oct:t.oct,op:.9}));
-    st.setProperty('--grain-ink', (S.paper.grain*.9).toFixed(3));
+    st.setProperty('--grain-ink', (S.paper.strength*.85).toFixed(3));
   } else if(L.type==='uv'){ st.setProperty('--gloss', L.gloss); }
   else if(L.type==='relief'){
     const d0 = L.depth*L.dir; st.setProperty('--dx', d0+'px'); st.setProperty('--dy', d0+'px');
@@ -650,21 +686,36 @@ function styleFx(d,L){
   }
 }
 function applyPaper(){
-  const P=S.paper, t=TEX[P.texture];
+  const P=S.paper; if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
+  const t=PAPERS[P.texture], blend=paperBlend(P), sz=(220*P.scale).toFixed(0)+'px';
+  const relief=reliefURI(P), grain=grainURI(P.grain*.9);
+  // 背景圖層由上到下：顆粒 → 條紋 → 凹凸紋理；全部與紙色做 blend
+  const imgs=[grain], sizes=['160px 160px'], blends=[blend], repeats=['repeat'];
+  (t.lines||[]).forEach(l=>{ const per=(l.period*P.scale).toFixed(2); const a=(l.str*P.strength).toFixed(3);
+    imgs.push(`repeating-linear-gradient(${l.dir}deg,rgba(255,255,255,${a}) 0 1px,rgba(0,0,0,${a}) 1px 2px,transparent 2px ${per}px)`); sizes.push('auto'); blends.push('overlay'); repeats.push('repeat'); });
+  imgs.push(relief); sizes.push(`${sz} ${sz}`); blends.push(blend); repeats.push('repeat');
   document.querySelectorAll('.paper').forEach(paper=>{
-    paper.className='paper '+P.texture;
+    paper.className='paper';
     paper.style.setProperty('--paper', P.color);
-    paper.style.setProperty('--tex', noiseURI({bf:t.bf,oct:t.oct,op:Math.min(1,P.grain*t.k*1.1)}));
+    paper.style.backgroundImage=imgs.join(','); paper.style.backgroundSize=sizes.join(','); paper.style.backgroundBlendMode=blends.join(','); paper.style.backgroundRepeat=repeats.join(',');
+    // 紋理強度：用一層半透明紙色蓋回去（強度 1 = 紋理全開）
+    paper.style.boxShadow=`inset 0 0 0 9999px color-mix(in srgb, ${P.color} ${Math.round((1-P.strength)*100)}%, transparent)`;
   });
   document.querySelectorAll('.card').forEach(card=>{
-    card.style.setProperty('--tex-size', (220*P.scale).toFixed(0)+'px');
+    card.style.setProperty('--tex-size', sz);
+    card.style.setProperty('--ptex', relief);
+    card.style.setProperty('--ptex-blend', blend);
+    card.style.setProperty('--ptex-foil', (P.strength*.4).toFixed(3));
     card.style.setProperty('--pgloss', P.gloss);
     card.style.setProperty('--radius', P.radius+'px');
   });
   S.layers.forEach(L=>{ if(L.type==='ink'||L.type==='relief') styleFx(null,L); });
   // paper tab controls
   $('#pColor').value=P.color; $('#pColorHex').textContent=P.color;
-  $('#pTex').value=P.texture; setRange('#pGrain',P.grain,PCT); setRange('#pScale',P.scale,v=>(+v).toFixed(2)+'×'); setRange('#pGloss',P.gloss,PCT); setRange('#pTilt',P.tilt,v=>v+'°'); setRange('#pRadius',P.radius,v=>v+'px');
+  if(!$('#pTex').options.length){ let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ $('#pTex').insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } $('#pTex').lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); }); }
+  $('#pTex').value=P.texture; $('#pTexNote').textContent=t.note; $('#pBlend').value=P.blend;
+  setRange('#pStrength',P.strength,PCT); setRange('#pRelief',P.relief,v=>(+v).toFixed(2)+'×'); setRange('#pAz',P.az,v=>v+'°');
+  setRange('#pGrain',P.grain,PCT); setRange('#pScale',P.scale,v=>(+v).toFixed(2)+'×'); setRange('#pGloss',P.gloss,PCT); setRange('#pTilt',P.tilt,v=>v+'°'); setRange('#pRadius',P.radius,v=>v+'px');
   $('#pAuto').checked=P.auto;
   $('#pSwatches').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.c===P.color));
 }
@@ -845,8 +896,9 @@ new ResizeObserver(()=>{ if(S){ fitCard(); fitScene(); } }).observe(stage);
 
 /* ---------- paper controls ---------- */
 $('#pColor').addEventListener('input', e=>{ S.paper.color=e.target.value; applyPaper(); save(); });
-$('#pTex').addEventListener('change', e=>{ S.paper.texture=e.target.value; applyPaper(); save(); });
-[['#pGrain','grain'],['#pScale','scale'],['#pGloss','gloss'],['#pTilt','tilt'],['#pRadius','radius']].forEach(([sel,p])=>{
+$('#pTex').addEventListener('change', e=>{ const P=S.paper, t=PAPERS[e.target.value]; P.texture=e.target.value; P.grain=t.grain; P.gloss=t.gloss; P.relief=1; applyPaper(); save(); });
+$('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; applyPaper(); save(); });
+[['#pStrength','strength'],['#pRelief','relief'],['#pAz','az'],['#pGrain','grain'],['#pScale','scale'],['#pGloss','gloss'],['#pTilt','tilt'],['#pRadius','radius']].forEach(([sel,p])=>{
   $(sel).addEventListener('input', e=>{ S.paper[p]=+e.target.value; applyPaper(); save(); });
 });
 $('#pAuto').addEventListener('change', e=>{ S.paper.auto=e.target.checked; save(); });
@@ -1011,7 +1063,7 @@ $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(
 
 /* ---------- boot ---------- */
 function start(svgText, name, fresh){
-  S = S || {}; S.paper = S.paper||defaultPaper(); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{};
+  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{};
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
