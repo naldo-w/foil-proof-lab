@@ -65,39 +65,46 @@ button{cursor:pointer}
 .base svg{width:100%;height:100%;display:block}
 .base svg .is-assigned{opacity:0!important}
 .fxs{pointer-events:none}
-.fx{position:absolute;inset:0;isolation:isolate;
-  -webkit-mask-image:var(--mask);mask-image:var(--mask);
+.fx{position:absolute;inset:0}
+/* .m = 被遮罩成圖形形狀的層；--mask 可能是「自身, 上層挖空」兩張，用 subtract 合成 */
+.m{position:absolute;inset:0;-webkit-mask-image:var(--mask);mask-image:var(--mask);
   -webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-.fx>div{position:absolute;inset:-2px}
+.fx.ko .m{-webkit-mask-composite:source-out;mask-composite:subtract}
+.m>div{position:absolute;inset:-2px}
+.m.foil,.m.ink{isolation:isolate}
 .fx.hidden{display:none}
+/* 燙印壓痕：反向遮罩 + drop-shadow → 影子只落在圖形內側 */
+.f-inner{inset:0!important;filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1.5px) rgba(0,0,0,.65));opacity:var(--dop,1)}
+.f-inner.hi{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1.5px) rgba(255,255,255,.55));opacity:calc(var(--dop,1)*.8)}
+.f-inner .inv{position:absolute;inset:0;background:#000;
+  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
+  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 
 /* foil */
-.fx-foil .f-base{background-image:var(--grad);background-size:280% 280%;background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
-.fx-foil .f-brush{opacity:var(--brush,.3);mix-blend-mode:soft-light;
+.m.foil .f-base{background-image:var(--grad);background-size:280% 280%;background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
+.m.foil .f-brush{opacity:var(--brush,.3);mix-blend-mode:soft-light;
   background-image:var(--brushtex),repeating-linear-gradient(var(--brushang,35deg),rgba(255,255,255,.22) 0 1px,rgba(0,0,0,.18) 1px 2px,transparent 2px 3px);
   background-size:160px 160px,auto}
-.fx-foil .f-holo{opacity:var(--holo,.15);mix-blend-mode:color-dodge;filter:saturate(1.6) brightness(.9);
+.m.foil .f-holo{opacity:var(--holo,.15);mix-blend-mode:color-dodge;filter:saturate(1.6) brightness(.9);
   background-image:linear-gradient(115deg,transparent 0%,#ff8a80 14%,#ffd54f 26%,#69f0ae 38%,#40c4ff 50%,#b388ff 62%,#ff80ab 74%,transparent 90%);
   background-size:220% 220%;background-position:calc(100% - var(--px)) calc(100% - var(--py))}
-.fx-foil .f-glare{opacity:calc(var(--gloss,.7) * (.35 + .65*var(--hov)));mix-blend-mode:overlay;
-  background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.75) 0%,rgba(255,255,255,.28) 22%,rgba(60,60,60,.25) 60%,rgba(0,0,0,.55) 100%)}
+.m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.35 + .65*var(--hov)));mix-blend-mode:overlay;
+  background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,var(--ga,.55)) 0%,rgba(255,255,255,calc(var(--ga,.55)*.4)) 22%,rgba(60,60,60,.18) 60%,rgba(0,0,0,var(--gd,.35)) 100%)}
 /* ink */
-.fx-ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
-.fx-ink .i-fill{background:var(--tint)}
-.fx-ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
-.fx-foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:var(--ptex-foil,.2)}
-.fx-ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
+.m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
+.m.ink .i-fill{background:var(--tint)}
+.m.ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
+.m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:var(--ptex-foil,.2)}
+.m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
-.fx-uv .u-glare{opacity:var(--gloss,.8);mix-blend-mode:screen;
+.m.uv .u-glare{opacity:var(--gloss,.8);mix-blend-mode:screen;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.75) 0%,rgba(255,255,255,.28) 18%,rgba(255,255,255,.05) 45%,rgba(255,255,255,0) 70%)}
-.fx-uv .u-edge{opacity:.35;mix-blend-mode:overlay;background:rgba(255,255,255,.35)}
+.m.uv .u-edge{opacity:.35;mix-blend-mode:overlay;background:rgba(255,255,255,.35)}
 /* deboss / emboss: mask lives on the children */
-.fx-relief{-webkit-mask-image:none;mask-image:none}
-.fx-relief>div{inset:0;-webkit-mask-image:var(--mask);mask-image:var(--mask);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-.fx-relief .r-dark{background:rgba(0,0,0,.6);transform:translate(var(--dx),var(--dy))}
-.fx-relief .r-light{background:rgba(255,255,255,.42);transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)))}
-.fx-relief .r-face{background:var(--face)}
+.m.r-dark{background:rgba(0,0,0,.6);transform:translate(var(--dx),var(--dy))}
+.m.r-light{background:rgba(255,255,255,.42);transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)))}
+.m.r-face{background:var(--face)}
 
 .paper-glare{mix-blend-mode:overlay;opacity:calc(var(--pgloss,.3) * (.25 + .75*var(--hov)));
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%)}
@@ -240,6 +247,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       <button class="btn ghost" id="btnSample" title="載入內建範例">範例</button>
       <button class="btn ghost" id="btnReset" title="清除指派與設定，重新自動偵測">重新偵測</button>
       <label class="btn">上傳 SVG<input type="file" id="file" accept=".svg,image/svg+xml"></label>
+      <button class="btn" id="btnExportSvg" title="輸出分版 SVG：每個效果一個圖層、上層已挖空">匯出 SVG</button>
       <button class="btn primary" id="btnExport">匯出 PNG</button>
     </div>
   </header>
@@ -329,6 +337,12 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h" style="margin-top:12px">依 SVG 圖層</div>
         <div class="chips" id="layerChips"></div>
         <p class="note">Illustrator／Affinity 的圖層在 SVG 裡是有名字的 <code>&lt;g&gt;</code>。點一下 → 整個圖層指派到目前圖層。</p>
+      </div>
+      <div class="sec">
+        <div class="sec-h">分版／挖空</div>
+        <div class="row"><label>安全空間</label><input type="range" id="koGap" min="0" max="12" step="0.25"><span class="val"></span></div>
+        <div class="row two"><label>單位</label><span class="note" id="koNote" style="margin:0"></span></div>
+        <p class="note">多層燙箔／油墨重疊時，下層會沿上層圖形外擴「安全空間」後挖空，避免箔面互疊起皺。每個圖層可個別關閉。「匯出 SVG」會輸出同樣的分版結果（每個效果一個具名圖層，挖空以 SVG mask 實作；需要純路徑時在 Illustrator 用「路徑管理員 › 減去上層」展開）。</p>
       </div>
       <div class="sec">
         <div class="sec-h">效果圖層 <button class="btn small" id="btnAddLayer">＋ 新增</button></div>
@@ -463,14 +477,14 @@ const LS_KEY = 'foil-proof-v1';
 const SAMPLE_NAME = 'sample-card.svg';
 
 const PRESETS = {
-  'foil-silver':{label:'燙銀',type:'foil',tint:'#c9cacf',bright:.55,holo:.12,brush:.35,gloss:.75},
-  'foil-gold':{label:'燙金',type:'foil',tint:'#d3a84a',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-red':{label:'燙紅',type:'foil',tint:'#c41e2a',bright:.5,holo:.06,brush:.25,gloss:.8},
-  'foil-rose':{label:'燙玫瑰金',type:'foil',tint:'#d9a091',bright:.55,holo:.08,brush:.3,gloss:.75},
-  'foil-copper':{label:'燙古銅',type:'foil',tint:'#b87333',bright:.5,holo:.05,brush:.4,gloss:.7},
-  'foil-blue':{label:'燙藍',type:'foil',tint:'#2f56b5',bright:.5,holo:.1,brush:.25,gloss:.8},
-  'foil-black':{label:'燙黑（鏡面）',type:'foil',tint:'#2b2b30',bright:.4,holo:.04,brush:.15,gloss:.95},
-  'foil-holo':{label:'全息銀',type:'foil',tint:'#d6d6dc',bright:.6,holo:.85,brush:.1,gloss:.8},
+  'foil-silver':{label:'燙銀',type:'foil',tint:'#c9cacf',bright:.5,contrast:.45,holo:.12,brush:.35,gloss:.6,depth:1},
+  'foil-gold':{label:'燙金',type:'foil',contrast:.45,depth:1,tint:'#d3a84a',bright:.55,holo:.08,brush:.3,gloss:.75},
+  'foil-red':{label:'燙紅',type:'foil',contrast:.45,depth:1,tint:'#c41e2a',bright:.5,holo:.06,brush:.25,gloss:.8},
+  'foil-rose':{label:'燙玫瑰金',type:'foil',contrast:.45,depth:1,tint:'#d9a091',bright:.55,holo:.08,brush:.3,gloss:.75},
+  'foil-copper':{label:'燙古銅',type:'foil',contrast:.45,depth:1,tint:'#b87333',bright:.5,holo:.05,brush:.4,gloss:.7},
+  'foil-blue':{label:'燙藍',type:'foil',contrast:.45,depth:1,tint:'#2f56b5',bright:.5,holo:.1,brush:.25,gloss:.8},
+  'foil-black':{label:'燙黑（鏡面）',type:'foil',contrast:.45,depth:1,tint:'#2b2b30',bright:.4,holo:.04,brush:.15,gloss:.95},
+  'foil-holo':{label:'全息銀',type:'foil',contrast:.45,depth:1,tint:'#d6d6dc',bright:.6,holo:.85,brush:.1,gloss:.8},
   'ink-red':{label:'印紅（專色）',type:'ink',tint:'#e0261c',opacity:.96,blend:'normal',gloss:.08},
   'ink-black':{label:'印墨',type:'ink',tint:'#161616',opacity:1,blend:'multiply',gloss:.05},
   'ink-white':{label:'白墨',type:'ink',tint:'#f3f1ec',opacity:.9,blend:'normal',gloss:.06},
@@ -494,7 +508,7 @@ const defaultScene = () => ({W:1080,H:1350,exportScale:1,layout:'grid',cols:2,ro
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
-const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.6,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true});
+const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.25,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true});
 /* 紙質目錄：bf = feTurbulence baseFrequency、oct = 八度、relief = 預設凹凸、grain = 預設顆粒、lines = 疊加的條紋、speck = 斑點式凹凸 */
 const PAPERS = {
   coated:   {label:'銅版紙（光滑）',        group:'塗佈', bf:'1.3', oct:1, relief:.35, grain:.12, gloss:.5, note:'表面幾乎無紋，反光強；適合一般彩色印刷與燙金。'},
@@ -546,9 +560,9 @@ function hsl(h){ const [r,g,b]=rgb(h).map(v=>v/255); const mx=Math.max(r,g,b),mn
 function guessPreset(h){ const {h:hu,s,l}=hsl(h);
   if(l<.12) return 'ink-black'; if(l>.9&&s<.2) return 'ink-white'; if(s<.18) return 'foil-silver';
   if(hu<22||hu>335) return 'foil-red'; if(hu<65) return 'foil-gold'; return 'ink-custom'; }
-function foilGradient(tint){
-  const dark=mix(tint,'#000000',.5), mid=tint, light=mix(tint,'#ffffff',.55), spec=mix(tint,'#ffffff',.82), deep=mix(tint,'#000000',.3);
-  return `linear-gradient(112deg,${dark} 0%,${deep} 12%,${mid} 22%,${light} 33%,${spec} 41%,${light} 47%,${mid} 58%,${dark} 70%,${deep} 80%,${light} 92%,${mid} 100%)`;
+function foilGradient(tint, c=.45){
+  const dark=mix(tint,'#000000',.2+c*.45), mid=tint, light=mix(tint,'#ffffff',.18+c*.4), spec=mix(tint,'#ffffff',.42+c*.4), deep=mix(tint,'#000000',.1+c*.3);
+  return `linear-gradient(112deg,${dark} 0%,${deep} 10%,${mid} 24%,${light} 36%,${spec} 41%,${light} 46%,${mid} 58%,${deep} 70%,${dark} 78%,${mid} 90%,${light} 100%)`;
 }
 function noiseURI(opts){
   const {bf='0.9', oct=2, op=.5, size=220, sat=0} = opts;
@@ -588,7 +602,8 @@ function indexShapes(){
     const fill = (el.tagName==='line'||el.tagName==='polyline') ? null : toHex(cs.fill), stroke = toHex(cs.stroke); // line 類元素沒有可填色的面積
     if(!fill && !stroke && el.tagName!=='image' && el.tagName!=='use') return;
     const key = el.getAttribute('data-k');
-    shapes[key] = {el, fill, stroke, tag:el.tagName};
+    let sc=1; try{ const m=el.getScreenCTM(), r=svgRoot.getScreenCTM(); sc=Math.sqrt(Math.abs(m.a*m.d-m.b*m.c))/Math.sqrt(Math.abs(r.a*r.d-r.b*r.c)); }catch(e){}
+    shapes[key] = {el, fill, stroke, tag:el.tagName, sw:parseFloat(cs.strokeWidth)||1, sc};
     for(const c of new Set([fill,stroke].filter(Boolean))) (colorIndex[c] ||= []).push(key);
   });
 }
@@ -614,7 +629,7 @@ function autoLayers(){
   S.active = (S.layers.find(l=>l.type!=='hide') || S.layers[0])?.id;
 }
 function newLayer(preset, name){
-  const p = PRESETS[preset]; const L = Object.assign({id:'L'+(uid++), name:name||p.label, preset, visible:true, blend:'normal', opacity:1}, p);
+  const p = PRESETS[preset]; const L = Object.assign({id:'L'+(uid++), name:name||p.label, preset, visible:true, blend:'normal', opacity:1, knockout:true}, p);
   delete L.label; S.layers.unshift(L); return L;
 }
 function applyPreset(L, preset){ const p=PRESETS[preset]; Object.assign(L, p, {preset}); delete L.label; }
@@ -629,24 +644,37 @@ function computeEffective(){
     s.el.classList.toggle('is-assigned', !!found);
   }
 }
-function buildMask(L){
-  if(maskCache[L.id]) return maskCache[L.id];
+/* 只保留 keep(k) 為真的圖形，其餘刪除；color = 填色，gap = 外擴（viewBox 單位，用描邊實作） */
+function layerSVG(keep, color, gap){
   const clone = svgRoot.cloneNode(true);
   clone.querySelectorAll(SHAPES).forEach(el=>{
     if(el.closest(NONRENDER)) return;
     const k = el.getAttribute('data-k'); const s = shapes[k];
-    if(!s || effLayer[k]!==L.id){ el.remove(); return; }
+    if(!s || !keep(k)){ el.remove(); return; }
     el.classList.remove('is-assigned');
+    if(color===null) return; // 原色輸出：保留原本樣式
     el.style.setProperty('opacity','1','important');
-    el.style.setProperty('fill', s.fill?'#fff':'none','important');
-    el.style.setProperty('stroke', s.stroke?'#fff':'none','important');
-    if(s.tag==='image'){ el.style.setProperty('filter','brightness(0) invert(1)','important'); }
+    el.style.setProperty('fill', s.fill?color:'none','important');
+    const g = gap ? gap/(s.sc||1) : 0;
+    if(g>0){ el.style.setProperty('stroke', color,'important'); el.style.setProperty('stroke-width', ((s.stroke?s.sw:0)+2*g).toFixed(3)+'px','important'); el.style.setProperty('stroke-linejoin','round','important'); el.style.setProperty('stroke-linecap','round','important'); el.style.setProperty('stroke-dasharray','none','important'); el.style.setProperty('paint-order','stroke','important'); }
+    else el.style.setProperty('stroke', s.stroke?color:'none','important');
+    if(s.tag==='image'){ el.style.setProperty('filter', color==='#000'?'brightness(0)':'brightness(0) invert(1)','important'); }
   });
   clone.querySelectorAll('.is-assigned').forEach(e=>e.classList.remove('is-assigned'));
-  // drop empty groups to keep the URI small
   let changed=true; while(changed){ changed=false; clone.querySelectorAll('g').forEach(g=>{ if(!g.children.length){ g.remove(); changed=true; } }); }
-  const str = new XMLSerializer().serializeToString(clone);
-  return maskCache[L.id] = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(str)}")`;
+  return clone;
+}
+const toURI = el => `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(el))}")`;
+function buildMask(L){
+  return maskCache[L.id] ||= toURI(layerSVG(k=>effLayer[k]===L.id, '#fff', 0));
+}
+/* 上層（列表中在 L 之前、會印出的圖層）圖形外擴 gap 後的遮罩；沒有上層圖形時回傳 null */
+function layersAbove(L){ const i=S.layers.indexOf(L); return S.layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='ink') && x.visible && x._count); }
+function buildKnockout(L){
+  const above=layersAbove(L); if(!above.length || !(S.koGap>0) || L.knockout===false) return null;
+  const key='ko:'+L.id+':'+S.koGap+':'+above.map(x=>x.id).join(',');
+  const ids=new Set(above.map(x=>x.id));
+  return maskCache[key] ||= toURI(layerSVG(k=>ids.has(effLayer[k]), '#fff', S.koGap));
 }
 
 /* ---------- render ---------- */
@@ -654,16 +682,17 @@ function renderFx(){
   computeEffective();
   const fxs = $('#fxs'); fxs.innerHTML='';
   const counts = {}; Object.values(effLayer).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; });
+  S.layers.forEach(L=>{ L._count = counts[L.id]||0; });
   [...S.layers].reverse().forEach(L=>{
-    L._count = counts[L.id]||0;
     if(L.type==='hide' || !L.visible || !L._count) return;
     const d = document.createElement('div');
     d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
-    d.style.setProperty('--mask', buildMask(L));
-    if(L.type==='foil') d.innerHTML='<div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>';
-    else if(L.type==='ink') d.innerHTML='<div class="i-fill"></div><div class="i-grain"></div><div class="i-glare"></div>';
-    else if(L.type==='uv') d.innerHTML='<div class="u-edge"></div><div class="u-glare"></div>';
-    else if(L.type==='relief') d.innerHTML='<div class="r-dark"></div><div class="r-light"></div><div class="r-face"></div>';
+    const own=buildMask(L), ko=buildKnockout(L);
+    d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
+    if(L.type==='foil') d.innerHTML='<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div><div class="f-inner"><div class="inv"></div></div><div class="f-inner hi"><div class="inv"></div></div></div>';
+    else if(L.type==='ink') d.innerHTML='<div class="m ink"><div class="i-fill"></div><div class="i-grain"></div><div class="i-glare"></div></div>';
+    else if(L.type==='uv') d.innerHTML='<div class="m uv"><div class="u-edge"></div><div class="u-glare"></div></div>';
+    else if(L.type==='relief') d.innerHTML='<div class="m r-dark"></div><div class="m r-light"></div><div class="m r-face"></div>';
     fxs.appendChild(d); styleFx(d,L);
   });
   renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene();
@@ -672,9 +701,12 @@ function styleFx(d,L){
   if(!d){ document.querySelectorAll(`.fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L)); return; }
   const st = d.style;
   if(L.type==='foil'){
-    st.setProperty('--grad', foilGradient(L.tint));
-    st.setProperty('--fb', (0.7+L.bright*0.7).toFixed(3)); st.setProperty('--fc', (0.85+L.bright*0.5).toFixed(3));
+    const c = L.contrast ?? .45, dp = L.depth ?? 1;
+    st.setProperty('--grad', foilGradient(L.tint, c));
+    st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
+    st.setProperty('--ga', (0.25+c*0.6).toFixed(3)); st.setProperty('--gd', (0.12+c*0.5).toFixed(3));
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
+    st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*1.4+0.3).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2));
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.type==='ink'){
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.blend); st.setProperty('--gloss', L.gloss);
@@ -761,7 +793,8 @@ function renderLayerList(){
     d.querySelector('.preset').addEventListener('change', e=>{ const oldLabel=PRESETS[L.preset].label, keepTint=L.tint; applyPreset(L,e.target.value); if(L.preset==='ink-custom' && keepTint) L.tint=keepTint; if(L.name===oldLabel) L.name=PRESETS[L.preset].label; else if(L.name.startsWith(oldLabel+' ·')) L.name=PRESETS[L.preset].label+L.name.slice(oldLabel.length); maskCache[L.id]=null; renderFx(); save(); });
     d.querySelectorAll('[data-p]').forEach(inp=>{
       inp.addEventListener('input', e=>{
-        const p=inp.dataset.p; L[p] = inp.type==='range'?+inp.value:inp.value;
+        const p=inp.dataset.p; L[p] = inp.type==='range'?+inp.value:(inp.type==='checkbox'?inp.checked:inp.value);
+        if(inp.type==='checkbox'){ maskCache={}; renderFx(); save(); return; }
         if(inp.type==='range') inp.parentElement.querySelector('.val').textContent = fmtParam(p,L[p]);
         if(inp.type==='color') inp.parentElement.querySelector('.hex').textContent=L[p];
         styleFx(null,L); d.querySelector('.sw').style.setProperty('--c',L.tint||'#888'); save();
@@ -769,12 +802,13 @@ function renderLayerList(){
     });
   });
 }
-function fmtParam(p,v){ if(p==='depth') return v.toFixed(1)+'px'; return Math.round(v*100)+'%'; }
+function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; return Math.round(v*100)+'%'; }
 function paramRows(L){
   const r=(label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
   const c=(label)=>`<div class="row two"><label>${label}</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span></div></div>`;
-  if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01);
-  if(L.type==='ink') return c('油墨色')+r('濃度','opacity',0,1,.01)+`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`+r('光澤','gloss',0,.5,.01);
+  const ko=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
+  if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01)+ko;
+  if(L.type==='ink') return ko+c('油墨色')+r('濃度','opacity',0,1,.01)+`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`+r('光澤','gloss',0,.5,.01);
   if(L.type==='uv') return r('光澤','gloss',0,1,.01);
   if(L.type==='relief') return r('深度','depth',.5,4,.1);
   return '<p class="note">此圖層的元素不會印出（例如底色矩形、輔助線）。</p>';
@@ -906,6 +940,8 @@ PAPER_SWATCHES.forEach(([c,n])=>{ const b=document.createElement('button'); b.st
 
 /* ---------- tabs / misc ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); document.querySelectorAll('.tabpane').forEach(p=>p.classList.toggle('on',p.id==='tab-'+b.dataset.t)); if(b.dataset.t==='scene') setViewMode('scene'); }));
+$('#koGap').addEventListener('input', e=>{ S.koGap=+e.target.value; setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); renderFx(); save(); });
+function koNote(){ const [W]=S.vb||[1000]; const pct=(S.koGap/W*100).toFixed(2); $('#koNote').textContent=`viewBox 單位（畫面寬 ${fmt(W)}）；目前 = 版面寬的 ${pct}%，若版面寬 420mm 約 ${(S.koGap/W*420).toFixed(2)}mm`; }
 $('#btnAddLayer').addEventListener('click', ()=>{ const L=newLayer('foil-silver'); S.active=L.id; renderFx(); save(); });
 $('#btnExpand').addEventListener('click', ()=>{ svgRoot.querySelectorAll('g').forEach(g=>treeOpen.set(g.getAttribute('data-k'),true)); renderTree(); });
 $('#btnCollapse').addEventListener('click', ()=>{ treeOpen.clear(); svgRoot.querySelectorAll('g').forEach(g=>treeOpen.set(g.getAttribute('data-k'),false)); renderTree(); });
@@ -956,6 +992,46 @@ $('#btnExport').addEventListener('click', async ()=>{
     $('#modalCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); toast('已複製 PNG'); }catch(e){ toast('剪貼簿寫入被拒絕'); } };
     $('#modal').classList.add('on');
   }catch(e){ toast(e.message||'匯出失敗'); }
+});
+/* 分版 SVG：由下而上每個效果一個具名 <g>，上層圖形外擴後用 <mask> 挖空下層 */
+function prefixIds(str, pre){
+  return str.replace(/\bid="([^"]+)"/g, (m,id)=>`id="${pre}${id}"`)
+            .replace(/url\(#([^)]+)\)/g, (m,id)=>`url(#${pre}${id})`)
+            .replace(/(xlink:)?href="#([^"]+)"/g, (m,x,id)=>`${x||''}href="#${pre}${id}"`);
+}
+function innerXML(el){ return [...el.childNodes].map(n=>new XMLSerializer().serializeToString(n)).join(''); }
+function exportSVG(){
+  const [W,H]=S.vb; const vb=svgRoot.getAttribute('viewBox');
+  const printed=[...S.layers].reverse().filter(L=>L.type!=='hide' && L.visible && L._count); // 由下而上
+  const unassigned=Object.keys(shapes).filter(k=>!effLayer[k]);
+  let defs='', body='';
+  const groupBlock=(id,label,extra,color,keep,gap)=>{
+    const g=layerSVG(keep,color,gap||0); g.querySelectorAll('[data-k]').forEach(n=>n.removeAttribute('data-k'));
+    return prefixIds(innerXML(g), id+'_');
+  };
+  printed.forEach((L,i)=>{
+    const above=printed.slice(i+1).filter(x=>x.type!=='uv' && x.type!=='relief');
+    let maskAttr='';
+    if(L.knockout!==false && S.koGap>0 && above.length){
+      const ids=new Set(above.map(x=>x.id));
+      defs+=`<mask id="ko_${L.id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>${groupBlock('ko_'+L.id,'', '', '#000', k=>ids.has(effLayer[k]), S.koGap)}</mask>`;
+      maskAttr=` mask="url(#ko_${L.id})"`;
+    }
+    const color = L.type==='uv' ? '#00ffff' : (L.type==='relief' ? '#ff00ff' : L.tint);
+    body+=`<g id="${esc(L.name)}" data-effect="${L.preset}" data-color="${color}"${maskAttr}>${groupBlock(L.id,L.name,'',color,k=>effLayer[k]===L.id,0)}</g>\n`;
+  });
+  if(unassigned.length){ const g=layerSVG(k=>!effLayer[k], null, 0); g.querySelectorAll('[data-k]').forEach(n=>n.removeAttribute('data-k')); body+=`<g id="未指派（原色）">${prefixIds(innerXML(g),'raw_')}</g>\n`; }
+  const paper=`<g id="紙（不印）" data-paper="${S.paper.color}" data-texture="${S.paper.texture}" style="display:none"><rect x="0" y="0" width="${W}" height="${H}" fill="${S.paper.color}"/></g>\n`;
+  const out=`<?xml version="1.0" encoding="UTF-8"?>\n<!-- 燙印打樣室 Foil Proof Lab 分版輸出 · ${esc(S.name||'')} · 安全空間 ${S.koGap} viewBox 單位 · 圖層由下而上 = 印刷順序 -->\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${vb}" width="${W}" height="${H}">\n<defs>${defs}</defs>\n${paper}${body}</svg>`;
+  return out.replace(/\s*!important/g,''); // 分版檔不需要 !important，部分繪圖軟體會讀不懂
+}
+window.foilProof = { exportSVG, get state(){ return S; } }; // 供外部腳本／除錯使用
+$('#btnExportSvg').addEventListener('click', async ()=>{
+  try{
+    const str=exportSVG(); const fname=(S.name||'proof').replace(/\.svg$/i,'')+'-separations.svg';
+    if(dlCap){ try{ await dlCap.save({filename:fname,data:str}); toast('已儲存 '+fname); }catch(e){ if(e&&e.code!=='declined') toast('無法儲存：'+(e&&e.code||'unavailable')); } return; }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([str],{type:'image/svg+xml'})); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); toast('已輸出 '+fname);
+  }catch(e){ toast('匯出失敗：'+e.message); }
 });
 $('#modalClose').addEventListener('click', ()=>$('#modal').classList.remove('on'));
 $('#btnAbout').addEventListener('click', ()=>$('#about').classList.add('on'));
@@ -1063,10 +1139,11 @@ $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(
 
 /* ---------- boot ---------- */
 function start(svgText, name, fresh){
-  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{};
+  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
+  setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote();
   applyPaper(); maskCache={}; renderFx(); syncSceneControls(); setViewMode(viewMode); save();
   $('#pickmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.m===S.pickMode));
   if(fresh) toast(`已載入 ${name}，自動建立 ${S.layers.length} 個效果圖層`);
