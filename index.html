@@ -177,6 +177,7 @@ button{cursor:pointer}
 .light-svg line{stroke:rgba(255,235,180,.75);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
 .light-svg #lightG{fill:none;stroke:rgba(255,235,180,.9);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .light-svg #lightSpec{fill:rgba(255,255,255,.85);stroke:rgba(0,0,0,.4);stroke-width:1;vector-effect:non-scaling-stroke}
+.light-svg text{fill:#fff;font-family:var(--sans);paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:3px;vector-effect:non-scaling-stroke;pointer-events:none}
 .light-svg #lightBeam{stroke:rgba(255,235,180,.45);stroke-width:1;stroke-dasharray:2 6;vector-effect:non-scaling-stroke}
 .light-svg #lightT circle{fill:rgba(255,235,180,.12);stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
 .light-svg #lightT line{stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
@@ -352,7 +353,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="paper-vignette"></div>
       </div>
     </div>
-    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="table" id="table"></div><div class="floor"></div></div><svg class="light-svg" id="lightSvg" preserveAspectRatio="none"><line id="lightPole" x1="0" y1="0" x2="0" y2="0"/><line id="lightBeam" x1="0" y1="0" x2="0" y2="0"/><circle id="lightSpec" r="0"/><circle id="lightG" r="0"/><g id="lightT"><circle r="0"/><line/><line/></g></svg><div class="light-handle" id="lightHandle" title="燈：拖曳移動（離燈近就拖燈，離焦點近就拖焦點）"><span></span></div></div></div>
+    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="table" id="table"></div><div class="floor"></div></div><svg class="light-svg" id="lightSvg" preserveAspectRatio="none"><line id="lightBeam" x1="0" y1="0" x2="0" y2="0"/><circle id="lightSpec" r="0"/><g id="lightT"><circle r="0"/><line/><line/></g><text id="lblL"></text><text id="lblT"></text><text id="lblP"></text></svg><div class="light-handle" id="lightHandle" title="燈：拖曳移動（離燈近就拖燈，離焦點近就拖焦點）"><span></span></div></div></div>
     <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
     <div class="stage-hint">移動滑鼠 = 改變光線角度 · 滾輪 = 縮放 · 拖曳 = 平移 · 指派效果請用右側「效果圖層」的顏色／圖層 chip 或「結構」樹</div>
     <div class="drop">放開以載入 SVG</div>
@@ -1657,8 +1658,10 @@ function applySceneLight(px,py,hov){
   // 畫布上的標示：燈（投影）、燈的落點、鏡面高光點
   const T=lightModel(px,py).T; const sG=tableToScreen(G.x,G.y,0), sL=tableToScreen(G.x,G.y,h), sP=tableToScreen(P.x,P.y,0), sT=tableToScreen(T.x,T.y,0);
   const hd=$('#lightHandle'); if(hd){ hd.style.left=(sL.x/C.W*100).toFixed(2)+'%'; hd.style.top=(sL.y/C.H*100).toFixed(2)+'%'; }
-  const svg=$('#lightSvg'); if(svg){ svg.setAttribute('viewBox',`0 0 ${C.W} ${C.H}`); const ln=$('#lightPole'); ln.setAttribute('x1',sG.x); ln.setAttribute('y1',sG.y); ln.setAttribute('x2',sL.x); ln.setAttribute('y2',sL.y);
-    const g=$('#lightG'); g.setAttribute('cx',sG.x); g.setAttribute('cy',sG.y); g.setAttribute('r',Math.max(6,C.W*.012)); const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(3,C.W*.005));
+  const svg=$('#lightSvg'); if(svg){ svg.setAttribute('viewBox',`0 0 ${C.W} ${C.H}`);
+    const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(3,C.W*.005));
+    const fs=Math.max(11,C.W*.014); const lbl=(id,x,y,t)=>{ const e=$(id); e.setAttribute('x',x); e.setAttribute('y',y); e.setAttribute('font-size',fs); e.textContent=t; };
+    lbl('#lblL',sL.x+C.W*.02,sL.y-C.W*.012,'燈'); lbl('#lblP',sP.x+C.W*.012,sP.y+fs*.35,'高光'); lbl('#lblT',sT.x+C.W*.025,sT.y-C.W*.012,'焦點');
     const bm=$('#lightBeam'); bm.setAttribute('x1',sL.x); bm.setAttribute('y1',sL.y); bm.setAttribute('x2',sT.x); bm.setAttribute('y2',sT.y);
     const tg=$('#lightT'), tr=Math.max(8,C.W*.016); const tc=tg.querySelector('circle'); tc.setAttribute('cx',sT.x); tc.setAttribute('cy',sT.y); tc.setAttribute('r',tr);
     const [l1,l2]=tg.querySelectorAll('line'); l1.setAttribute('x1',sT.x-tr*1.6); l1.setAttribute('x2',sT.x+tr*1.6); l1.setAttribute('y1',sT.y); l1.setAttribute('y2',sT.y); l2.setAttribute('x1',sT.x); l2.setAttribute('x2',sT.x); l2.setAttribute('y1',sT.y-tr*1.6); l2.setAttribute('y2',sT.y+tr*1.6); }
