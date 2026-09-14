@@ -157,6 +157,12 @@ button{cursor:pointer}
 .scenewrap{position:absolute;inset:0;display:grid;place-items:center;padding:56px 40px 40px}
 .scenewrap[hidden]{display:none}
 .scenebox{position:relative}
+.stage:has(#scenewrap:not([hidden])){cursor:grab}
+.stage.dragging-light{cursor:grabbing}
+.light-handle{position:absolute;left:30%;top:25%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px 6px rgba(255,240,200,.45);background:radial-gradient(circle,#fff6d6 0%,#ffd77a 55%,rgba(255,215,122,0) 70%);pointer-events:none;z-index:9}
+.light-handle span{position:absolute;inset:0;border-radius:50%;animation:lh 2.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,235,180,.6)}
+@keyframes lh{0%{box-shadow:0 0 0 0 rgba(255,235,180,.6)}100%{box-shadow:0 0 0 14px rgba(255,235,180,0)}}
+@media (prefers-reduced-motion:reduce){.light-handle span{animation:none}}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
 .scene .glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at var(--lx,50%) var(--ly,40%),rgba(255,255,255,var(--glow,.3)),transparent 70%);pointer-events:none}
 .scene .floor{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.35) 100%);pointer-events:none}
@@ -324,7 +330,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="paper-vignette"></div>
       </div>
     </div>
-    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="glow"></div><div class="table" id="table"></div><div class="floor"></div></div></div></div>
+    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="glow"></div><div class="table" id="table"></div><div class="floor"></div></div><div class="light-handle" id="lightHandle" title="拖曳設定光源位置"><span></span></div></div></div>
     <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
     <div class="pickbox" id="pickbox"><span class="tag"></span></div>
     <div class="stage-hint">移動滑鼠 = 改變光線角度 · 點擊元素 = 指派到<b>目前圖層</b>（再點一次取消） · 右上「版面 Mockup」可平鋪多張並匯出 IG 尺寸</div>
@@ -458,6 +464,9 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h">場景</div>
         <div class="row two"><label>背景</label><div class="colorwrap"><input type="color" id="sBg"><span class="hex" id="sBgHex"></span></div></div>
         <div class="row two" style="margin-top:6px"><label>常用</label><div class="swatches" id="sBgSwatches"></div></div>
+        <div class="row"><label>光源 X</label><input type="range" id="sLx" min="-0.2" max="1.2" step="0.01"><span class="val"></span></div>
+        <div class="row"><label>光源 Y</label><input type="range" id="sLy" min="-0.2" max="1.2" step="0.01"><span class="val"></span></div>
+        <p class="note">在畫布上<b>按住拖曳</b>即可移動光源（放開後停住，不會跟著滑鼠跑）。</p>
         <div class="row"><label>光暈</label><input type="range" id="sGlow" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>暗角</label><input type="range" id="sVig" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>投影</label><input type="range" id="sShadow" min="0" max="1" step="0.01"><span class="val"></span></div>
@@ -617,7 +626,7 @@ let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
 const VIEW_PRESETS=[['正上方',0,0],['俯 30°',30,0],['俯 45°',45,0],['左前 45°',45,-35],['右前 45°',45,35],['等角',55,45],['低角 65°',65,0]];
 const SCENE_BG=[['#2a2a2e','深灰'],['#141416','黑'],['#6b6b70','中灰'],['#c9c4bb','暖灰'],['#e9e4da','米白'],['#f5f5f5','白'],['#1f2a3a','深藍'],['#3d2f2a','深棕']];
-const defaultScene = () => ({W:1080,H:1350,roll:0,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
+const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
@@ -1062,20 +1071,31 @@ function setPointer(px,py,hov){
   card.style.setProperty('--rx',((0.5-py)*P.tilt*2).toFixed(2)+'deg'); card.style.setProperty('--ry',((px-0.5)*P.tilt*2).toFixed(2)+'deg');
   card.style.setProperty('--hov',hov.toFixed(3));
 }
+/* 單張模式：滑過即改變光線。版面模式：按住拖曳才移動光源（放開後停在原地，方便匯出） */
+let lightDrag=false;
+function sceneLightFrom(e){ const r=$('#scene').getBoundingClientRect(); const C=S.scene; C.lx=Math.min(1.2,Math.max(-.2,(e.clientX-r.left)/r.width)); C.ly=Math.min(1.2,Math.max(-.2,(e.clientY-r.top)/r.height)); }
 stage.addEventListener('pointermove', e=>{
-  const r=(viewMode==='scene'?$('#scene'):card).getBoundingClientRect();
+  if(viewMode==='scene'){ if(lightDrag) sceneLightFrom(e); return; }
+  const r=card.getBoundingClientRect();
   target.px=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)); target.py=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)); target.hov=1;
   hovering=true; lastMove=performance.now();
 });
+stage.addEventListener('pointerdown', e=>{
+  if(viewMode!=='scene' || e.button!==0 || e.target.closest('.stage-tools')) return;
+  lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} sceneLightFrom(e); e.preventDefault();
+});
+const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; stage.classList.remove('dragging-light'); save(); };
+stage.addEventListener('pointerup', endLightDrag); stage.addEventListener('pointercancel', endLightDrag);
 stage.addEventListener('pointerleave', ()=>{ hovering=false; lastMove=performance.now(); });
 function loop(){
   requestAnimationFrame(loop); if(!S) return;
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(!hovering){
+  if(viewMode==='scene'){ const C=S.scene; target.px=C.lx ?? .3; target.py=C.ly ?? .25; target.hov=1; }
+  else if(!hovering){
     if(S.paper.auto && !reduce && performance.now()-lastMove>1800){ autoT+=0.006; target.px=.5+.38*Math.cos(autoT); target.py=.5+.3*Math.sin(autoT*.8); target.hov=.8; }
     else { target.px=.5; target.py=.5; target.hov=0; }
   }
-  const k = hovering ? .4 : (reduce ? 1 : .06);
+  const k = (hovering||lightDrag) ? .4 : (viewMode==='scene' ? .25 : (reduce ? 1 : .06));
   let moved=false;
   for(const key of ['px','py','hov']){ const d=target[key]-cur[key]; if(Math.abs(d)>1e-4){ cur[key]+=d*k; moved=true; } }
   if(moved){ setPointer(cur.px,cur.py,cur.hov); if(viewMode==='scene') applySceneLight(cur.px,cur.py,cur.hov); }
@@ -1316,6 +1336,7 @@ function applySceneView(){
   sc.style.setProperty('--sbg',C.bg); sc.style.setProperty('--glow',C.glow); sc.querySelector('.floor').style.opacity=C.vig;
 }
 function applySceneLight(px,py,hov){
+  const hd=$('#lightHandle'); if(hd){ hd.style.left=(px*100).toFixed(2)+'%'; hd.style.top=(py*100).toFixed(2)+'%'; }
   const C=S.scene, tb=$('#table'), slots=tb._slots||[]; const Lx=px*C.W, Ly=py*C.H;
   $('#scene').style.setProperty('--lx',(px*100).toFixed(1)+'%'); $('#scene').style.setProperty('--ly',(py*100).toFixed(1)+'%');
   [...tb.children].forEach((d,i)=>{
@@ -1336,6 +1357,7 @@ function setViewMode(v){
   $('#cardwrap').style.display = v==='scene'?'none':''; $('#scenewrap').hidden = v!=='scene';
   $('#stage').querySelector('.stage-tools:not(.right)').style.visibility = v==='scene'?'hidden':'';
   $('#btnExport').textContent = v==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG';
+  $('.stage-hint').innerHTML = v==='scene' ? '在畫布上<b>按住拖曳</b>移動光源 · 放開即固定 · 匯出會用目前光源位置' : '移動滑鼠 = 改變光線角度 · 點擊元素 = 指派到<b>目前圖層</b>（再點一次取消） · 右上「版面 Mockup」可平鋪多張並匯出 IG 尺寸';
   if(v==='scene' && sceneDirty) renderScene(); else if(v==='scene') { applySceneView(); fitScene(); }
 }
 $('#viewmode').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setViewMode(b.dataset.v); });
@@ -1347,7 +1369,7 @@ function syncSceneControls(){
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
-  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
+  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
   const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
@@ -1359,7 +1381,7 @@ $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
-[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
+[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','lx'],['#sLy','ly'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
 $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(false); });
 
 /* ---------- boot ---------- */
