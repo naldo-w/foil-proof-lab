@@ -110,15 +110,23 @@ button{cursor:pointer}
 .m.uv.uv-matte .u-glare{display:none}
 .m.uv.uv-matte .u-edge{opacity:1;mix-blend-mode:multiply;background-image:var(--ptexg);background-size:160px 160px;background-color:rgba(0,0,0,.10)}
 .m.uv.uv-frost .u-edge{opacity:.9;mix-blend-mode:normal;background-image:var(--ptexg);background-size:120px 120px;background-color:rgba(255,255,255,.22)}
-.m.uv.uv-frost .u-glare{opacity:calc(var(--gloss,.35)*.6)}
+.m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.35)*.6)}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
-.m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--gloss,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
-.f-rim.rev.dk{filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1px) rgba(0,0,0,.5))}
-.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1px) rgba(255,255,255,.7))}
+.m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
+.f-rim.rev{opacity:var(--ro,1)}
+.f-rim.rev.dk{filter:drop-shadow(var(--rd,1px) var(--rd,1px) var(--rb,1px) rgba(0,0,0,.5))}
+.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--rd,1px)) calc(-1*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,.7))}
+.m.r-face{background:var(--face)}
 /* 發泡印花：外緣立體陰影 + 內側圓頂明暗（反向遮罩 drop-shadow）+ 霧面顆粒 */
-.i-dome{position:absolute;inset:0!important;opacity:var(--dop,1)}
-.i-dome.sh{filter:drop-shadow(calc(-1*var(--dd,1.6px)) calc(-1*var(--dd,1.6px)) var(--db,2.7px) rgba(0,0,0,.42))}
-.i-dome.hi{filter:drop-shadow(var(--dd,1.6px) var(--dd,1.6px) var(--db,2.7px) rgba(255,255,255,.5))}
+.i-dome{position:absolute;inset:0!important;opacity:var(--qo,1)}
+.i-dome.sh{filter:drop-shadow(calc(-1*var(--qd,1.6px)) calc(-1*var(--qd,1.6px)) var(--qb,2.7px) rgba(0,0,0,.42))}
+.i-dome.hi{filter:drop-shadow(var(--qd,1.6px) var(--qd,1.6px) var(--qb,2.7px) rgba(255,255,255,.5))}
+/* 凸版印刷：油墨被壓進紙裡，邊緣略深、表面霧 */
+.m.ink.press .i-grain{opacity:calc(var(--grain-ink,.5)*1.3)}
+.m.ink.press .i-glare{opacity:calc(var(--gloss,.05)*var(--hov)*.5)}
+/* 網版印刷：厚而不透明的墨層 */
+.m.ink.screen .i-fill{opacity:1}
+.m.ink.screen .i-grain{background-image:var(--ptexg);background-size:110px 110px;mix-blend-mode:soft-light;opacity:.4}
 .i-dome .inv{position:absolute;inset:0;background:#000;
   -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
   -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
@@ -139,7 +147,7 @@ button{cursor:pointer}
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
-.m.uv .u-glare{opacity:var(--gloss,.8);mix-blend-mode:screen;
+.m.uv .u-glare{opacity:var(--uvg,.8);mix-blend-mode:screen;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.75) 0%,rgba(255,255,255,.28) 18%,rgba(255,255,255,.05) 45%,rgba(255,255,255,0) 70%)}
 .m.uv .u-edge{opacity:.35;mix-blend-mode:overlay;background:rgba(255,255,255,.35)}
 /* deboss / emboss: mask lives on the children */
@@ -249,6 +257,9 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .layer-b{display:none;padding:2px 10px 10px;border-top:1px solid var(--line)}
 .layer.active .layer-b{display:block}
 .layer-b .row{grid-template-columns:64px 1fr 40px}
+.cchips{display:flex;flex-wrap:wrap;gap:4px;padding-top:3px}
+.cchip{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.15);padding:0;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 55%,#000),var(--c) 45%,color-mix(in srgb,var(--c) 35%,#fff) 62%,var(--c))}
+.cchip.on{outline:2px solid var(--accent);outline-offset:1px}
 .layer-foot{display:flex;gap:6px;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--muted)}
 
 /* tree */
@@ -767,17 +778,87 @@ function autoLayers(){
   if(bgKey){ S.paper.color = shapes[bgKey].fill; const L=newLayer('hide','背景底色（紙）'); S.assign[bgKey]=L.id; }
   const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey)]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
   for(const [c,keys] of cols){
-    const p = guessPreset(c); const L=newLayer(p, `${PRESETS[p].label} · ${c}`);
-    if(PRESETS[p].type==='ink') L.tint=c;
+    const p = guessPreset(c); const L=newLayer(p);
+    if(PRESETS[p].type==='ink'){ L.tint=c; delete L.cname; } L.srcColor=c; L.name=autoName(L); L.named=false;
     keys.forEach(k=>{ if(!S.assign[k]) S.assign[k]=L.id; });
   }
   S.active = (S.layers.find(l=>l.type!=='hide') || S.layers[0])?.id;
 }
-function newLayer(preset, name){
-  const p = PRESETS[preset]; const L = Object.assign({id:'L'+(uid++), name:name||p.label, preset, visible:true, blend:'normal', opacity:1, knockout:true}, p);
-  delete L.label; delete L.group; S.layers.unshift(L); return L;
+/* ---------- 工法模型：每個圖層 = 工法（上色方式）+ 顏色 + 疊加加工 ---------- */
+const PROCS = {
+  foil:{label:'燙箔',colored:true,base:'foil-silver'},
+  holo:{label:'燙雷射',colored:true,base:'holo-lines'},
+  ink:{label:'印刷（平版／數位）',colored:true,base:'ink-black'},
+  letterpress:{label:'凸版印刷',colored:true,base:'ink-black'},
+  screen:{label:'網版印刷',colored:true,base:'ink-white'},
+  none:{label:'不上色（只做加工）',colored:false},
+  hide:{label:'不印',colored:false},
+};
+const HOLO_SUBS={lines:'線條雷射',rainbow:'彩虹雷射',glitter:'碎片亮粉',cosmos:'星空宇宙',cracked:'碎冰',pearl:'珍珠箔',clear:'透明雷射膜'};
+const UV_SUBS={none:'無',gloss:'亮面 UV',matte:'霧面 UV',frost:'磨砂 UV',raised:'立體 UV／水晶膠',glitter:'亮粉 UV'};
+const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
+const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:1.2,thick:.6};
+/* 依 type 反推 proc（舊資料相容），並補齊欄位 */
+function normalizeLayer(L){
+  if(!L.proc){
+    const t=L.type;
+    if(t==='foil') L.proc='foil'; else if(t==='holo') L.proc='holo';
+    else if(t==='ink'){ L.proc=(L.puff||L.flock)?'screen':'ink'; if(L.puff) L.puffDepth=L.depth??2; }
+    else if(t==='uv'){ L.proc='none'; L.uv=L.sub||'gloss'; L.uvGloss=L.gloss??.8; L.uvDepth=L.depth??1.5; }
+    else if(t==='relief'){ L.proc='none'; L.relief=L.dir<0?'deboss':'emboss'; L.reliefDepth=L.depth??1.5; }
+    else L.proc='hide';
+  }
+  for(const [k,v] of Object.entries(FIN_DEFAULTS)) if(L[k]===undefined) L[k]=v;
+  if(L.proc==='foil'||L.proc==='holo'){ L.tint??='#c9cacf'; L.bright??=.5; L.contrast??=.45; L.sat??=1.15; L.holo??=.1; L.brush??=.3; L.gloss??=.7; L.depth??=1; L.hscale??=1; if(L.proc==='holo') L.sub??='lines'; }
+  if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){ L.tint??='#161616'; L.opacity??=1; L.blend??='normal'; L.gloss??=.08; }
+  L.knockout??=true; L.visible??=true;
+  syncType(L); return L;
 }
-function applyPreset(L, preset){ const p=PRESETS[preset]; delete L.sub; delete L.fluo; delete L.noKnock; delete L.puff; delete L.flock; Object.assign(L, p, {preset}); delete L.label; delete L.group; }
+/* 舊程式碼（挖空、匯出、圖示）仍看 type：由工法與加工推回 */
+function syncType(L){
+  if(L.proc==='hide') L.type='hide';
+  else if(L.proc==='none') L.type = L.uv!=='none' ? 'uv' : 'relief';
+  else if(L.proc==='foil') L.type='foil'; else if(L.proc==='holo') L.type='holo'; else L.type='ink';
+  L.noKnock = (L.proc==='holo' && L.sub==='clear') || L.proc==='none';
+  if(L.type==='relief') L.dir = L.relief==='deboss' ? -1 : 1;
+}
+function autoName(L){
+  if(L.proc==='hide') return '不印';
+  let n = L.proc==='none' ? '加工' : PROCS[L.proc].label.replace(/（.*）/,'');
+  if((L.proc==='foil'||L.proc==='holo') && L.cname) n = L.cname;            // 「燙金」「雷射銀（線條）」本身就含工法
+  else if(L.proc==='holo') n+=`（${HOLO_SUBS[L.sub]||''}）· ${L.tint}`;
+  else if(PROCS[L.proc].colored) n+=' · '+(L.cname||L.tint);
+  const fin=[]; if(L.relief!=='none') fin.push(RELIEFS[L.relief]); if(L.uv!=='none') fin.push(UV_SUBS[L.uv]); if(L.puff) fin.push('發泡'); if(L.flock) fin.push('植絨');
+  return fin.length ? n+' + '+fin.join(' + ') : n;
+}
+/* 套用一個顏色預設（PRESETS 表）：帶入顏色與該工法的參數，保留工法與加工 */
+function applyColorPreset(L, key){
+  const p=PRESETS[key]; if(!p) return;
+  const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
+  const {label,group,type,sub,puff,flock,dir,...params}=p;
+  Object.assign(L, params, keep, {preset:key, cname:label});
+  L.fluo = !!p.fluo;
+  if(L.proc==='holo' && sub) L.sub=sub;
+  normalizeLayer(L); if(!L.named) L.name=autoName(L);
+}
+function setProc(L, proc){
+  L.proc=proc;
+  if(proc==='none'||proc==='hide'){ delete L.cname; }
+  else { const wasColored=['foil','holo','ink','letterpress','screen'].includes(L._prevProc); const base=PROCS[proc].base;
+    const keepTint = wasColored; // 換工法保留顏色（紅箔 → 紅墨），只重設該工法的參數
+    const tint=L.tint, cname=L.cname; applyColorPreset(L, base); if(keepTint){ L.tint=tint; L.cname=cname; } }
+  if(proc==='none' && L.relief==='none' && L.uv==='none') L.relief='emboss';
+  normalizeLayer(L); if(!L.named) L.name=autoName(L);
+}
+function newLayer(preset, name){
+  const L={id:'L'+(uid++), visible:true, knockout:true, proc: PRESETS[preset].type==='uv'||PRESETS[preset].type==='relief' ? 'none' : (PRESETS[preset].type==='hide'?'hide':PRESETS[preset].type)};
+  if(L.proc==='none'){ const p=PRESETS[preset]; if(p.type==='uv'){ L.uv=p.sub||'gloss'; L.uvGloss=p.gloss; L.uvDepth=p.depth??1.5; } else { L.relief=p.dir<0?'deboss':'emboss'; L.reliefDepth=p.depth; } normalizeLayer(L); }
+  else if(L.proc==='hide') normalizeLayer(L);
+  else { if(PRESETS[preset].type==='ink' && (PRESETS[preset].puff||PRESETS[preset].flock)){ L.proc='screen'; L.puff=!!PRESETS[preset].puff; L.flock=!!PRESETS[preset].flock; } applyColorPreset(L, preset); }
+  if(name){ L.name=name; L.named=true; } else L.name=autoName(L);
+  S.layers.unshift(L); return L;
+}
+function applyPreset(L, preset){ applyColorPreset(L, preset); }
 
 /* ---------- effective layer / masks ---------- */
 /* 依某一組圖層（目前設定或某個版本）算出每個圖形的有效圖層 */
@@ -819,7 +900,7 @@ function buildMask(L, eff=effLayer, vk=''){
   return maskCache[vk+L.id] ||= toURI(layerSVG(k=>eff[k]===L.id, '#fff', 0));
 }
 /* 上層（列表中在 L 之前、會印出的圖層）圖形外擴 gap 後的遮罩；沒有上層圖形時回傳 null */
-function layersAbove(L, layers=S.layers){ const i=layers.indexOf(L); return layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='holo'||x.type==='ink') && !x.noKnock && x.visible && x._count); }
+function layersAbove(L, layers=S.layers){ const i=layers.indexOf(L); return layers.slice(0,i).filter(x=>PROCS[x.proc]?.colored && !x.noKnock && x.visible && x._count); }
 function buildKnockout(L, layers=S.layers, eff=effLayer, vk=''){
   const above=layersAbove(L, layers); if(!above.length || !(S.koGap>0) || L.knockout===false) return null;
   const key=vk+'ko:'+L.id+':'+S.koGap+':'+above.map(x=>x.id).join(',');
@@ -839,20 +920,29 @@ function renderFxInto(host, layers, eff, vk, paper){
     d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
     const own=buildMask(L, eff, vk), ko=buildKnockout(L, layers, eff, vk);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
-    if(L.type==='foil') d.innerHTML='<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
-    else if(L.type==='holo') d.innerHTML=`<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
-    else if(L.type==='ink'){
-      const raised = L.puff||L.flock;
-      d.innerHTML=(L.fluo?'<div class="f-rim glow"><div class="m rim"></div></div>':'')
-        +(raised?'<div class="f-rim dk rev"><div class="m rim"></div></div><div class="f-rim lt rev"><div class="m rim"></div></div>':'')
-        +`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}"><div class="i-fill"></div><div class="i-grain"></div>`
-        +(L.puff?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
-        +`<div class="i-glare"></div></div>`;
-    }
-    else if(L.type==='uv') d.innerHTML=(L.sub==='raised'?'<div class="f-rim dk rev"><div class="m rim"></div></div><div class="f-rim lt rev"><div class="m rim"></div></div>':'')+`<div class="m uv uv-${L.sub||'gloss'}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
-    else if(L.type==='relief') d.innerHTML='<div class="m r-dark"></div><div class="m r-light"></div><div class="m r-face"></div>';
+    d.innerHTML=fxDOM(L);
     host.appendChild(d); styleFx(d,L,paper);
   });
+}
+/* 依工法 + 疊加加工組出效果 DOM（由下而上：壓痕外緣 → 上色層 → 表面 UV） */
+function fxDOM(L){
+  const rim=(rev)=>`<div class="f-rim dk${rev?' rev':''}"><div class="m rim"></div></div><div class="f-rim lt${rev?' rev':''}"><div class="m rim"></div></div>`;
+  let h='';
+  const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress' || L.relief==='deboss';
+  const raised = L.relief==='emboss' || L.puff || L.uv==='raised' || L.proc==='screen';
+  if(pressed) h+=rim(false);
+  if(raised) h+=rim(true);
+  if(L.proc==='none' && L.relief!=='none') h+='<div class="m r-face"></div>';
+  if(L.fluo && PROCS[L.proc].colored && L.proc!=='foil' && L.proc!=='holo') h+='<div class="f-rim glow"><div class="m rim"></div></div>';
+  if(L.proc==='foil') h+='<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
+  else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
+  else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
+    h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div><div class="i-grain"></div>`
+      +(L.puff?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
+      +'<div class="i-glare"></div></div>';
+  }
+  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
+  return h;
 }
 function renderFx(){
   computeEffective();
@@ -862,27 +952,31 @@ function renderFx(){
 function styleFx(d,L,paper=S.paper){
   if(!d){ document.querySelectorAll(`.card[data-v="current"] .fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L,paper)); return; }
   const st = d.style;
-  if(L.type==='foil' || L.type==='holo'){
-    const c = L.contrast ?? .45, dp = L.depth ?? 1;
-    if(L.type==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); }
+  if(L.proc==='foil' || L.proc==='holo'){
+    const c = L.contrast ?? .45;
+    if(L.proc==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); }
     st.setProperty('--grad', foilGradient(L.tint, c));
     st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
     const hi=rgb(foilShades(L.tint,c).hi), ga=0.25+c*0.6;
     st.setProperty('--g1', `rgba(${hi.join(',')},${ga.toFixed(3)})`); st.setProperty('--g2', `rgba(${hi.join(',')},${(ga*.4).toFixed(3)})`); st.setProperty('--gd', (0.12+c*0.5).toFixed(3));
     st.setProperty('--sat', (L.sat ?? 1.15).toFixed(2));
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
-    st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.7+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2));
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
-  } else if(L.type==='ink'){
-    st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.fluo?'normal':L.blend); st.setProperty('--gloss', L.gloss);
+  } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
+    const opaque = L.fluo || L.proc==='screen';
+    st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', opaque?'normal':L.blend); st.setProperty('--gloss', L.gloss);
     st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (paper.strength*.85).toFixed(3)));
-    if(L.puff||L.flock){ const dp=L.depth ?? 2; st.setProperty('--dd', (dp*0.8).toFixed(2)+'px'); st.setProperty('--db', (dp*1.2+0.3).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp/1.5).toFixed(2)); st.setProperty('--ptexg', grainURI(.8)); }
-  } else if(L.type==='uv'){ st.setProperty('--gloss', L.gloss); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6));
-    const dp=L.depth ?? 1.5; st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.8+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2)); }
-  else if(L.type==='relief'){
-    const d0 = L.depth*L.dir; st.setProperty('--dx', d0+'px'); st.setProperty('--dy', d0+'px');
-    st.setProperty('--face', L.dir<0 ? mix(paper.color,'#000000',.12) : mix(paper.color,'#ffffff',.06));
+    st.setProperty('--ptexg', grainURI(.8));
+    if(L.puff){ const q=L.puffDepth ?? 2; st.setProperty('--qd', (q*0.8).toFixed(2)+'px'); st.setProperty('--qb', (q*1.2+0.3).toFixed(2)+'px'); st.setProperty('--qo', Math.min(1,q/1.5).toFixed(2)); }
   }
+  if(L.proc==='none' && L.relief!=='none') st.setProperty('--face', L.relief==='deboss' ? mix(paper.color,'#000000',.12) : mix(paper.color,'#ffffff',.06));
+  // 壓入式外緣（燙箔壓痕／凸版壓印／打凹）：取最大深度
+  const pd=Math.max((L.proc==='foil'||L.proc==='holo')?(L.depth??0):0, L.proc==='letterpress'?(L.press??0):0, L.relief==='deboss'?(L.reliefDepth??0):0);
+  st.setProperty('--dd', (pd*0.9).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
+  // 隆起式外緣（打凸／發泡／立體 UV／網版墨層）
+  const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0, L.uv==='raised'?(L.uvDepth??0):0, L.proc==='screen'?(L.thick??0):0);
+  st.setProperty('--rd', (rd*0.9).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd).toFixed(2));
+  if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6)); }
 }
 function paperApply(cards, P){
   if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
@@ -970,59 +1064,92 @@ $('#stage').addEventListener('pointerup', endPan); $('#stage').addEventListener(
 function renderLayerList(){
   const host=$('#layerList'); host.innerHTML='';
   S.layers.forEach((L,i)=>{
+    normalizeLayer(L);
     const d=document.createElement('div'); d.className='layer'+(L.id===S.active?' active':''); d.dataset.id=L.id;
-    const swClass = (L.type==='foil'||L.type==='holo')?'':L.type;
-    let opts='', grp='';
-    Object.entries(PRESETS).forEach(([k,p])=>{ if(p.group!==grp){ if(grp) opts+='</optgroup>'; opts+=`<optgroup label="${p.group}">`; grp=p.group; } opts+=`<option value="${k}"${k===L.preset?' selected':''}>${p.label}</option>`; });
-    opts+='</optgroup>';
+    const swClass = (L.proc==='foil'||L.proc==='holo')?'':(L.proc==='hide'?'hide':(L.proc==='none'?(L.uv!=='none'?'uv':'relief'):'ink'));
+    const procOpts=Object.entries(PROCS).map(([k,p])=>`<option value="${k}"${k===L.proc?' selected':''}>${p.label}</option>`).join('');
     d.innerHTML = `<div class="layer-h">
-      <span class="sw ${swClass}" style="--c:${L.tint||(L.type==='relief'?S.paper.color:'#888')}"></span>
-      <input class="name" value="${esc(L.name)}" spellcheck="false">
+      <span class="sw ${swClass}" style="--c:${PROCS[L.proc].colored?L.tint:S.paper.color}"></span>
+      <input class="name" value="${esc(L.name)}" spellcheck="false" title="可自行命名；留空則自動命名">
       <span class="cnt">${L._count||0}</span>
       <button class="ib vis${L.visible?'':' off'}" title="顯示／隱藏">${L.visible?'●':'○'}</button>
       <button class="ib up" title="上移">↑</button><button class="ib dn" title="下移">↓</button>
       <button class="ib del" title="刪除圖層">✕</button>
     </div>
     <div class="layer-b">
-      <div class="row two" style="margin-top:8px"><label>效果</label><select class="preset">${opts}</select></div>
+      <div class="row two" style="margin-top:8px"><label>工法</label><select class="proc">${procOpts}</select></div>
+      ${L.proc==='holo'?`<div class="row two"><label>雷射種類</label><select data-p="sub">${Object.entries(HOLO_SUBS).map(([k,v])=>`<option value="${k}"${k===L.sub?' selected':''}>${v}</option>`).join('')}</select></div>`:''}
+      ${colorChipsHTML(L)}
       ${paramRows(L)}
+      ${finishRows(L)}
       <div class="layer-foot"><span>已指派 ${L._count||0} 個元素</span><span><button class="btn small ghost clr">清除指派</button></span></div>
     </div>`;
     host.appendChild(d);
     const h=d.querySelector('.layer-h');
     h.addEventListener('click', e=>{ if(e.target.closest('button')||e.target.closest('input')) return; setActive(L.id); });
-    d.querySelector('.name').addEventListener('change', e=>{ L.name=e.target.value; save(); renderTree(); updateActiveLbl(); });
+    d.querySelector('.name').addEventListener('change', e=>{ const v=e.target.value.trim(); if(v){ L.name=v; L.named=true; } else { L.named=false; L.name=autoName(L); e.target.value=L.name; } save(); renderTree(); updateActiveLbl(); });
     d.querySelector('.name').addEventListener('focus', ()=>setActive(L.id,true));
     d.querySelector('.vis').addEventListener('click', ()=>{ L.visible=!L.visible; renderFx(); save(); });
     d.querySelector('.up').addEventListener('click', ()=>{ if(i>0){ S.layers.splice(i,1); S.layers.splice(i-1,0,L); renderFx(); save(); } });
     d.querySelector('.dn').addEventListener('click', ()=>{ if(i<S.layers.length-1){ S.layers.splice(i,1); S.layers.splice(i+1,0,L); renderFx(); save(); } });
     d.querySelector('.del').addEventListener('click', ()=>{ S.layers.splice(i,1); for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; if(S.active===L.id) S.active=S.layers[0]?.id; maskCache={}; renderFx(); save(); toast(`已刪除「${L.name}」`); });
     d.querySelector('.clr').addEventListener('click', ()=>{ for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; maskCache={}; renderFx(); save(); });
-    d.querySelector('.preset').addEventListener('change', e=>{ const oldLabel=PRESETS[L.preset].label, keepTint=L.tint; applyPreset(L,e.target.value); if(L.preset==='ink-custom' && keepTint) L.tint=keepTint; if(L.name===oldLabel) L.name=PRESETS[L.preset].label; else if(L.name.startsWith(oldLabel+' ·')) L.name=PRESETS[L.preset].label+L.name.slice(oldLabel.length); maskCache[L.id]=null; renderFx(); save(); });
+    d.querySelector('.proc').addEventListener('change', e=>{ L._prevProc=L.proc; setProc(L,e.target.value); maskCache={}; renderFx(); save(); });
+    d.querySelectorAll('.cchip').forEach(b=>b.addEventListener('click', ()=>{ applyColorPreset(L,b.dataset.k); maskCache={}; renderFx(); save(); }));
     d.querySelectorAll('[data-p]').forEach(inp=>{
       inp.addEventListener('input', e=>{
         const p=inp.dataset.p; L[p] = inp.type==='range'?+inp.value:(inp.type==='checkbox'?inp.checked:inp.value);
-        if(inp.type==='checkbox'){ maskCache={}; renderFx(); save(); return; }
+        if(p==='tint'){ delete L.cname; }
+        const structural = inp.type==='checkbox' || inp.tagName==='SELECT' && ['sub','relief','uv'].includes(p) || p==='tint' && false;
+        syncType(L); if(!L.named) L.name=autoName(L);
+        if(structural){ maskCache={}; renderFx(); save(); return; }
         if(inp.type==='range') inp.parentElement.querySelector('.val').textContent = fmtParam(p,L[p]);
-        if(inp.type==='color') inp.parentElement.querySelector('.hex').textContent=L[p];
+        if(inp.type==='color'){ inp.parentElement.querySelector('.hex').textContent=L[p]; d.querySelector('.name').value=L.name; d.querySelectorAll('.cchip').forEach(x=>x.classList.remove('on')); }
         styleFx(null,L); d.querySelector('.sw').style.setProperty('--c',L.tint||'#888'); save();
       });
     });
   });
 }
-function fmtParam(p,v){ if(p==='depth') return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+function colorChipsHTML(L){
+  if(!PROCS[L.proc].colored) return '';
+  const inkLike = ['ink','letterpress','screen'].includes(L.proc);
+  const groups = L.proc==='foil' ? ['燙箔'] : L.proc==='holo' ? ['燙雷射'] : ['油墨','專色','螢光色'];
+  let h='';
+  groups.forEach(g=>{
+    const items=Object.entries(PRESETS).filter(([k,p])=>p.group===g && !p.puff && !p.flock && (L.proc!=='holo' || p.sub===L.sub));
+    if(!items.length) return;
+    h+=`<div class="row two" style="align-items:start"><label style="padding-top:5px">${g==='燙箔'||g==='燙雷射'?'常用箔色':g}</label><div class="cchips">`+
+       items.map(([k,p])=>`<button class="cchip${L.preset===k&&L.cname===p.label?' on':''}" data-k="${k}" title="${p.label}" style="--c:${p.tint}"></button>`).join('')+'</div></div>';
+  });
+  h+=`<div class="row two"><label>自訂顏色</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span>${L.fluo?'<span class="note" style="margin:0">螢光</span>':''}</div></div>`;
+  if(inkLike) h+=`<div class="row two"><label></label><label class="toggle"><input type="checkbox" data-p="fluo"${L.fluo?' checked':''}> 螢光墨（不透明、微微發光）</label></div>`;
+  return h;
+}
+function fmtParam(p,v){ if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 function paramRows(L){
-  const r=(label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
-  const c=(label)=>`<div class="row two"><label>${label}</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span></div></div>`;
-  const ko=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
-  if(L.type==='foil') return c('箔色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+`<p class="note" style="margin:-2px 0 6px">壓痕只作用在箔面外圍的紙上（左上暗、右下亮），箔面顏色不受影響。</p>`+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01)+ko;
-  if(L.type==='holo') return c('底色')+r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05)+ko;
-  if(L.type==='ink' && (L.puff||L.flock)) return ko+c(L.flock?'絨毛色':'發泡色')+r('濃度','opacity',0,1,.01)+r('厚度','depth',0,4,.05)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">${L.flock?'植絨：絨毛吸光、無反光，邊緣略微隆起。':'發泡印花：加熱後隆起的厚墨，邊緣圓潤、霧面；厚度越大隆起越明顯。'}</p>`;
-  if(L.type==='ink' && L.fluo) return ko+c('螢光色')+r('濃度','opacity',0,1,.01)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">螢光墨為不透明覆蓋並帶微微發光；螢幕無法真正呈現螢光，此為近似。</p>`;
-  if(L.type==='ink') return ko+c('油墨色')+r('濃度','opacity',0,1,.01)+`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`+r('光澤','gloss',0,.5,.01);
-  if(L.type==='uv') return r('光澤','gloss',0,1,.01)+(L.sub==='raised'?r('厚度','depth',0,3,.05):'')+`<p class="note" style="margin:-2px 0 6px">${({gloss:'透明亮膜，只改變反光不改變顏色。',matte:'消光膜，讓該區域比周圍更霧、略暗。',frost:'帶細砂質感的半透明霧膜。',raised:'厚塗透明膠，邊緣有立體高光與陰影。',glitter:'透明膠內含亮粉，隨光線閃爍。'})[L.sub||'gloss']}</p>`;
-  if(L.type==='relief') return r('深度','depth',.5,4,.1);
-  return '<p class="note">此圖層的元素不會印出（例如底色矩形、輔助線）。</p>';
+  const r=(label,p,min,max,step)=>rowR(L,label,p,min,max,step);
+  if(L.proc==='foil') return r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01);
+  if(L.proc==='holo') return r('亮度','bright',0,1,.01)+r('反差','contrast',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05);
+  if(L.proc==='ink') return r('濃度','opacity',0,1,.01)+(L.fluo?'':`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`)+r('光澤','gloss',0,.5,.01);
+  if(L.proc==='letterpress') return r('濃度','opacity',0,1,.01)+r('壓印深度','press',0,3,.05)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">凸版：油墨被壓進紙面，邊緣留下壓痕、墨面偏霧。</p>`;
+  if(L.proc==='screen') return r('濃度','opacity',0,1,.01)+r('墨層厚度','thick',0,2,.05)+r('光澤','gloss',0,.5,.01)+`<p class="note" style="margin:-2px 0 6px">網版：厚而不透明的墨層，深色紙上也能印白、印亮色。</p>`;
+  if(L.proc==='hide') return '<p class="note">此圖層的元素不會印出（例如底色矩形、輔助線）。</p>';
+  return '';
+}
+function finishRows(L){
+  if(L.proc==='hide') return '';
+  const r=(label,p,min,max,step)=>rowR(L,label,p,min,max,step);
+  const sel=(label,p,map)=>`<div class="row two"><label>${label}</label><select data-p="${p}">${Object.entries(map).map(([k,v])=>`<option value="${k}"${L[p]===k?' selected':''}>${v}</option>`).join('')}</select></div>`;
+  let h=`<div class="sec-h" style="margin:10px 0 6px">疊加加工</div>`;
+  h+=sel('壓凸／壓凹','relief',RELIEFS)+(L.relief!=='none'?r('深度','reliefDepth',.3,4,.1):'');
+  h+=sel('表面處理','uv',UV_SUBS)+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
+  if(['ink','letterpress','screen'].includes(L.proc)){
+    h+=`<div class="row two"><label>特殊</label><span style="display:flex;gap:12px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" data-p="puff"${L.puff?' checked':''}> 發泡印花</label><label class="toggle"><input type="checkbox" data-p="flock"${L.flock?' checked':''}> 植絨</label></span></div>`;
+    if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
+  }
+  if(PROCS[L.proc].colored && !(L.proc==='holo'&&L.sub==='clear')) h+=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
+  return h;
 }
 function setActive(id, quiet){ S.active=id; document.querySelectorAll('.layer').forEach(d=>d.classList.toggle('active', d.dataset.id===id)); updateActiveLbl(); renderChips(); if(!quiet) save(); }
 function activeLayer(){ return S.layers.find(l=>l.id===S.active); }
@@ -1225,15 +1352,16 @@ function exportSVG(){
     return prefixIds(innerXML(g), id+'_');
   };
   printed.forEach((L,i)=>{
-    const above=printed.slice(i+1).filter(x=>x.type!=='uv' && x.type!=='relief' && !x.noKnock);
+    const above=printed.slice(i+1).filter(x=>PROCS[x.proc]?.colored && !x.noKnock);
     let maskAttr='';
     if(L.knockout!==false && S.koGap>0 && above.length){
       const ids=new Set(above.map(x=>x.id));
       defs+=`<mask id="ko_${L.id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>${groupBlock('ko_'+L.id,'', '', '#000', k=>ids.has(effLayer[k]), S.koGap)}</mask>`;
       maskAttr=` mask="url(#ko_${L.id})"`;
     }
-    const color = L.type==='uv' ? '#00ffff' : (L.type==='relief' ? '#ff00ff' : L.tint);
-    body+=`<g id="${esc(L.name)}" data-effect="${L.preset}" data-color="${color}"${maskAttr}>${groupBlock(L.id,L.name,'',color,k=>effLayer[k]===L.id,0)}</g>\n`;
+    const color = PROCS[L.proc].colored ? L.tint : (L.uv!=='none' ? '#00ffff' : '#ff00ff');
+    const fin=[L.relief!=='none'?L.relief:'',L.uv!=='none'?'uv-'+L.uv:'',L.puff?'puff':'',L.flock?'flock':''].filter(Boolean).join(' ');
+    body+=`<g id="${esc(L.name)}" data-process="${L.proc}${L.proc==='holo'?'/'+L.sub:''}" data-finish="${fin}" data-color="${color}"${maskAttr}>${groupBlock(L.id,L.name,'',color,k=>effLayer[k]===L.id,0)}</g>\n`;
   });
   if(unassigned.length){ const g=layerSVG(k=>!effLayer[k], null, 0); g.querySelectorAll('[data-k]').forEach(n=>n.removeAttribute('data-k')); body+=`<g id="未指派（原色）">${prefixIds(innerXML(g),'raw_')}</g>\n`; }
   const paper=`<g id="紙（不印）" data-paper="${S.paper.color}" data-texture="${S.paper.texture}" style="display:none"><rect x="0" y="0" width="${W}" height="${H}" fill="${S.paper.color}"/></g>\n`;
@@ -1424,7 +1552,7 @@ $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(
 
 /* ---------- boot ---------- */
 function start(svgText, name, fresh){
-  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
+  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); (S.layers||[]).forEach(normalizeLayer); (S.variants||[]).forEach(v=>(v.layers||[]).forEach(normalizeLayer)); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
