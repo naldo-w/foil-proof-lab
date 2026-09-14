@@ -175,6 +175,9 @@ button{cursor:pointer}
 .scene .floor{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.35) 100%);pointer-events:none}
 .table{position:absolute;inset:0;transform-style:flat;transform-origin:50% 50%} /* flat：卡片依疊放順序繪製，不做逐像素深度交錯，微傾時不會穿模 */
 .slot{position:absolute;transform-style:preserve-3d}
+.fxs.merged{position:absolute;inset:0;pointer-events:none}
+.fxs.merged .fx{position:absolute;inset:0}
+.fxs.merged .lightfall{position:absolute;inset:0;mix-blend-mode:multiply;pointer-events:none}
 .slot .card{position:relative;width:100%;max-width:none;pointer-events:none;box-shadow:var(--sh,none);transform:none}
 .chip .lay{font-family:var(--sans);font-size:11px}
 .tn .tl.layer{color:var(--accent);font-weight:500}
@@ -480,6 +483,8 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       </div>
       <div class="sec">
         <div class="sec-h">光源</div>
+        <div class="row two"><label>光場算法</label><select id="sLightMode"><option value="merged">合併：整個版面一個連續光場（建議）</option><option value="separate">各卡獨立：每張卡各自相位、微傾、抬高</option></select></div>
+        <p class="note" id="sLightModeNote"></p>
         <div class="row"><label>強度</label><input type="range" id="sInt" min="0.2" max="2" step="0.01"><span class="val"></span></div>
         <div class="row"><label>X</label><input type="range" id="sLx" min="-0.5" max="1.5" step="0.01"><span class="val"></span></div>
         <div class="row"><label>Y</label><input type="range" id="sLy" min="-0.5" max="1.5" step="0.01"><span class="val"></span></div>
@@ -649,7 +654,7 @@ let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
 const VIEW_PRESETS=[['正上方',0,0],['俯 30°',30,0],['俯 45°',45,0],['左前 45°',45,-35],['右前 45°',45,35],['等角',55,45],['低角 65°',65,0]];
 const SCENE_BG=[['#2a2a2e','深灰'],['#141416','黑'],['#6b6b70','中灰'],['#c9c4bb','暖灰'],['#e9e4da','米白'],['#f5f5f5','白'],['#1f2a3a','深藍'],['#3d2f2a','深棕']];
-const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lightDist:1,lsize:1,intensity:1,elev:8,thick:2,tilt:2,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
+const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lightDist:1,lsize:1,intensity:1,elev:8,thick:2,tilt:2,lightMode:'merged',mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
@@ -1407,10 +1412,49 @@ function currentCardClone(){
 function variantPool(){
   const C=S.scene, pool=[];
   const use=(S.variants||[]).filter(v=>v.use!==false);
-  if(C.mix==='current' || !use.length){ pool.push({name:'目前設定', el:currentCardClone()}); return pool; }
-  if(C.includeCurrent!==false) pool.push({name:'目前設定', el:currentCardClone()});
-  use.forEach(v=>pool.push({name:v.name, el:buildVariantCard(v)}));
+  const cur={name:'目前設定', el:currentCardClone(), layers:S.layers, paper:S.paper, vk:''};
+  if(C.mix==='current' || !use.length){ pool.push(cur); return pool; }
+  if(C.includeCurrent!==false) pool.push(cur);
+  use.forEach(v=>pool.push({name:v.name, el:buildVariantCard(v), layers:v.layers, paper:v.paper, vk:v.id+':'}));
   return pool;
+}
+/* ---------- 合併光場：整個版面每個效果圖層只做一張遮罩（symbol + N 個 use），一盞燈連續掃過所有卡 ---------- */
+function slotPivot(sl){ const m=(sl.pivot||'50% 50%').split(/\s+/).map(parseFloat); return {x: sl.x-sl.w/2+sl.w*m[0]/100, y: sl.y-sl.h/2+sl.h*m[1]/100}; }
+function slotRectSVG(sl, fill, grow=0){ const pv=slotPivot(sl); return `<rect x="${(sl.x-sl.w/2-grow).toFixed(2)}" y="${(sl.y-sl.h/2-grow).toFixed(2)}" width="${(sl.w+2*grow).toFixed(2)}" height="${(sl.h+2*grow).toFixed(2)}" fill="${fill}" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"/>`; }
+function buildMergedMask(keep, gap, keyBase, slots, idxs){
+  const C=S.scene;
+  const key='mg:'+keyBase+':'+gap+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1),s.pivot||''].join(',')).join(';')+':'+idxs.join(',');
+  if(maskCache[key]) return maskCache[key];
+  const root=layerSVG(keep,'#fff',gap); const vb=root.getAttribute('viewBox');
+  const sym=`<symbol id="c" viewBox="${vb}" style="${esc(root.getAttribute('style')||'')}">${innerXML(root)}</symbol>`;
+  // 每張卡只畫「沒被後放的卡蓋住」的部分（遮擋遮罩），交疊鋪法才不會讓下面那張的效果浮到上面
+  let defs=sym, body='';
+  idxs.forEach(i=>{
+    const sl=slots[i], pv=slotPivot(sl), above=slots.slice(i+1);
+    defs+=`<mask id="o${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="${C.W}" height="${C.H}"><rect x="0" y="0" width="${C.W}" height="${C.H}" fill="#fff"/>${above.map(a=>slotRectSVG(a,'#000')).join('')}</mask>`;
+    body+=`<g mask="url(#o${i})"><use href="#c" xlink:href="#c" x="${(sl.x-sl.w/2).toFixed(2)}" y="${(sl.y-sl.h/2).toFixed(2)}" width="${sl.w.toFixed(2)}" height="${sl.h.toFixed(2)}" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"/></g>`;
+  });
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${C.W} ${C.H}" width="${C.W}" height="${C.H}"><defs>${defs}</defs>${body}</svg>`;
+  return maskCache[key]=`url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+function buildMergedFx(host, pool, slotOwner, slots){
+  host.innerHTML='';
+  pool.forEach((pe,pi)=>{
+    const idxs=slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi); if(!idxs.length) return;
+    const layers=pe.layers, eff = pe.vk ? computeEffectiveFor(layers) : effLayer;
+    const counts={}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; }); layers.forEach(L=>{ L._count=counts[L.id]||0; });
+    [...layers].reverse().forEach(L=>{
+      if(L.type==='hide' || !L.visible || !L._count) return;
+      const d=document.createElement('div'); d.className='fx fx-'+L.type; d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
+      const own=buildMergedMask(k=>eff[k]===L.id, 0, pe.vk+L.id, slots, idxs);
+      let ko=null; const above=layersAbove(L, layers);
+      if(above.length && S.koGap>0 && L.knockout!==false){ const ids=new Set(above.map(x=>x.id)); ko=buildMergedMask(k=>ids.has(eff[k]), S.koGap, pe.vk+'ko:'+L.id+':'+above.map(x=>x.id).join(','), slots, idxs); }
+      d.style.setProperty('--own', own); d.style.setProperty('--mask', ko?`${own}, ${ko}`:own); d.classList.toggle('ko', !!ko);
+      // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
+      const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
+      d.innerHTML=fxDOM(L); host.appendChild(d); styleFx(d,L,pe.paper);
+    });
+  });
 }
 function renderVariantList(){
   const host=$('#variantList'); if(!host) return; host.innerHTML='';
@@ -1471,14 +1515,23 @@ function renderScene(){
   sc.style.width=C.W+'px'; sc.style.height=C.H+'px';
   tb.innerHTML='';
   const slots=layoutSlots(); tb._slots=slots;
-  const pool=variantPool(); const rnd=mulberry(C.seed*131+7);
+  const pool=variantPool(); const rnd=mulberry(C.seed*131+7); const merged=(C.lightMode||'merged')==='merged'; tb._merged=merged;
+  const owner=[];
   slots.forEach((sl,i)=>{
     const d=document.createElement('div'); d.className='slot';
-    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`translateZ(${((C.elev??8)+i*(C.thick??2)).toFixed(1)}px) rotate(${sl.r}deg) rotateX(${(sl.tx*(C.tilt??2)).toFixed(2)}deg) rotateY(${(sl.ty*(C.tilt??2)).toFixed(2)}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
-    const pick = pool.length===1 ? pool[0] : (C.mix==='random' ? pool[Math.floor(rnd()*pool.length)] : pool[i%pool.length]);
-    const c=pick.el.cloneNode(true); c.title=pick.name;
+    const z = merged ? 0 : (C.elev??8)+i*(C.thick??2), tilt = merged ? 0 : (C.tilt??2);
+    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`translateZ(${z.toFixed(1)}px) rotate(${sl.r}deg) rotateX(${(sl.tx*tilt).toFixed(2)}deg) rotateY(${(sl.ty*tilt).toFixed(2)}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
+    const pi = pool.length===1 ? 0 : (C.mix==='random' ? Math.floor(rnd()*pool.length) : i%pool.length); owner[i]=pi;
+    const pick=pool[pi]; const c=pick.el.cloneNode(true); c.title=pick.name;
+    if(merged){ const f=c.querySelector('.fxs'); if(f) f.innerHTML=''; }
     d.appendChild(c); tb.appendChild(d);
   });
+  if(merged){
+    const host=document.createElement('div'); host.className='fxs merged'; host.style.zIndex=slots.length+2;
+    buildMergedFx(host, pool, owner, slots);
+    const fall=document.createElement('div'); fall.className='lightfall'; host.appendChild(fall);
+    tb.appendChild(host);
+  }
   applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); fitScene();
 }
 function applySceneView(){
@@ -1492,14 +1545,19 @@ function applySceneLight(px,py,hov){
   $('#scene').style.setProperty('--lx',(px*100).toFixed(1)+'%'); $('#scene').style.setProperty('--ly',(py*100).toFixed(1)+'%');
   /* 光源距離：越近，各卡之間的反光差異越大；tri() 讓遠處的卡也會落在另一個反光相位，而不是全部卡死在邊緣 */
   const dist=C.lightDist??1, tilt=(C.tilt??2)/8, inten=C.intensity??1, lsz=C.lsize??1, elev=C.elev??8, tri=v=>{ const t=((v%4)+4)%4; return t<2 ? t-1 : 3-t; };
-  [...tb.children].forEach((d,i)=>{
+  const merged=!!tb._merged;
+  if(merged){ const host=tb.querySelector('.fxs.merged'); if(host){
+    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',(px*100).toFixed(2)+'%'); d.style.setProperty('--py',(py*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(lsz*Math.max(.35,dist)*.9).toFixed(2)); });
+    const fl=host.querySelector('.lightfall'); if(fl){ const a=Math.min(.5,.38/dist); fl.style.background=`radial-gradient(circle calc(90% * ${(lsz*dist).toFixed(2)}) at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(0,0,0,0) 25%, rgba(0,0,0,${a.toFixed(2)}) 100%)`; fl.style.opacity=(1/(0.75+inten*.25)).toFixed(2); }
+  } }
+  [...tb.querySelectorAll(':scope > .slot')].forEach((d,i)=>{
     const sl=slots[i]; if(!sl) return; const c=d.firstElementChild;
     const ux=(Lx-sl.x)/(sl.w*dist), uy=(Ly-sl.y)/(sl.h*dist);
     const lpx=.5+tri(ux+sl.ph*.6)*.75+sl.ty*tilt*.8, lpy=.5+tri(uy+sl.ph*.4)*.75-sl.tx*tilt*.8;
     c.style.setProperty('--px',(lpx*100).toFixed(1)+'%'); c.style.setProperty('--py',(lpy*100).toFixed(1)+'%');
     c.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); c.style.setProperty('--gsz',lsz.toFixed(2));
     // 離光源越遠、燈越低，整張越暗；強度整體縮放
-    const dd=Math.hypot((Lx-sl.x)/C.W,(Ly-sl.y)/C.H); c.style.filter=`brightness(${((1-Math.min(.4,dd*.35/dist))*(0.75+inten*.25)).toFixed(3)})`;
+    const dd=Math.hypot((Lx-sl.x)/C.W,(Ly-sl.y)/C.H); c.style.filter = merged ? `brightness(${(0.75+inten*.25).toFixed(3)})` : `brightness(${((1-Math.min(.4,dd*.35/dist))*(0.75+inten*.25)).toFixed(3)})`;
     // 投影：方向背光、長度隨離地高度與燈的高度、軟硬隨燈的大小
     const len=(4+elev*3)/dist, ox=(sl.x-Lx)/C.W*len*C.shadow*2, oy=(sl.y-Ly)/C.H*len*C.shadow*2+elev*.6*C.shadow;
     const bl=(2+elev*1.2)*(0.5+lsz*0.8)*(0.5+C.shadow*.5), a=Math.max(.08,(.6-elev*.008)*C.shadow/(0.7+lsz*0.3));
@@ -1532,7 +1590,7 @@ function syncSceneControls(){
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
-  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
+  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); $('#sLightMode').value=C.lightMode||'merged'; $('#sLightModeNote').textContent=(C.lightMode||'merged')==='merged' ? '合併：同一效果圖層在所有卡片上只算一張遮罩（symbol + use），反光帶與光斑連續掃過整個版面，交疊處以遮擋遮罩處理；此模式不做卡片微傾與 Z 軸抬高。' : '各卡獨立：每張卡各自複製效果層，可微傾與抬高，但同一盞燈下每張的反光相位是各自近似的。'; setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
   const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
@@ -1546,6 +1604,7 @@ $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.rando
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
 [['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','lx'],['#sLy','ly'],['#sDist','lightDist'],['#sSize','lsize'],['#sInt','intensity'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
 $('#sTilt').addEventListener('input',e=>{ S.scene.tilt=+e.target.value; sceneChanged(true); });
+$('#sLightMode').addEventListener('change',e=>{ S.scene.lightMode=e.target.value; sceneChanged(true); });
 $('#sElev').addEventListener('input',e=>{ S.scene.elev=+e.target.value; sceneChanged(true); });
 $('#sThick').addEventListener('input',e=>{ S.scene.thick=+e.target.value; sceneChanged(true); });
 $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(false); });
