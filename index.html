@@ -167,6 +167,19 @@ button{cursor:pointer}
 .tn .tl.layer{color:var(--accent);font-weight:500}
 .row.three{grid-template-columns:76px 1fr 1fr}
 .row input[type=number]{height:26px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:0 6px;width:100%;font:12px var(--mono)}
+.variant{display:flex;align-items:center;gap:6px;padding:6px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);margin-bottom:6px}
+.variant .psw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex:none}
+.variant .vname{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;height:22px;font-weight:500}
+.variant .vname:focus{border-bottom-color:var(--accent);outline:0}
+.variant .sws{display:flex;gap:2px}
+.variant .sws .sw{width:8px;height:8px;border-radius:50%;display:inline-block}
+.variant .ib{height:22px;padding:0 6px;border:1px solid var(--line-2);background:transparent;color:var(--muted);border-radius:4px;font-size:11px}
+.variant .ib:hover{color:var(--text);border-color:var(--accent-dim)}
+.val.edit{outline:1px solid var(--accent);background:var(--panel-2);border-radius:3px}
+.val input{width:100%;background:transparent;border:0;color:var(--text);font:11px var(--mono);text-align:right;padding:0;outline:0}
+.stage.bg-white{background:#f2f2f2;background-image:radial-gradient(ellipse at 50% 40%,#fff 0%,#e4e4e4 70%)}
+.stage.bg-black{background:#000;background-image:none}
+.stage.bg-white .stage-hint{color:#777}.stage.bg-white .stage-hint b{color:#333}
 .presets{display:flex;flex-wrap:wrap;gap:5px}
 .presets button{height:24px;padding:0 9px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel-2);font-size:11.5px;color:var(--muted)}
 .presets button.on{border-color:var(--accent);color:var(--text)}
@@ -303,7 +316,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       <span class="lbl" id="activeLbl"></span>
     </div>
     <div class="card-wrap" id="cardwrap">
-      <div class="card" id="card">
+      <div class="card" id="card" data-v="current">
         <div class="paper smooth" id="paper"></div>
         <div class="base" id="base"></div>
         <div class="fxs" id="fxs"></div>
@@ -312,7 +325,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       </div>
     </div>
     <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="glow"></div><div class="table" id="table"></div><div class="floor"></div></div></div></div>
-    <div class="stage-tools right"><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
+    <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
     <div class="pickbox" id="pickbox"><span class="tag"></span></div>
     <div class="stage-hint">移動滑鼠 = 改變光線角度 · 點擊元素 = 指派到<b>目前圖層</b>（再點一次取消） · 右上「版面 Mockup」可平鋪多張並匯出 IG 尺寸</div>
     <div class="drop">放開以載入 SVG</div>
@@ -432,6 +445,14 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row"><label>鏡頭焦距</label><input type="range" id="sFov" min="600" max="6000" step="50"><span class="val"></span></div>
         <div class="row"><label>整體縮放</label><input type="range" id="sZoom" min="0.3" max="2.5" step="0.01"><span class="val"></span></div>
         <div class="row"><label>垂直位移</label><input type="range" id="sShift" min="-50" max="50" step="1"><span class="val"></span></div>
+        <div class="row"><label>整體旋轉</label><input type="range" id="sRoll" min="-180" max="180" step="1"><span class="val"></span></div>
+      </div>
+      <div class="sec">
+        <div class="sec-h">卡片版本（混搭） <button class="btn small" id="btnAddVariant">＋ 存成版本</button></div>
+        <div class="row two"><label>分配</label><select id="sMix"><option value="current">全部用目前設定</option><option value="cycle">依序輪流</option><option value="random">隨機（跟種子）</option></select></div>
+        <div class="row two"><label>目前</label><label class="toggle"><input type="checkbox" id="sIncCur"> 目前設定也算一個版本</label></div>
+        <div id="variantList" style="margin-top:8px"></div>
+        <p class="note">每個版本 = 一組完整的紙張＋效果設定（例如「燙金版」「燙銀版」「螢光粉版」）。版面上的每張卡會輪流或隨機套用不同版本，而不是同一張複製多份。</p>
       </div>
       <div class="sec">
         <div class="sec-h">場景</div>
@@ -596,7 +617,7 @@ let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
 const VIEW_PRESETS=[['正上方',0,0],['俯 30°',30,0],['俯 45°',45,0],['左前 45°',45,-35],['右前 45°',45,35],['等角',55,45],['低角 65°',65,0]];
 const SCENE_BG=[['#2a2a2e','深灰'],['#141416','黑'],['#6b6b70','中灰'],['#c9c4bb','暖灰'],['#e9e4da','米白'],['#f5f5f5','白'],['#1f2a3a','深藍'],['#3d2f2a','深棕']];
-const defaultScene = () => ({W:1080,H:1350,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
+const defaultScene = () => ({W:1080,H:1350,roll:0,mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6});
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
@@ -738,14 +759,19 @@ function newLayer(preset, name){
 function applyPreset(L, preset){ const p=PRESETS[preset]; delete L.sub; delete L.fluo; delete L.noKnock; delete L.puff; delete L.flock; Object.assign(L, p, {preset}); delete L.label; delete L.group; }
 
 /* ---------- effective layer / masks ---------- */
-function computeEffective(){
-  effLayer = {}; const byId = Object.fromEntries(S.layers.map(l=>[l.id,l]));
+/* 依某一組圖層（目前設定或某個版本）算出每個圖形的有效圖層 */
+function computeEffectiveFor(layers){
+  const eff={}; const byId = Object.fromEntries(layers.map(l=>[l.id,l]));
   for(const [k,s] of Object.entries(shapes)){
     let el = s.el, found=null;
     while(el && el!==svgRoot.parentNode){ const a=S.assign[el.getAttribute('data-k')]; if(a && byId[a]){ found=a; break; } el=el.parentElement; }
-    effLayer[k]=found;
-    s.el.classList.toggle('is-assigned', !!found);
+    eff[k]=found;
   }
+  return eff;
+}
+function computeEffective(){
+  effLayer = computeEffectiveFor(S.layers);
+  for(const [k,s] of Object.entries(shapes)) s.el.classList.toggle('is-assigned', !!effLayer[k]);
 }
 /* 只保留 keep(k) 為真的圖形，其餘刪除；color = 填色，gap = 外擴（viewBox 單位，用描邊實作） */
 function layerSVG(keep, color, gap){
@@ -768,29 +794,29 @@ function layerSVG(keep, color, gap){
   return clone;
 }
 const toURI = el => `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(el))}")`;
-function buildMask(L){
-  return maskCache[L.id] ||= toURI(layerSVG(k=>effLayer[k]===L.id, '#fff', 0));
+function buildMask(L, eff=effLayer, vk=''){
+  return maskCache[vk+L.id] ||= toURI(layerSVG(k=>eff[k]===L.id, '#fff', 0));
 }
 /* 上層（列表中在 L 之前、會印出的圖層）圖形外擴 gap 後的遮罩；沒有上層圖形時回傳 null */
-function layersAbove(L){ const i=S.layers.indexOf(L); return S.layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='holo'||x.type==='ink') && !x.noKnock && x.visible && x._count); }
-function buildKnockout(L){
-  const above=layersAbove(L); if(!above.length || !(S.koGap>0) || L.knockout===false) return null;
-  const key='ko:'+L.id+':'+S.koGap+':'+above.map(x=>x.id).join(',');
+function layersAbove(L, layers=S.layers){ const i=layers.indexOf(L); return layers.slice(0,i).filter(x=>(x.type==='foil'||x.type==='holo'||x.type==='ink') && !x.noKnock && x.visible && x._count); }
+function buildKnockout(L, layers=S.layers, eff=effLayer, vk=''){
+  const above=layersAbove(L, layers); if(!above.length || !(S.koGap>0) || L.knockout===false) return null;
+  const key=vk+'ko:'+L.id+':'+S.koGap+':'+above.map(x=>x.id).join(',');
   const ids=new Set(above.map(x=>x.id));
-  return maskCache[key] ||= toURI(layerSVG(k=>ids.has(effLayer[k]), '#fff', S.koGap));
+  return maskCache[key] ||= toURI(layerSVG(k=>ids.has(eff[k]), '#fff', S.koGap));
 }
 
 /* ---------- render ---------- */
-function renderFx(){
-  computeEffective();
-  const fxs = $('#fxs'); fxs.innerHTML='';
-  const counts = {}; Object.values(effLayer).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; });
-  S.layers.forEach(L=>{ L._count = counts[L.id]||0; });
-  [...S.layers].reverse().forEach(L=>{
+/* 把一組圖層的效果 DOM 建到 host 裡；vk = 版本鍵（遮罩快取用），paper = 該版本的紙 */
+function renderFxInto(host, layers, eff, vk, paper){
+  host.innerHTML='';
+  const counts = {}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; });
+  layers.forEach(L=>{ L._count = counts[L.id]||0; });
+  [...layers].reverse().forEach(L=>{
     if(L.type==='hide' || !L.visible || !L._count) return;
     const d = document.createElement('div');
     d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
-    const own=buildMask(L), ko=buildKnockout(L);
+    const own=buildMask(L, eff, vk), ko=buildKnockout(L, layers, eff, vk);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
     if(L.type==='foil') d.innerHTML='<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
     else if(L.type==='holo') d.innerHTML=`<div class="f-rim dk"><div class="m rim"></div></div><div class="f-rim lt"><div class="m rim"></div></div><div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
@@ -804,12 +830,16 @@ function renderFx(){
     }
     else if(L.type==='uv') d.innerHTML=(L.sub==='raised'?'<div class="f-rim dk rev"><div class="m rim"></div></div><div class="f-rim lt rev"><div class="m rim"></div></div>':'')+`<div class="m uv uv-${L.sub||'gloss'}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
     else if(L.type==='relief') d.innerHTML='<div class="m r-dark"></div><div class="m r-light"></div><div class="m r-face"></div>';
-    fxs.appendChild(d); styleFx(d,L);
+    host.appendChild(d); styleFx(d,L,paper);
   });
+}
+function renderFx(){
+  computeEffective();
+  renderFxInto($('#fxs'), S.layers, effLayer, '', S.paper);
   renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene();
 }
-function styleFx(d,L){
-  if(!d){ document.querySelectorAll(`.fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L)); return; }
+function styleFx(d,L,paper=S.paper){
+  if(!d){ document.querySelectorAll(`.card[data-v="current"] .fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L,paper)); return; }
   const st = d.style;
   if(L.type==='foil' || L.type==='holo'){
     const c = L.contrast ?? .45, dp = L.depth ?? 1;
@@ -824,17 +854,17 @@ function styleFx(d,L){
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.type==='ink'){
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.fluo?'normal':L.blend); st.setProperty('--gloss', L.gloss);
-    st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (S.paper.strength*.85).toFixed(3)));
+    st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (paper.strength*.85).toFixed(3)));
     if(L.puff||L.flock){ const dp=L.depth ?? 2; st.setProperty('--dd', (dp*0.8).toFixed(2)+'px'); st.setProperty('--db', (dp*1.2+0.3).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp/1.5).toFixed(2)); st.setProperty('--ptexg', grainURI(.8)); }
   } else if(L.type==='uv'){ st.setProperty('--gloss', L.gloss); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6));
     const dp=L.depth ?? 1.5; st.setProperty('--dd', (dp*0.9).toFixed(2)+'px'); st.setProperty('--db', (dp*0.8+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,dp).toFixed(2)); }
   else if(L.type==='relief'){
     const d0 = L.depth*L.dir; st.setProperty('--dx', d0+'px'); st.setProperty('--dy', d0+'px');
-    st.setProperty('--face', L.dir<0 ? mix(S.paper.color,'#000000',.12) : mix(S.paper.color,'#ffffff',.06));
+    st.setProperty('--face', L.dir<0 ? mix(paper.color,'#000000',.12) : mix(paper.color,'#ffffff',.06));
   }
 }
-function applyPaper(){
-  const P=S.paper; if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
+function paperApply(cards, P){
+  if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
   const t=PAPERS[P.texture], blend=paperBlend(P), sz=(220*P.scale).toFixed(0)+'px';
   const relief=reliefURI(P), grain=grainURI(P.grain*.9);
   // 背景圖層由上到下：顆粒 → 條紋 → 凹凸紋理；全部與紙色做 blend
@@ -842,14 +872,14 @@ function applyPaper(){
   (t.lines||[]).forEach(l=>{ const per=(l.period*P.scale).toFixed(2); const a=(l.str*P.strength).toFixed(3);
     imgs.push(`repeating-linear-gradient(${l.dir}deg,rgba(255,255,255,${a}) 0 1px,rgba(0,0,0,${a}) 1px 2px,transparent 2px ${per}px)`); sizes.push('auto'); blends.push('overlay'); repeats.push('repeat'); });
   imgs.push(relief); sizes.push(`${sz} ${sz}`); blends.push(blend); repeats.push('repeat');
-  document.querySelectorAll('.paper').forEach(paper=>{
+  cards.forEach(card=>{ const paper=card.querySelector('.paper'); if(!paper) return;
     paper.className='paper';
     paper.style.setProperty('--paper', P.color);
     paper.style.backgroundImage=imgs.join(','); paper.style.backgroundSize=sizes.join(','); paper.style.backgroundBlendMode=blends.join(','); paper.style.backgroundRepeat=repeats.join(',');
     // 紋理強度：用一層半透明紙色蓋回去（強度 1 = 紋理全開）
     paper.style.boxShadow=`inset 0 0 0 9999px color-mix(in srgb, ${P.color} ${Math.round((1-P.strength)*100)}%, transparent)`;
   });
-  document.querySelectorAll('.card').forEach(card=>{
+  cards.forEach(card=>{
     card.style.setProperty('--tex-size', sz);
     card.style.setProperty('--ptex', relief);
     card.style.setProperty('--ptex-blend', blend);
@@ -857,11 +887,15 @@ function applyPaper(){
     card.style.setProperty('--pgloss', P.gloss);
     card.style.setProperty('--radius', P.radius+'px');
   });
+}
+function applyPaper(){
+  const P=S.paper;
+  paperApply([...document.querySelectorAll('.card[data-v="current"]')], P);
   S.layers.forEach(L=>{ if(L.type==='ink'||L.type==='relief') styleFx(null,L); });
   // paper tab controls
   $('#pColor').value=P.color; $('#pColorHex').textContent=P.color;
   if(!$('#pTex').options.length){ let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ $('#pTex').insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } $('#pTex').lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); }); }
-  $('#pTex').value=P.texture; $('#pTexNote').textContent=t.note; $('#pBlend').value=P.blend;
+  $('#pTex').value=P.texture; $('#pTexNote').textContent=PAPERS[P.texture].note; $('#pBlend').value=P.blend;
   setRange('#pStrength',P.strength,PCT); setRange('#pRelief',P.relief,v=>(+v).toFixed(2)+'×'); setRange('#pAz',P.az,v=>v+'°');
   setRange('#pGrain',P.grain,PCT); setRange('#pScale',P.scale,v=>(+v).toFixed(2)+'×'); setRange('#pGloss',P.gloss,PCT); setRange('#pTilt',P.tilt,v=>v+'°'); setRange('#pRadius',P.radius,v=>v+'px');
   $('#pAuto').checked=P.auto;
@@ -1059,6 +1093,26 @@ $('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; apply
 $('#pAuto').addEventListener('change', e=>{ S.paper.auto=e.target.checked; save(); });
 PAPER_SWATCHES.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.dataset.c=c; b.addEventListener('click',()=>{ S.paper.color=c; applyPaper(); save(); }); $('#pSwatches').appendChild(b); });
 
+/* ---------- 數值直接輸入：雙擊滑桿右邊的數字 ---------- */
+document.addEventListener('dblclick', e=>{
+  const val=e.target.closest('.row .val'); if(!val || val.classList.contains('edit')) return;
+  const range=val.parentElement.querySelector('input[type=range]'); if(!range) return;
+  const old=val.textContent; val.classList.add('edit'); val.innerHTML=`<input type="text" value="${range.value}">`;
+  const inp=val.querySelector('input'); inp.focus(); inp.select();
+  let closed=false;
+  const done=(commit)=>{
+    if(closed) return; closed=true;
+    let applied=false;
+    if(commit){ let v=parseFloat(inp.value.replace(/[^\d.\-]/g,'')); if(!isNaN(v)){ if(+range.max<=1 && v>1) v=v/100; v=Math.max(+range.min,Math.min(+range.max,v)); range.value=v; val.classList.remove('edit'); val.textContent=old; range.dispatchEvent(new Event('input',{bubbles:true})); applied=true; } }
+    if(!applied){ val.classList.remove('edit'); val.textContent=old; }
+  };
+  inp.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){ done(true); } else if(ev.key==='Escape'){ done(false); } });
+  inp.addEventListener('blur', ()=>done(true));
+});
+/* ---------- 預覽背景 ---------- */
+function applyStageBg(){ const b=S.stageBg||'dark'; stage.classList.toggle('bg-white', b==='white'); stage.classList.toggle('bg-black', b==='black'); $('#stagebg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.b===b)); }
+$('#stagebg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; S.stageBg=b.dataset.b; applyStageBg(); save(); });
+
 /* ---------- tabs / misc ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); document.querySelectorAll('.tabpane').forEach(p=>p.classList.toggle('on',p.id==='tab-'+b.dataset.t)); if(b.dataset.t==='scene') setViewMode('scene'); }));
 $('#koGap').addEventListener('input', e=>{ S.koGap=+e.target.value; setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); renderFx(); save(); });
@@ -1160,6 +1214,56 @@ $('#aboutClose').addEventListener('click', ()=>$('#about').classList.remove('on'
 $('#about').addEventListener('click', e=>{ if(e.target===$('#about')) $('#about').classList.remove('on'); });
 $('#modal').addEventListener('click', e=>{ if(e.target===$('#modal')) $('#modal').classList.remove('on'); });
 
+/* ---------- 版本（同一份稿的不同效果組合，供版面混搭） ---------- */
+const deep = o => JSON.parse(JSON.stringify(o));
+function snapshotVariant(name){ return {id:'V'+Date.now().toString(36), name, paper:deep(S.paper), layers:deep(S.layers.map(({_count,...l})=>l))}; }
+function buildVariantCard(v){
+  const c=document.createElement('div'); c.className='card inst'; c.dataset.v=v.id;
+  c.innerHTML='<div class="paper"></div><div class="base"></div><div class="fxs"></div><div class="paper-glare"></div><div class="paper-vignette"></div>';
+  const eff=computeEffectiveFor(v.layers);
+  const base=svgRoot.cloneNode(true);
+  base.querySelectorAll('[data-k]').forEach(el=>{ const k=el.getAttribute('data-k'); if(shapes[k]) el.classList.toggle('is-assigned', !!eff[k]); });
+  c.querySelector('.base').appendChild(base);
+  paperApply([c], v.paper);
+  renderFxInto(c.querySelector('.fxs'), v.layers, eff, v.id+':', v.paper);
+  c.style.setProperty('--w','100%'); c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg');
+  return c;
+}
+function currentCardClone(){
+  const c=card.cloneNode(true); c.id=''; c.classList.add('inst');
+  c.querySelectorAll('[id]').forEach(n=>{ if(['paper','base','fxs'].includes(n.id)) n.removeAttribute('id'); });
+  c.style.setProperty('--w','100%'); c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg');
+  return c;
+}
+/* 版面要用的卡片池：依設定回傳 [{name, el}] */
+function variantPool(){
+  const C=S.scene, pool=[];
+  const use=(S.variants||[]).filter(v=>v.use!==false);
+  if(C.mix==='current' || !use.length){ pool.push({name:'目前設定', el:currentCardClone()}); return pool; }
+  if(C.includeCurrent!==false) pool.push({name:'目前設定', el:currentCardClone()});
+  use.forEach(v=>pool.push({name:v.name, el:buildVariantCard(v)}));
+  return pool;
+}
+function renderVariantList(){
+  const host=$('#variantList'); if(!host) return; host.innerHTML='';
+  (S.variants||[]).forEach((v,i)=>{
+    const row=document.createElement('div'); row.className='variant';
+    const foils=v.layers.filter(l=>l.type!=='hide' && l.visible).map(l=>`<span class="sw" style="background:${l.tint||'#888'}"></span>`).join('');
+    row.innerHTML=`<label class="toggle" title="在版面中使用"><input type="checkbox" ${v.use!==false?'checked':''}></label><span class="psw" style="background:${v.paper.color}" title="紙色 ${v.paper.color}"></span><input class="vname" value="${esc(v.name)}" spellcheck="false"><span class="sws">${foils}</span>
+      <button class="ib load" title="把這個版本載入成目前設定來編輯">載入</button><button class="ib upd" title="用目前設定覆蓋這個版本">更新</button><button class="ib del" title="刪除">✕</button>`;
+    row.querySelector('input[type=checkbox]').addEventListener('change',e=>{ v.use=e.target.checked; sceneChanged(true); });
+    row.querySelector('.vname').addEventListener('change',e=>{ v.name=e.target.value; save(); });
+    row.querySelector('.load').addEventListener('click',()=>{ S.paper=deep(v.paper); S.layers=deep(v.layers); S.active=S.layers.find(l=>l.type!=='hide')?.id; maskCache={}; applyPaper(); renderFx(); save(); toast(`已載入版本「${v.name}」`); });
+    row.querySelector('.upd').addEventListener('click',()=>{ const nv=snapshotVariant(v.name); v.paper=nv.paper; v.layers=nv.layers; maskCache={}; sceneChanged(true); toast(`版本「${v.name}」已更新`); });
+    row.querySelector('.del').addEventListener('click',()=>{ S.variants.splice(i,1); sceneChanged(true); });
+    host.appendChild(row);
+  });
+  if(!(S.variants||[]).length) host.innerHTML='<p class="note">還沒有版本。調好一組效果（例如燙金版）後按「＋ 存成版本」，再調另一組存第二個版本，版面就會混搭排列。</p>';
+}
+$('#btnAddVariant').addEventListener('click',()=>{ S.variants=S.variants||[]; const n=S.variants.length+1; S.variants.push(snapshotVariant(`版本 ${String.fromCharCode(64+n)}`)); if(S.scene.mix==='current') S.scene.mix='cycle'; sceneChanged(true); toast('已存成版本'); });
+$('#sMix').addEventListener('change',e=>{ S.scene.mix=e.target.value; sceneChanged(true); });
+$('#sIncCur').addEventListener('change',e=>{ S.scene.includeCurrent=e.target.checked; sceneChanged(true); });
+
 /* ---------- scene (mockup) ---------- */
 let viewMode='single', sceneDirty=true;
 function mulberry(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -1196,20 +1300,19 @@ function renderScene(){
   sc.style.width=C.W+'px'; sc.style.height=C.H+'px';
   tb.innerHTML='';
   const slots=layoutSlots(); tb._slots=slots;
-  const tpl=card;
+  const pool=variantPool(); const rnd=mulberry(C.seed*131+7);
   slots.forEach((sl,i)=>{
     const d=document.createElement('div'); d.className='slot';
     Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`rotate(${sl.r}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
-    const c=tpl.cloneNode(true); c.id=''; c.classList.add('inst');
-    c.querySelectorAll('[id]').forEach(n=>{ if(['paper','base','fxs'].includes(n.id)) n.removeAttribute('id'); });
-    c.style.setProperty('--w','100%'); c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg');
+    const pick = pool.length===1 ? pool[0] : (C.mix==='random' ? pool[Math.floor(rnd()*pool.length)] : pool[i%pool.length]);
+    const c=pick.el.cloneNode(true); c.title=pick.name;
     d.appendChild(c); tb.appendChild(d);
   });
   applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); fitScene();
 }
 function applySceneView(){
   const C=S.scene, sc=$('#scene'), tb=$('#table');
-  tb.style.transform=`perspective(${C.fov}px) translateY(${C.shift}%) scale(${C.zoom}) rotateX(${C.pitch}deg) rotateZ(${C.yaw}deg)`;
+  tb.style.transform=`rotate(${C.roll||0}deg) perspective(${C.fov}px) translateY(${C.shift}%) scale(${C.zoom}) rotateX(${C.pitch}deg) rotateZ(${C.yaw}deg)`;
   sc.style.setProperty('--sbg',C.bg); sc.style.setProperty('--glow',C.glow); sc.querySelector('.floor').style.opacity=C.vig;
 }
 function applySceneLight(px,py,hov){
@@ -1241,7 +1344,8 @@ function syncSceneControls(){
   $('#sizePresets').innerHTML=''; SIZE_PRESETS.forEach(([v,n])=>{ const [w,h]=v.split('x').map(Number); const b=document.createElement('button'); b.textContent=`${n} ${w}×${h}`; b.classList.toggle('on',C.W===w&&C.H===h); b.addEventListener('click',()=>{ C.W=w; C.H=h; sceneChanged(true); }); $('#sizePresets').appendChild(b); });
   $('#sW').value=C.W; $('#sH').value=C.H; $('#sExport').value=C.exportScale; $('#sLayout').value=C.layout;
   setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
-  setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%');
+  setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
+  $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
   $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
@@ -1255,7 +1359,7 @@ $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
-[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
+[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(false); }));
 $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(false); });
 
 /* ---------- boot ---------- */
@@ -1264,7 +1368,7 @@ function start(svgText, name, fresh){
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
-  setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote();
+  setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyStageBg();
   applyPaper(); maskCache={}; renderFx(); syncSceneControls(); setViewMode(viewMode); save();
   $('#pickmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.m===S.pickMode));
   if(fresh) toast(`已載入 ${name}，自動建立 ${S.layers.length} 個效果圖層`);
