@@ -1,5 +1,3 @@
-<!doctype html>
-<html lang="zh-Hant">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>燙印打樣室</title>
@@ -656,60 +654,16 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
   <p>在瀏覽器裡把 SVG 設計稿模擬成燙銀、燙金、燙紅、專色油墨、局部上光與打凹打凸的紙本打樣，並可平鋪多張匯出社群尺寸 mockup。</p>
   <dl>
     <dt>版權</dt><dd>© 2026 n_do（naldo-w）。程式碼以 <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT License</a> 釋出：可自由使用、修改、再散布，但須保留本版權聲明與授權條款。</dd>
-    <dt>範例卡</dt><dd>內建範例卡為本工具自製的示範圖，隨程式碼一併以 MIT 授權釋出。</dd>
+    <dt>範例卡</dt><dd>__SAMPLE_CREDIT__</dd>
     <dt>致謝</dt><dd>卡片傾斜、反光與全息效果的手法參考 <a href="https://github.com/simeydotme/pokemon-cards-css" target="_blank" rel="noopener">pokemon-cards-css</a>（© simeydotme，MIT License）。介面字型 IBM Plex 與 Noto Sans TC（SIL Open Font License）。</dd>
     <dt>隱私</dt><dd>你上傳的 SVG 只在本機瀏覽器處理與暫存（localStorage），不會傳送到任何伺服器。</dd>
     <dt>免責</dt><dd>畫面效果為視覺近似，實際燙印成品的色澤、反光與紙質仍以印刷廠打樣為準。</dd>
   </dl>
-  <div class="mb"><span>原始碼：<a href="https://github.com/naldo-w/foil-proof-lab" target="_blank" rel="noopener">github.com/naldo-w/foil-proof-lab</a></span><button class="btn ghost" id="aboutClose">關閉</button></div>
+  <div class="mb"><span>__SOURCE_LINK__</span><button class="btn ghost" id="aboutClose">關閉</button></div>
 </div></div>
 <div class="modal" id="modal"><div class="box"><img id="modalImg" alt="匯出結果"><div class="mb"><span id="modalMsg"></span><button class="btn" id="modalCopy">複製到剪貼簿</button><button class="btn primary" id="modalDl">下載 PNG</button><button class="btn ghost" id="modalClose">關閉</button></div></div></div>
 
-<script type="text/plain" id="sampleSvg"><?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
-  <g id="不印 · 底色">
-    <rect x="0" y="0" width="1000" height="600" fill="#141414"/>
-  </g>
-  <g id="燙箔 · 銀">
-    <rect x="28" y="28" width="944" height="544" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-    <rect x="40" y="40" width="920" height="520" fill="none" stroke="#8a8a8a" stroke-width="0.6"/>
-    <text x="80" y="128" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="10" fill="#8a8a8a">FOIL PROOF</text>
-    <text x="80" y="172" font-family="Helvetica, Arial, sans-serif" font-size="16" letter-spacing="6" fill="#8a8a8a">HOT STAMPING · SPOT COLOUR · PAPER MOCKUP</text>
-    <line x1="80" y1="200" x2="560" y2="200" stroke="#8a8a8a" stroke-width="1"/>
-    <text x="80" y="262" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#8a8a8a">Silver foil on 350gsm black board</text>
-    <text x="80" y="292" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#8a8a8a">Red foil seal · gold foil dots</text>
-    <text x="80" y="322" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#8a8a8a">Move the cursor to change the light</text>
-    <g transform="translate(80 470)">
-      <polygon points="30,0 60,30 30,60 0,30" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
-      <text x="30" y="37" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8a8a8a">F</text>
-      <text x="80" y="38" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="4" fill="#8a8a8a">FOIL PROOF LAB</text>
-    </g>
-    <text x="920" y="540" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="14" letter-spacing="3" fill="#8a8a8a">MMXXVI · SAMPLE</text>
-  </g>
-  <g id="燙箔 · 紅 + 打凹">
-    <g transform="translate(770 300)">
-      <circle r="150" fill="none" stroke="#e0261c" stroke-width="2"/>
-      <circle r="132" fill="none" stroke="#e0261c" stroke-width="0.8"/>
-      <circle r="58" fill="none" stroke="#e0261c" stroke-width="2"/>
-      <g stroke="#e0261c" stroke-width="1.2" fill="none">
-        <line x1="0" y1="-118" x2="0" y2="-72"/><line x1="0" y1="72" x2="0" y2="118"/>
-        <line x1="-118" y1="0" x2="-72" y2="0"/><line x1="72" y1="0" x2="118" y2="0"/>
-        <line x1="-83" y1="-83" x2="-51" y2="-51"/><line x1="83" y1="83" x2="51" y2="51"/>
-        <line x1="83" y1="-83" x2="51" y2="-51"/><line x1="-83" y1="83" x2="-51" y2="51"/>
-      </g>
-      <text x="0" y="16" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#e0261c">印</text>
-      <path d="M-150 0 A150 150 0 0 1 150 0" fill="none" stroke="#e0261c" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/>
-    </g>
-    <line x1="80" y1="380" x2="360" y2="380" stroke="#e0261c" stroke-width="3"/>
-  </g>
-  <g id="燙箔 · 金">
-    <circle cx="600" cy="128" r="5" fill="#d3a84a"/>
-    <circle cx="624" cy="128" r="5" fill="#d3a84a"/>
-    <circle cx="648" cy="128" r="5" fill="#d3a84a"/>
-    <polygon points="500,470 512,494 538,498 519,516 524,542 500,530 476,542 481,516 462,498 488,494" fill="#d3a84a"/>
-  </g>
-</svg>
-</script>
+<script type="text/plain" id="sampleSvg">__SAMPLE_SVG__</script>
 <script>
 (() => {
 'use strict';
@@ -717,7 +671,7 @@ const $ = s => document.querySelector(s);
 const SHAPES = 'path,rect,circle,ellipse,line,polyline,polygon,text,image,use';
 const NONRENDER = 'defs,clipPath,mask,pattern,symbol,marker,linearGradient,radialGradient,filter';
 const LS_KEY = 'foil-proof-v1';
-const SAMPLE_NAME = 'sample-card.svg';
+const SAMPLE_NAME = '__SAMPLE_NAME__';
 
 const F = (label,tint,o={}) => Object.assign({label,group:'燙箔',type:'foil',tint,bright:.5,contrast:.45,sat:1.15,holo:.06,brush:.28,gloss:.7,depth:1},o);
 const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
