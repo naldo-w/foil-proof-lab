@@ -166,8 +166,8 @@ button{cursor:pointer}
 .m.ink.flock{filter:saturate(.9) brightness(.9)}
 .m.ink.flock .i-glare{display:none}
 /* 螢光墨：飽和拉高 + 外緣微光 */
-.m.ink.fluo{filter:saturate(1.4) brightness(1.06)}
-.f-rim.glow{filter:drop-shadow(0 0 3px var(--tint)) drop-shadow(0 0 8px var(--tint));opacity:.45}
+.m.ink.fluo{filter:saturate(1.25) brightness(1.03)}
+.f-rim.glow{filter:drop-shadow(0 0 4px var(--tint));opacity:.2}
 .f-rim.glow .m.rim{background:var(--tint)}
 /* ink */
 .m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
@@ -734,11 +734,11 @@ const PRESETS = {
   'spot-black6':I('專色黑 Black 6C','專色','#101820'),
   'spot-wg7':  I('專色暖灰 Warm Gray 7C','專色','#968c83'),
   'spot-cg9':  I('專色冷灰 Cool Gray 9C','專色','#75787b'),
-  'spot-877':  I('專色金屬銀 877C','專色','#9a9c9e',{gloss:.3,metallic:true,opacity:.9}),
-  'spot-871':  I('專色金屬金 871C','專色','#9b8557',{gloss:.3,metallic:true,opacity:.9}),
-  'spot-875u': I('專色金屬赤金 875U','專色','#9d6a50',{gloss:.28,metallic:true,opacity:.9}),
-  'spot-8003': I('專色金屬古銅 8003C','專色','#8f6b4d',{gloss:.3,metallic:true,opacity:.9}),
-  'spot-8062': I('專色金屬玫瑰金 8062C','專色','#a8877c',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-877':  I('金屬銀 877C','金屬色','#9a9c9e',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-871':  I('金屬金 871C','金屬色','#9b8557',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-875u':  I('金屬赤金 875U','金屬色','#9d6a50',{gloss:.28,metallic:true,opacity:.9}),
+  'spot-8003':  I('金屬古銅 8003C','金屬色','#8f6b4d',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-8062':  I('金屬玫瑰金 8062C','金屬色','#a8877c',{gloss:.3,metallic:true,opacity:.9}),
   /* 螢光色 */
   'fluo-806':  I('螢光粉 806C','螢光色','#ff3eb5',{fluo:true,opacity:1}),
   'fluo-805':  I('螢光紅 805C','螢光色','#ff7276',{fluo:true,opacity:1}),
@@ -931,7 +931,7 @@ const PROCS = {
 const HOLO_SUBS={lines:'線條雷射',reverse:'直條反轉',radiant:'放射交叉',rainbow:'彩虹雷射',amazing:'幻彩流動',glitter:'碎片亮粉',secret:'金蔥亮粉',cosmos:'星空宇宙',trainer:'星塵線條',shiny:'閃鑽 V',cracked:'碎冰',pearl:'珍珠箔',clear:'透明雷射膜'};
 const UV_SUBS={none:'無',gloss:'亮面 UV',matte:'霧面 UV',frost:'磨砂 UV',raised:'立體 UV／水晶膠',glitter:'亮粉 UV'};
 const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
-const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:1.2,thick:.6};
+const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6};
 /* 依 type 反推 proc（舊資料相容），並補齊欄位 */
 function normalizeLayer(L){
   if(!L.proc){
@@ -956,13 +956,23 @@ function syncType(L){
   L.noKnock = (L.proc==='holo' && L.sub==='clear') || L.proc==='none';
   if(L.type==='relief') L.dir = L.relief==='deboss' ? -1 : 1;
 }
+/* 命名規律：工法 · 顏色／效果 [+ 加工 + 加工…]
+   燙箔 · 金 ／ 燙雷射 · 線條雷射 · 銀 ／ 印刷 · 專色紅 185C ／ 凸版 · 印墨 ／ 網版 · 白墨 + 發泡 ／ 印刷 · #a06a4f（金屬墨）／ 加工 · 打凸 ／ 不印
+   顏色用色票名（去掉「燙」「雷射」前綴），自訂色用色碼；螢光墨、金屬墨以括號註記；使用者自己改過的名稱不會被覆寫。 */
+const PROC_SHORT={foil:'燙箔',holo:'燙雷射',ink:'印刷',letterpress:'凸版',screen:'網版',none:'加工',hide:'不印'};
+function colorName(L){
+  const base = L.cname ? L.cname.replace(/^燙/,'').replace(/^雷射/,'').replace(/（線條）$/,'').replace(/^專色/,'') : L.tint;
+  const tags=[]; if(L.fluo && !/螢光/.test(base)) tags.push('螢光墨'); if(L.metallic && !/金屬/.test(base)) tags.push('金屬墨');
+  return base + (tags.length?`（${tags.join('、')}）`:'');
+}
 function autoName(L){
   if(L.proc==='hide') return '不印';
-  let n = L.proc==='none' ? '加工' : PROCS[L.proc].label.replace(/（.*）/,'');
-  if((L.proc==='foil'||L.proc==='holo') && L.cname) n = L.cname;            // 「燙金」「雷射銀（線條）」本身就含工法
-  else if(L.proc==='holo') n+=`（${HOLO_SUBS[L.sub]||''}）· ${L.tint}`;
-  else if(PROCS[L.proc].colored) n+=' · '+(L.cname||L.tint);
-  const fin=[]; if(L.relief!=='none') fin.push(RELIEFS[L.relief]); if(L.uv!=='none') fin.push(UV_SUBS[L.uv]); if(L.puff) fin.push('發泡'); if(L.flock) fin.push('植絨');
+  const parts=[PROC_SHORT[L.proc]||L.proc];
+  if(L.proc==='holo') parts.push(HOLO_SUBS[L.sub]||'');
+  if(PROCS[L.proc].colored) parts.push(colorName(L));
+  let n=parts.filter(Boolean).join(' · ');
+  const fin=[]; if(L.relief!=='none') fin.push(RELIEFS[L.relief]); if(L.uv!=='none') fin.push(UV_SUBS[L.uv].replace('／水晶膠','')); if(L.puff) fin.push('發泡'); if(L.flock) fin.push('植絨');
+  if(L.proc==='none' && !fin.length) return '加工（未設定）';
   return fin.length ? n+' + '+fin.join(' + ') : n;
 }
 /* 套用一個顏色預設（PRESETS 表）：帶入顏色與該工法的參數，保留工法與加工 */
@@ -1298,7 +1308,7 @@ function renderLayerList(){
 function colorChipsHTML(L){
   if(!PROCS[L.proc].colored) return '';
   const inkLike = ['ink','letterpress','screen'].includes(L.proc);
-  const groups = L.proc==='foil' ? ['燙箔'] : L.proc==='holo' ? ['燙雷射'] : ['油墨','專色','螢光色'];
+  const groups = L.proc==='foil' ? ['燙箔'] : L.proc==='holo' ? ['燙雷射'] : ['油墨','專色','金屬色','螢光色'];
   let h='';
   groups.forEach(g=>{
     const items=Object.entries(PRESETS).filter(([k,p])=>p.group===g && !p.puff && !p.flock && (L.proc!=='holo' || p.sub===L.sub));
@@ -1307,7 +1317,7 @@ function colorChipsHTML(L){
        items.map(([k,p])=>`<button class="cchip${L.preset===k&&L.cname===p.label?' on':''}" data-k="${k}" title="${p.label}" style="--c:${p.tint}"></button>`).join('')+'</div></div>';
   });
   h+=`<div class="row two"><label>自訂顏色</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span>${L.fluo?'<span class="note" style="margin:0">螢光</span>':''}</div></div>`;
-  if(inkLike) h+=`<div class="row two"><label></label><label class="toggle"><input type="checkbox" data-p="fluo"${L.fluo?' checked':''}> 螢光墨（不透明、微微發光）</label></div>`;
+  if(inkLike) h+=`<div class="row two"><label></label><span style="display:flex;gap:12px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" data-p="fluo"${L.fluo?' checked':''}> 螢光墨</label><label class="toggle"><input type="checkbox" data-p="metallic"${L.metallic?' checked':''}> 金屬墨</label></span></div>`;
   return h;
 }
 function tileHTML({attr,key,label,cls,on,c}){ return `<button class="tile${on?' on':''}" ${attr}="${key}" title="${esc(label)}" style="--c:${c||'#999'};--grad:${(cls||'').includes('foil')?foilGradient(c||'#c9cacf',.45):'none'}"><span class="sh ${cls||''}"></span><span class="lb">${esc(label)}</span></button>`; }
@@ -1335,7 +1345,7 @@ function finishRows(L){
   const uvCls={none:'off',gloss:'uvg',matte:'uvm',frost:'uvf',raised:'uvr',glitter:'uvgl'};
   h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
   if(['ink','letterpress','screen'].includes(L.proc)){
-    h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'metallic',label:'金屬墨',cls:'metal',on:!!L.metallic,c}),tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
+    h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
     if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
   }
   if(PROCS[L.proc].colored && !(L.proc==='holo'&&L.sub==='clear')) h+=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
