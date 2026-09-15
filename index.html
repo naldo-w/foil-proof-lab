@@ -146,6 +146,14 @@ button{cursor:pointer}
 .f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,.45))} /* 隆起：近光側外緣受光 */
 .m.r-face{background:var(--face)}
 /* 發泡印花：外緣立體陰影 + 內側圓頂明暗（反向遮罩 drop-shadow）+ 霧面顆粒 */
+/* 印刷油墨：薄墨層 → 紙紋透出、低頻斑駁；金屬油墨：鋁粉／銅粉的弱方向性反光 + 細閃點，比燙箔暗、鈍、粗 */
+.m.ink .i-mottle{background-image:var(--mottle);background-size:420px 420px;mix-blend-mode:soft-light;opacity:.22}
+.m.ink.screen .i-mottle{opacity:.08}
+.m.ink .i-metal{display:none}.m.ink .i-spark{display:none}
+.m.ink.metal .i-fill{opacity:.9}
+.m.ink.metal .i-metal{display:block;background-image:linear-gradient(112deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.38) 28%,rgba(0,0,0,.28) 52%,rgba(255,255,255,.22) 78%,rgba(0,0,0,.15) 100%);background-size:260% 260%;background-position:var(--px) var(--py);mix-blend-mode:overlay;opacity:.7}
+.m.ink.metal .i-spark{display:block;background-image:var(--glit);background-size:60px 60px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.2);mix-blend-mode:screen;opacity:.16;filter:saturate(0) brightness(1.3)}
+.m.ink.metal .i-glare{opacity:calc(var(--gloss,.3)*var(--hov)*1.4)}
 /* 凸版印刷：油墨被壓進紙裡，邊緣略深、表面霧 */
 .m.ink.press .i-grain{opacity:calc(var(--grain-ink,.5)*1.3)}
 .m.ink.press .i-glare{opacity:calc(var(--gloss,.05)*var(--hov)*.5)}
@@ -331,6 +339,8 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .tile .sh.uvr{box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.5)}.tile .sh.uvr::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.85) 42%,rgba(255,255,255,0) 58%)}
 .tile .sh.uvgl::after{content:"";position:absolute;inset:0;background:radial-gradient(circle 1px at 25% 30%,#fff 60%,transparent),radial-gradient(circle 1px at 65% 60%,#fff 60%,transparent),radial-gradient(circle 1px at 80% 25%,#fff 60%,transparent),radial-gradient(circle 1px at 45% 75%,#fff 60%,transparent);background-size:12px 12px}
 .tile .sh.puff{border-radius:8px;box-shadow:inset -2px -2px 3px rgba(0,0,0,.35),inset 2px 2px 3px rgba(255,255,255,.35),1px 2px 3px rgba(0,0,0,.45)}
+.tile .sh.metal{background:linear-gradient(112deg,rgba(255,255,255,.35),rgba(0,0,0,.25) 50%,rgba(255,255,255,.2)),var(--c,#999);background-blend-mode:overlay,normal}
+.tile .sh.metal::after{content:"";position:absolute;inset:0;background:radial-gradient(circle 1px at 25% 30%,#fff 60%,transparent),radial-gradient(circle 1px at 65% 65%,#fff 60%,transparent),radial-gradient(circle 1px at 80% 25%,#fff 60%,transparent);background-size:9px 9px;opacity:.5}
 .tile .sh.flock{filter:brightness(.85) saturate(.9);box-shadow:inset 0 0 6px rgba(0,0,0,.4)}
 .tile .sh.flock::after{content:"";position:absolute;inset:0;background:var(--ptile);background-size:22px 22px;opacity:.7;mix-blend-mode:soft-light}
 .tile .sh.off{background:transparent}
@@ -671,7 +681,7 @@ const SAMPLE_NAME = 'sample-card.svg';
 
 const F = (label,tint,o={}) => Object.assign({label,group:'燙箔',type:'foil',tint,bright:.5,contrast:.45,sat:1.15,holo:.06,brush:.28,gloss:.7,depth:1},o);
 const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
-const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.96,blend:'normal',gloss:.08},o);
+const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.93,blend:'normal',gloss:.08},o);
 const PRESETS = {
   /* 燙箔 */
   'foil-silver': F('燙銀','#c9cacf',{sat:1,holo:.12,brush:.3,gloss:.6}),
@@ -722,8 +732,10 @@ const PRESETS = {
   'spot-black6':I('專色黑 Black 6C','專色','#101820'),
   'spot-wg7':  I('專色暖灰 Warm Gray 7C','專色','#968c83'),
   'spot-cg9':  I('專色冷灰 Cool Gray 9C','專色','#75787b'),
-  'spot-877':  I('專色金屬銀 877C','專色','#8a8d8f',{gloss:.25}),
-  'spot-871':  I('專色金屬金 871C','專色','#85714d',{gloss:.25}),
+  'spot-877':  I('專色金屬銀 877C','專色','#9a9c9e',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-871':  I('專色金屬金 871C','專色','#9b8557',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-8003': I('專色金屬古銅 8003C','專色','#8f6b4d',{gloss:.3,metallic:true,opacity:.9}),
+  'spot-8062': I('專色金屬玫瑰金 8062C','專色','#a8877c',{gloss:.3,metallic:true,opacity:.9}),
   /* 螢光色 */
   'fluo-806':  I('螢光粉 806C','螢光色','#ff3eb5',{fluo:true,opacity:1}),
   'fluo-805':  I('螢光紅 805C','螢光色','#ff7276',{fluo:true,opacity:1}),
@@ -805,6 +817,8 @@ function grainURI(op){
 /* 雷射用貼圖（固定，產生一次） */
 const GLITTER = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="11" stitchTiles="stitch"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncG type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncB type="discrete" tableValues="0 0 0 0 0 0 0 0 1"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 const COSMOS = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><filter id="c" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency="0.012" numOctaves="3" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="4"/><feComponentTransfer><feFuncR type="linear" slope="1.8" intercept="-0.35"/><feFuncG type="linear" slope="1.8" intercept="-0.35"/><feFuncB type="linear" slope="1.8" intercept="-0.35"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#c)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+/* 油墨斑駁：低頻雲狀不均，模擬吸墨不均與網點 */
+const MOTTLE = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><filter id="m" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="1.4" intercept="-0.2"/><feFuncG type="linear" slope="1.4" intercept="-0.2"/><feFuncB type="linear" slope="1.4" intercept="-0.2"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 const CRACK = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="k" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="saturate" values="3"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncG type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncB type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#k)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 function paperBlend(P){ if(P.blend!=='auto') return P.blend; return hsl(P.color).l<.35 ? 'hard-light' : 'overlay'; }
 
@@ -953,7 +967,7 @@ function applyColorPreset(L, key){
   const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
   const {label,group,type,sub,puff,flock,dir,...params}=p;
   Object.assign(L, params, keep, {preset:key, cname:label});
-  L.fluo = !!p.fluo;
+  L.fluo = !!p.fluo; L.metallic = !!p.metallic;
   if(L.proc==='holo' && sub) L.sub=sub;
   normalizeLayer(L); if(!L.named) L.name=autoName(L);
 }
@@ -1093,7 +1107,7 @@ function fxDOM(L, fast=false){
   if(L.proc==='foil') h+=`<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
   else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
-    h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div><div class="i-grain"></div>${dome}${inner(innerParts)}<div class="i-glare"></div></div>`;
+    h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.metallic?' metal':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div>${fast?'':'<div class="i-mottle"></div>'}<div class="i-grain"></div>${L.metallic?'<div class="i-metal"></div><div class="i-spark"></div>':''}${dome}${inner(innerParts)}<div class="i-glare"></div></div>`;
   }
   if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
   return h;
@@ -1119,8 +1133,10 @@ function styleFx(d,L,paper=S.paper){
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     const opaque = L.fluo || L.proc==='screen';
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', opaque?'normal':L.blend); st.setProperty('--gloss', L.gloss);
-    st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (paper.strength*.85).toFixed(3)));
-    st.setProperty('--ptexg', grainURI(.8));
+    // 印刷油墨是薄薄一層，紙紋要透得出來：平版最透、凸版次之、網版厚墨最不透
+    const show = L.flock ? .95 : (L.puff ? .35 : (L.proc==='screen' ? .45 : (L.proc==='letterpress' ? 1.2 : 1.15))*paper.strength);
+    st.setProperty('--grain-ink', Math.min(1,show).toFixed(3));
+    st.setProperty('--ptexg', grainURI(.8)); st.setProperty('--mottle', MOTTLE); st.setProperty('--glit', GLITTER);
   }
   if(L.proc==='none' && L.relief!=='none') st.setProperty('--face', L.relief==='deboss' ? mix(paper.color,'#000000',.12) : mix(paper.color,'#ffffff',.06));
   // 壓入式外緣（燙箔壓痕／凸版壓印／打凹）：取最大深度
@@ -1309,7 +1325,7 @@ function finishRows(L){
   const uvCls={none:'off',gloss:'uvg',matte:'uvm',frost:'uvf',raised:'uvr',glitter:'uvgl'};
   h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
   if(['ink','letterpress','screen'].includes(L.proc)){
-    h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
+    h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'metallic',label:'金屬墨',cls:'metal',on:!!L.metallic,c}),tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
     if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
   }
   if(PROCS[L.proc].colored && !(L.proc==='holo'&&L.sub==='clear')) h+=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
@@ -1512,7 +1528,7 @@ const HELP = {
   brush:'髮絲紋：箔面的細直紋，霧銀、拉絲金常見；鏡面箔設 0。',
   gloss:'光澤：光源移動時的反光範圍與強度。燙箔 60–90%，油墨 5–10%，霧面幾乎 0。',
   hscale:'雷射紋路尺寸：線條間距、亮粉大小、星空色塊的縮放。',
-  opacity:'油墨濃度：100% 為滿版實色，降低可模擬淡色或網點。',
+  opacity:'油墨濃度：印刷油墨是薄薄一層，實際滿版大約 90–95% 且紙紋會透出；100% 只有網版厚墨或白墨打底才成立。降低可模擬淡色或網點。',
   blend:'油墨混合方式：正常 = 不透明覆蓋（網版、白墨、深色紙上的專色）；色彩增值 = 透明油墨（平版四色與一般專色，在淺色紙上）；濾色 = 特殊亮色效果。',
   press:'凸版壓印深度：油墨隨凸版壓進紙面的深度，邊緣留壓痕、墨面偏霧。厚紙（象牙卡、棉紙）壓得深，銅版紙幾乎壓不出來。',
   thick:'網版墨層厚度：網版油墨堆在紙面上的厚度，邊緣會有微微隆起與投影。',
@@ -1521,6 +1537,7 @@ const HELP = {
   uvDepth:'立體 UV／水晶膠的厚度：越厚邊緣的高光與陰影越明顯。',
   puffDepth:'發泡厚度：發泡油墨加熱後隆起的高度，越厚圓頂越明顯。',
   fluo:'螢光墨：以不透明方式覆蓋、飽和拉高、外緣微微發光。螢幕無法真正顯示螢光，只能近似。',
+  metallic:'金屬油墨（871／877 系）：含鋁粉或銅粉，比燙箔暗、鈍、粗——只有微弱的方向性反光與細閃點，不會像鏡子。要亮就用燙箔。',
   knockout:'被上層圖形挖空：關掉的話這一層會完整印出，上層直接疊在上面（例如白墨打底再印彩色時要關掉底層的挖空）。',
   /* 版面 */
   sW:'畫布尺寸（px）。IG 貼文 1080×1080／1080×1350，限動 1080×1920，A4 300dpi 2480×3508。',
