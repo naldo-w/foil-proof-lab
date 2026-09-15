@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
-  <g id="底色">
+  <g id="不印 · 底色">
     <rect x="0" y="0" width="1000" height="600" fill="#141414"/>
   </g>
-  <g id="燙銀">
+  <g id="燙箔 · 銀">
     <rect x="28" y="28" width="944" height="544" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
     <rect x="40" y="40" width="920" height="520" fill="none" stroke="#8a8a8a" stroke-width="0.6"/>
     <text x="80" y="128" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="10" fill="#8a8a8a">FOIL PROOF</text>
@@ -19,7 +19,7 @@
     </g>
     <text x="920" y="540" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="14" letter-spacing="3" fill="#8a8a8a">MMXXVI · SAMPLE</text>
   </g>
-  <g id="燙紅">
+  <g id="燙箔 · 紅 + 打凹">
     <g transform="translate(770 300)">
       <circle r="150" fill="none" stroke="#e0261c" stroke-width="2"/>
       <circle r="132" fill="none" stroke="#e0261c" stroke-width="0.8"/>
@@ -35,7 +35,7 @@
     </g>
     <line x1="80" y1="380" x2="360" y2="380" stroke="#e0261c" stroke-width="3"/>
   </g>
-  <g id="燙金">
+  <g id="燙箔 · 金">
     <circle cx="600" cy="128" r="5" fill="#d3a84a"/>
     <circle cx="624" cy="128" r="5" fill="#d3a84a"/>
     <circle cx="648" cy="128" r="5" fill="#d3a84a"/>

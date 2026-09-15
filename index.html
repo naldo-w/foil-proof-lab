@@ -507,7 +507,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <p class="note">依 SVG 內偵測到的填色／描邊顏色。點一下 → 該顏色的所有元素指派到目前圖層；再點一下取消。載入時預設：<b>相同顏色 → 相同效果</b>。</p>
         <div class="sec-h" style="margin-top:12px">依 SVG 圖層</div>
         <div class="chips" id="layerChips"></div>
-        <p class="note">Illustrator／Affinity 的圖層在 SVG 裡是有名字的 <code>&lt;g&gt;</code>。點一下 → 整個圖層指派到目前圖層。</p>
+        <p class="note">Illustrator／Affinity 的圖層在 SVG 裡是有名字的 <code>&lt;g&gt;</code>。點一下 → 整個圖層指派到目前圖層。<br>圖層名稱若符合命名規律，上傳時會<b>自動建立對應效果</b>：<code>燙箔 · 金</code>、<code>凸版 · 185C + 打凸</code>、<code>網版 · 白墨 + 發泡</code>、<code>印刷 · #e4002b（金屬墨）</code>、<code>燙雷射 · 彩虹</code>、<code>加工 · 打凹</code>、<code>不印</code>；沒符合的圖層改用「相同顏色 → 相同效果」。</p>
       </div>
       <div class="sec">
         <div class="sec-h">分版／挖空</div>
@@ -629,10 +629,10 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 
 <script type="text/plain" id="sampleSvg"><?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
-  <g id="底色">
+  <g id="不印 · 底色">
     <rect x="0" y="0" width="1000" height="600" fill="#141414"/>
   </g>
-  <g id="燙銀">
+  <g id="燙箔 · 銀">
     <rect x="28" y="28" width="944" height="544" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
     <rect x="40" y="40" width="920" height="520" fill="none" stroke="#8a8a8a" stroke-width="0.6"/>
     <text x="80" y="128" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="10" fill="#8a8a8a">FOIL PROOF</text>
@@ -648,7 +648,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
     </g>
     <text x="920" y="540" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="14" letter-spacing="3" fill="#8a8a8a">MMXXVI · SAMPLE</text>
   </g>
-  <g id="燙紅">
+  <g id="燙箔 · 紅 + 打凹">
     <g transform="translate(770 300)">
       <circle r="150" fill="none" stroke="#e0261c" stroke-width="2"/>
       <circle r="132" fill="none" stroke="#e0261c" stroke-width="0.8"/>
@@ -664,7 +664,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
     </g>
     <line x1="80" y1="380" x2="360" y2="380" stroke="#e0261c" stroke-width="3"/>
   </g>
-  <g id="燙金">
+  <g id="燙箔 · 金">
     <circle cx="600" cy="128" r="5" fill="#d3a84a"/>
     <circle cx="624" cy="128" r="5" fill="#d3a84a"/>
     <circle cx="648" cy="128" r="5" fill="#d3a84a"/>
@@ -906,17 +906,94 @@ function detectBackground(){
   }
   return null;
 }
+/* ---------- 讀 SVG 圖層名稱，依命名規律自動建立效果 ----------
+   支援：工法（燙箔／燙雷射／印刷／凸版／網版／加工／不印）、色票名或色號（燙金、專色紅 185C、871C、#ff5511）、
+   旗標（螢光、金屬、發泡、植絨）、加工（打凸／打凹、亮面／霧面／磨砂／立體／亮粉 UV）、雷射種類。
+   例：「燙箔 · 金」「凸版 · 185C + 打凸」「網版 · 白墨 + 發泡」「印刷 · #e4002b（金屬墨）」「加工 · 打凹」「不印」 */
+function parseLayerName(raw){
+  const name=(raw||'').trim(); if(!name) return null;
+  const n=name.replace(/\s+/g,' ');
+  const has=re=>re.test(n);
+  const r={proc:null, preset:null, tint:null, fluo:has(/螢光|fluo|neon/i), metallic:has(/金屬(?!箔)|metallic/i), puff:has(/發泡|puff/i), flock:has(/植絨|flock/i), relief:'none', uv:'none', sub:null};
+  if(has(/不印|隱藏|底色|背景|^bg$|hide/i)) r.proc='hide';
+  else if(has(/雷射|holo|全息|鐳射/i)) r.proc='holo';
+  else if(has(/凸版|letterpress/i)) r.proc='letterpress';
+  else if(has(/網版|絹印|silk|screen/i)) r.proc='screen';
+  else if(has(/燙箔|燙金|燙銀|燙紅|燙|foil/i)) r.proc='foil';
+  else if(has(/印刷|平版|數位|油墨|印墨|印紅|白墨|ink|offset/i)) r.proc='ink';
+  else if(has(/加工|不上色/)) r.proc='none';
+  if(has(/打凸|浮凸|emboss/i)) r.relief='emboss'; else if(has(/打凹|壓凹|deboss/i)) r.relief='deboss';
+  if(has(/磨砂/)) r.uv='frost'; else if(has(/立體\s*UV|厚版|水晶膠|raised/i)) r.uv='raised'; else if(has(/亮粉/)) r.uv='glitter'; else if(has(/霧面|霧\s*UV|matte/i)) r.uv='matte'; else if(has(/亮面|上光|UV|gloss/i)) r.uv='gloss';
+  // 雷射種類
+  for(const [k,v] of Object.entries(HOLO_SUBS)){ const key=v.replace(/雷射|膜/g,''); if(key && n.includes(key)){ r.sub=k; break; } }
+  if(!r.sub && has(/透明/)) r.sub='clear';
+  if(!r.sub){ for(const k of Object.keys(HOLO_SUBS)){ if(new RegExp('\\b'+k+'\\b','i').test(n)){ r.sub=k; break; } } }
+  // 色票：色號 → 標籤最長符合 → 色碼
+  const code=n.match(/(\d{3,4})\s*([CU])\b/i);
+  let best=null, bestLen=0;
+  for(const [k,pz] of Object.entries(PRESETS)){
+    if(pz.type!=='foil' && pz.type!=='ink' && pz.type!=='holo') continue;
+    if(pz.group==='特殊工藝') continue; // 發泡／植絨屬加工旗標，不當顏色比對
+    if(code && new RegExp(code[1]+'\\s*'+code[2],'i').test(pz.label)){ best=k; bestLen=99; break; }
+    const cands=[pz.label, pz.label.replace(/^燙/,''), pz.label.replace(/^專色/,''), pz.label.replace(/（.*）/,''), pz.label.replace(/\s.*$/,'')].filter(x=>x&&x.length>=1);
+    for(const c of cands){ if(c.length>bestLen && n.includes(c)){ if(pz.type==='foil' && r.proc && r.proc!=='foil' && r.proc!=='holo' && c.length<3) continue; best=k; bestLen=c.length; } }
+  }
+  // 英文色名／油墨常用單字
+  if(!best){
+    const EN={gold:'foil-gold',silver:'foil-silver',champagne:'foil-champagne',rose:'foil-rose',copper:'foil-copper',red:'foil-red',orange:'foil-orange',pink:'foil-pink',purple:'foil-purple',blue:'foil-blue',teal:'foil-teal',green:'foil-green',white:'foil-white',black:'foil-black'};
+    const INK={'白':'ink-white',white:'ink-white','黑':'ink-black',black:'ink-black','紅':'ink-red',red:'ink-red'};
+    const isInk=['ink','letterpress','screen'].includes(r.proc);
+    const table=isInk?INK:EN;
+    for(const [w,k] of Object.entries(table)){ if(new RegExp(/^[a-z]+$/.test(w)?'\\b'+w+'\\b':w,'i').test(n)){ best=k; break; } }
+    if(best && isInk && !PRESETS[best]) best=null;
+  }
+  const hex=n.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/i); if(hex){ r.tint = hex[1].length===3 ? '#'+[...hex[1]].map(ch=>ch+ch).join('') : '#'+hex[1]; }
+  if(best){
+    r.preset=best; const t=PRESETS[best].type;
+    if(!r.proc) r.proc = t==='foil'?'foil':(t==='holo'?'holo':'ink');
+    if(t==='holo' && r.proc==='foil') r.proc='holo';           // 「燙珍珠箔」→ 雷射工法
+    if(t==='holo' && r.proc==='holo' && !r.sub) r.sub=PRESETS[best].sub;
+  }
+  if(!r.proc){ if(r.tint||r.fluo||r.metallic||r.puff||r.flock) r.proc='ink'; else if(r.relief!=='none'||r.uv!=='none') r.proc='none'; else return null; }
+  return r;
+}
+function layerFromParsed(r, name){
+  if(r.proc==='hide'){ return newLayer('hide', name); }
+  if(r.proc==='none'){ const L=newLayer(r.relief==='deboss'?'deboss':(r.relief==='emboss'?'emboss':'uv')); L.relief=r.relief; L.uv=r.uv; normalizeLayer(L); L.name=autoName(L); L.named=false; return L; }
+  const base = r.preset || PROCS[r.proc].base;
+  const L=newLayer(base);
+  if(r.proc==='holo' && L.proc!=='holo'){ L._prevProc=L.proc; setProc(L,'holo'); }
+  else if(r.proc!==L.proc){ L._prevProc=L.proc; setProc(L,r.proc); if(r.preset) applyColorPreset(L,r.preset); }
+  if(r.sub && L.proc==='holo') L.sub=r.sub;
+  if(r.tint){ L.tint=r.tint; delete L.cname; }
+  if(['ink','letterpress','screen'].includes(L.proc)){ if(r.fluo) L.fluo=true; if(r.metallic) L.metallic=true; if(r.puff) L.puff=true; if(r.flock) L.flock=true; }
+  if(r.relief!=='none') L.relief=r.relief; if(r.uv!=='none') L.uv=r.uv;
+  normalizeLayer(L); L.name=autoName(L); L.named=false; return L;
+}
 function autoLayers(){
   S.layers = []; S.assign = {};
   const bgKey = detectBackground();
-  if(bgKey){ S.paper.color = shapes[bgKey].fill; const L=newLayer('hide','不印 · 底色'); S.assign[bgKey]=L.id; }
-  const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey)]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
+  let hideL=null;
+  if(bgKey){ S.paper.color = shapes[bgKey].fill; hideL=newLayer('hide','不印 · 底色'); S.assign[bgKey]=hideL.id; }
+  // 1) 具名圖層：名稱符合命名規律 → 直接建立效果並指派整個群組（「不印」共用同一層）
+  const parsedGroups=[];
+  layerGroups().forEach(g=>{
+    const r=parseLayerName(groupName(g)); if(!r) return;
+    let L;
+    if(r.proc==='hide'){ L = hideL || (hideL=newLayer('hide', groupName(g))); }
+    else L=layerFromParsed(r, groupName(g));
+    const k=g.getAttribute('data-k'); S.assign[k]=L.id; parsedGroups.push(g);
+  });
+  const inParsed = k => parsedGroups.some(g=>g.contains(shapes[k].el));
+  // 2) 其餘元素：相同顏色 → 相同效果
+  const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey && !inParsed(k))]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
   for(const [c,keys] of cols){
     const p = guessPreset(c); const L=newLayer(p);
     if(PRESETS[p].type==='ink'){ L.tint=c; delete L.cname; } L.srcColor=c; L.name=autoName(L); L.named=false;
     keys.forEach(k=>{ if(!S.assign[k]) S.assign[k]=L.id; });
   }
   S.active = (S.layers.find(l=>l.type!=='hide') || S.layers[0])?.id;
+  if(parsedGroups.length) setTimeout(()=>toast(`已依圖層名稱建立 ${parsedGroups.length} 個效果`),300);
 }
 /* ---------- 工法模型：每個圖層 = 工法（上色方式）+ 顏色 + 疊加加工 ---------- */
 const PROCS = {
@@ -1770,7 +1847,7 @@ function prefixIds(str, pre){
             .replace(/(xlink:)?href="#([^"]+)"/g, (m,x,id)=>`${x||''}href="#${pre}${id}"`);
 }
 function innerXML(el){ return [...el.childNodes].map(n=>new XMLSerializer().serializeToString(n)).join(''); }
-window.foilProof = { get state(){ return S; } }; // 供外部腳本／除錯使用
+window.foilProof = { get state(){ return S; }, parseLayerName }; // 供外部腳本／除錯使用
 $('#modalClose').addEventListener('click', ()=>$('#modal').classList.remove('on'));
 $('#btnAbout').addEventListener('click', ()=>$('#about').classList.add('on'));
 $('#aboutClose').addEventListener('click', ()=>$('#about').classList.remove('on'));
@@ -2083,5 +2160,3 @@ if(saved){ S=saved; uid = Math.max(1, ...S.layers.map(l=>+l.id.slice(1)+1)); sta
 else start($('#sampleSvg').textContent, SAMPLE_NAME, true);
 })();
 </script>
-
-</html>
