@@ -199,9 +199,10 @@ button{cursor:pointer}
 .stage:has(#scenewrap:not([hidden])){cursor:grab}
 .stage.dragging-light{cursor:grabbing}
 .light-handle{position:absolute;left:30%;top:25%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px 6px rgba(255,85,17,.45);background:radial-gradient(circle,#fff 0%,var(--accent) 55%,rgba(255,85,17,0) 70%);pointer-events:none;z-index:9}
-.light-handle span{position:absolute;inset:0;border-radius:50%;animation:lh 2.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,85,17,.6)}
-@keyframes lh{0%{box-shadow:0 0 0 0 rgba(255,85,17,.6)}100%{box-shadow:0 0 0 14px rgba(255,85,17,0)}}
-@media (prefers-reduced-motion:reduce){.light-handle span{animation:none}}
+.light-svg #lightStem{stroke:rgba(255,255,255,.7);stroke-width:1.5;stroke-dasharray:none;vector-effect:non-scaling-stroke}
+.light-svg #lightFoot{fill:rgba(255,255,255,.9);stroke:rgba(0,0,0,.5);stroke-width:1;vector-effect:non-scaling-stroke}
+.light-svg #lightCone{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.35);stroke-width:1;stroke-dasharray:3 5;vector-effect:non-scaling-stroke}
+.light-svg #lightZ path{fill:#fff;stroke:rgba(0,0,0,.5);stroke-width:1;vector-effect:non-scaling-stroke}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
 .table .tbg{position:absolute;inset:-100%;background:var(--sbg,#2a2a2e);pointer-events:none}
 .table .tglow{position:absolute;inset:-100%;pointer-events:none}   /* 桌面上的光斑（在桌面座標系，會跟著視角變換）；放大到 3×，桌面旋轉後不露邊 */
@@ -217,7 +218,9 @@ button{cursor:pointer}
 .light-svg #lightT line{stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .scene .floor{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.35) 100%);pointer-events:none}
 .table{position:absolute;inset:0;transform-style:flat;transform-origin:50% 50%} /* flat：卡片依疊放順序繪製，不做逐像素深度交錯，微傾時不會穿模 */
-.slot{position:absolute;transform-style:preserve-3d}
+.slot{position:absolute;transform-style:preserve-3d;contain:layout style}
+.table.interacting{will-change:transform}
+.table.interacting .tdof{display:none}
 .fxs.merged{position:absolute;inset:0;pointer-events:none}
 .fx.fast .f-paper,.fx.fast .f-brush,.fx.fast .i-grain{display:none} /* 快速預覽：略過紙紋與髮絲紋 */
 .fxs.merged .fx{position:absolute;inset:0;-webkit-mask-image:var(--vis);mask-image:var(--vis);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
@@ -233,9 +236,9 @@ button{cursor:pointer}
 .doc.on{border-color:var(--accent)}
 .doc .dn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 .doc.on .dn{color:var(--text)}
-.doc .tag{font:10px var(--mono);color:var(--accent);letter-spacing:.08em}
+.doc .tag{font:10px var(--mono);color:var(--accent);letter-spacing:.04em;flex:none;white-space:nowrap}
 .doc .dim{font:10px var(--mono);color:var(--faint)}
-.doc .ib{height:20px;padding:0 5px;border:1px solid var(--line-2);background:transparent;color:var(--muted);border-radius:4px;font-size:11px}
+.doc .ib{height:20px;padding:0 4px;flex:none;border:1px solid var(--line-2);background:transparent;color:var(--muted);border-radius:4px;font-size:11px}
 .doc .ib:hover{color:var(--text);border-color:var(--accent-dim)}
 .variant{display:flex;align-items:center;gap:6px;padding:6px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);margin-bottom:6px}
 .variant .psw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex:none}
@@ -418,6 +421,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .modal .about dt{color:var(--accent);font:11px var(--mono);letter-spacing:.1em;padding-top:2px}
 .modal .about dd{margin:0}
 .modal .about a{color:var(--text);text-decoration:underline;text-decoration-color:var(--accent-dim)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:6px 0 4px}
 
 @media (max-width:1100px){ :root{--panel-w:300px} }
 @media (max-width:900px){
@@ -453,6 +457,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       <button class="btn ghost" id="btnAbout" title="關於本工具與版權">關於</button>
       <button class="btn ghost" id="btnSample" title="載入內建範例">範例</button>
       <button class="btn ghost" id="btnReset" title="清除指派與設定，重新自動偵測">重新偵測</button>
+      <button class="btn ghost" id="btnParams" title="匯出／匯入參數 JSON">參數</button>
       <label class="btn">上傳 SVG<input type="file" id="file" accept=".svg,image/svg+xml"></label>
       <button class="btn primary" id="btnExport">匯出 PNG</button>
     </div>
@@ -480,7 +485,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
       </div>
     </div>
     <div id="docstore" aria-hidden="true"></div>
-    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="table" id="table"></div><div class="floor"></div></div><svg class="light-svg" id="lightSvg" preserveAspectRatio="none"><line id="lightBeam" x1="0" y1="0" x2="0" y2="0"/><circle id="lightSpec" r="0"/><g id="lightT"><circle r="0"/><line/><line/></g><g id="dofT" hidden><rect/></g><text id="lblL"></text><text id="lblT"></text><text id="lblP"></text></svg><div class="light-handle" id="lightHandle" title="燈：拖曳移動（離燈近就拖燈，離焦點近就拖焦點）"><span></span></div></div></div>
+    <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="table" id="table"></div><div class="floor"></div></div><svg class="light-svg" id="lightSvg" preserveAspectRatio="none"><polygon id="lightCone" points=""/><line id="lightBeam" x1="0" y1="0" x2="0" y2="0"/><line id="lightStem"/><circle id="lightFoot" r="0"/><circle id="lightSpec" r="0"/><g id="lightT"><circle r="0"/><line/><line/></g><g id="dofT" hidden><rect/></g><g id="lightZ"><path d=""/></g><text id="lblL"></text><text id="lblT"></text><text id="lblP"></text></svg><div class="light-handle" id="lightHandle" title="燈：拖曳移動；拖上方 ▲▼ 或 Shift+拖曳 = 高度；拖十字 = 照向目標"></div></div></div>
     <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
     <div class="stage-hint">滑鼠 = 光線 · 滾輪 = 縮放 · 拖曳 = 平移</div>
     <div class="drop">放開以載入 SVG</div>
@@ -569,18 +574,20 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row two"><label>預覽</label><select id="sQuality"><option value="wire">線框</option><option value="fast">快速</option><option value="full">完整</option></select></div>
       </div>
       <div class="sec" data-sec="layout">
-        <div class="sec-h" data-help="sec-layout">排列 <button class="btn small ghost" id="sShuffle" title="換一組隨機">🎲</button></div>
+        <div class="sec-h" data-help="sec-layout">排列 <span><button class="btn small ghost" id="sLayoutReset" title="排列相關設定回復預設">回復預設</button><button class="btn small ghost" id="sShuffle" title="換一組隨機">🎲</button></span></div>
         <div class="row two"><label>鋪法</label><select id="sLayout">
           <option value="single">單張置中</option>
           <option value="grid">整齊格狀</option>
-          <option value="brick">錯開（磚牆）</option>
+          <option value="brick">鋪磚</option>
           <option value="random">隨機鋪滿</option>
           <option value="fan">扇形展開</option>
           <option value="cascade">階梯堆疊</option>
+          <option value="toss">空中灑落</option>
         </select></div>
         <div class="row" data-for="grid brick"><label>欄</label><input type="range" id="sCols" min="1" max="8" step="1"><span class="val"></span></div>
         <div class="row" data-for="grid brick"><label>列</label><input type="range" id="sRows" min="1" max="10" step="1"><span class="val"></span></div>
-        <div class="row" data-for="fan cascade"><label>張數</label><input type="range" id="sN" min="1" max="24" step="1"><span class="val"></span></div>
+        <div class="row" data-for="brick"><label>錯開</label><input type="range" id="sBrickOff" min="0" max="100" step="5"><span class="val"></span></div>
+        <div class="row" data-for="fan cascade toss"><label>張數</label><input type="range" id="sN" min="1" max="40" step="1"><span class="val"></span></div>
         <div class="row" data-for="random"><label>張數</label><input type="range" id="sRN" min="0" max="60" step="1"><span class="val"></span></div>
         <div class="row"><label>卡片寬</label><input type="range" id="sSize" min="8" max="120" step="1"><span class="val"></span></div>
         <div class="row" data-for="grid brick cascade random"><label>間距</label><input type="range" id="sGap" min="-200" max="300" step="2"><span class="val"></span></div>
@@ -589,9 +596,20 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row" data-for="fan"><label>直徑</label><input type="range" id="sFanD" min="40" max="600" step="5"><span class="val"></span></div>
         <div class="row" data-for="fan"><label>起點</label><input type="range" id="sFanA0" min="-180" max="180" step="1"><span class="val"></span></div>
         <div class="row" data-for="fan"><label>終點</label><input type="range" id="sFanA1" min="-180" max="180" step="1"><span class="val"></span></div>
+        <div class="row" data-for="fan"><label>圓心 X</label><input type="range" id="sFanCx" min="-100" max="100" step="1"><span class="val"></span></div>
+        <div class="row" data-for="fan"><label>圓心 Y</label><input type="range" id="sFanCy" min="-100" max="100" step="1"><span class="val"></span></div>
+        <div class="row" data-for="fan"><label>單張 X 軸</label><input type="range" id="sFanRx" min="-60" max="60" step="1"><span class="val"></span></div>
+        <div class="row" data-for="fan"><label>單張 Y 軸</label><input type="range" id="sFanRy" min="-60" max="60" step="1"><span class="val"></span></div>
         <div class="row two" data-for="fan"><label>路徑</label><label class="toggle"><input type="checkbox" id="sFanGuide"> 顯示虛線路徑（不匯出）</label></div>
+        <div class="row" data-for="toss"><label>散布</label><input type="range" id="sTossSpread" min="10" max="150" step="1"><span class="val"></span></div>
+        <div class="row" data-for="toss"><label>傾斜</label><input type="range" id="sTossTilt" min="0" max="60" step="1"><span class="val"></span></div>
+        <div class="row" data-for="toss"><label>懸空比例</label><input type="range" id="sTossAir" min="0" max="100" step="1"><span class="val"></span></div>
+        <div class="row" data-for="toss"><label>最高</label><input type="range" id="sTossH" min="0" max="300" step="5"><span class="val"></span></div>
+        <div class="row" data-for="random"><label>隨機 X 軸</label><input type="range" id="sRandRx" min="0" max="45" step="1"><span class="val"></span></div>
+        <div class="row" data-for="random"><label>隨機 Y 軸</label><input type="range" id="sRandRy" min="0" max="45" step="1"><span class="val"></span></div>
         <div class="row" data-for="random cascade brick grid single"><label>旋轉</label><input type="range" id="sRot" min="0" max="90" step="1"><span class="val"></span></div>
         <div class="row"><label>單張旋轉</label><input type="range" id="sRot2" min="-90" max="90" step="1"><span class="val"></span></div>
+        <div class="row"><label>自然微傾</label><input type="range" id="sTilt3" min="0" max="20" step="0.5"><span class="val"></span></div>
       </div>
       <div class="sec" data-sec="view">
         <div class="sec-h" data-help="sec-view">視角</div>
@@ -616,6 +634,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h" data-help="sec-variants">版本混搭 <button class="btn small" id="btnAddVariant">＋ 存成版本</button></div>
         <div class="row two"><label>分配</label><select id="sMix"><option value="current">只用目前檔案的目前設定</option><option value="cycle">依序輪流</option><option value="random">隨機</option><option value="rows">逐列輪流</option><option value="cols">逐欄輪流</option><option value="half">左右對照</option><option value="halfv">上下對照</option></select></div>
         <div class="row two"><label>目前</label><label class="toggle"><input type="checkbox" id="sIncCur"> 目前設定也算一個版本</label></div>
+        <div class="row" data-link><label>翻面比例</label><input type="range" id="sFlip" min="0" max="100" step="5"><span class="val"></span></div>
         <div id="variantList" style="margin-top:8px"></div>
       </div>
       <div class="sec" data-sec="bg">
@@ -646,16 +665,16 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row"><label>聚焦</label><input type="range" id="sSpot" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>柔光</label><input type="range" id="sSoft" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>大小</label><input type="range" id="sLsize" min="0.2" max="3" step="0.05"><span class="val"></span></div>
-        <div class="row"><label>高度</label><input type="range" id="sDist" min="0.15" max="3" step="0.05"><span class="val"></span></div>
+        <div class="row"><label>高度</label><input type="range" id="sDist" min="0.1" max="3" step="0.05"><span class="val"></span></div>
         <div class="row"><label>色溫</label><input type="range" id="sKelvin" min="2200" max="9500" step="50"><span class="val"></span></div>
         <div class="row two"><label></label><div class="presets" id="kelvinPresets"></div></div>
         <div class="row two"><label>自訂色</label><div class="colorwrap"><label class="toggle" style="margin-right:6px"><input type="checkbox" id="sUseLC"> 取代色溫</label><input type="color" id="sLC"><span class="hex" id="sLCHex"></span></div></div>
-        <details class="adv"><summary>燈與焦點座標</summary>
+        <details class="adv"><summary>燈與目標座標</summary>
           <div class="row"><label>燈 X</label><input type="range" id="sLx" min="-1.5" max="2.5" step="0.01"><span class="val"></span></div>
           <div class="row"><label>燈 Y</label><input type="range" id="sLy" min="-1.5" max="2.5" step="0.01"><span class="val"></span></div>
-          <div class="row"><label>焦點 X</label><input type="range" id="sTx" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
-          <div class="row"><label>焦點 Y</label><input type="range" id="sTy" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
-          <div class="row two"><label></label><button class="btn small ghost" id="sTcenter">焦點回到中心</button></div>
+          <div class="row"><label>目標 X</label><input type="range" id="sTx" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
+          <div class="row"><label>目標 Y</label><input type="range" id="sTy" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
+          <div class="row two"><label></label><button class="btn small ghost" id="sTcenter">目標回到中心</button></div>
         </details>
       </div>
       <div class="sec" data-sec="card">
@@ -682,6 +701,19 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
   </dl>
   <div class="mb"><span>原始碼：<a href="https://github.com/naldo-w/foil-proof-lab" target="_blank" rel="noopener">github.com/naldo-w/foil-proof-lab</a></span><button class="btn ghost" id="aboutClose">關閉</button></div>
 </div></div>
+<div class="modal" id="paramModal"><div class="box about" style="max-width:520px"><h2>參數 <span>JSON</span></h2>
+  <p>勾選要匯出（或匯入時要套用）的項目。匯入只會套用檔案裡有、而且有勾選的部分。</p>
+  <div class="pgrid" id="paramSel">
+    <label class="toggle"><input type="checkbox" data-k="paper" checked> 紙張</label>
+    <label class="toggle"><input type="checkbox" data-k="layers" checked> 效果圖層＋指派</label>
+    <label class="toggle"><input type="checkbox" data-k="layout" checked> 版面（畫布、排列、視角、鏡頭）</label>
+    <label class="toggle"><input type="checkbox" data-k="light" checked> 光源與背景</label>
+    <label class="toggle"><input type="checkbox" data-k="variants" checked> 版本</label>
+    <label class="toggle"><input type="checkbox" data-k="docs"> 檔案（含 SVG 原文，較大）</label>
+  </div>
+  <div class="mb"><span id="paramMsg"></span><label class="btn ghost">匯入 .json<input type="file" id="paramFile" accept=".json,application/json" hidden></label><button class="btn primary" id="paramExport">匯出 .json</button><button class="btn ghost" id="paramClose">關閉</button></div>
+</div></div>
+<div class="modal" id="linkModal"><div class="box about" style="max-width:460px"><h2>正反面 <span>Front / Back</span></h2><p id="linkMsg"></p><div class="mb"><span></span><button class="btn ghost" id="linkNo">不用</button><button class="btn primary" id="linkYes">連結為正反面</button></div></div></div>
 <div class="modal" id="modal"><div class="box"><img id="modalImg" alt="匯出結果"><div class="mb"><span id="modalMsg"></span><button class="btn" id="modalCopy">複製到剪貼簿</button><button class="btn primary" id="modalDl">下載 PNG</button><button class="btn ghost" id="modalClose">關閉</button></div></div></div>
 
 <script type="text/plain" id="sampleSvg"><?xml version="1.0" encoding="UTF-8"?>
@@ -887,12 +919,22 @@ function addDoc(text, name){
   syncDocFromS(); if(!parseSVGRoot(text)) return toast('這不是可解析的 SVG');
   const d={id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1e3), name, svgText:text, assign:{}, layers:[], paper:defaultPaper(), variants:[], koGap:2, use:true};
   S.docs.push(d); switchDoc(d.id, true);
+  const same=S.docs.find(o=>o.id!==d.id && o.vb && S.vb && Math.abs(o.vb[0]-S.vb[0])<1e-6 && Math.abs(o.vb[1]-S.vb[1])<1e-6 && !o.backOf && !o.frontOf);
+  if(same) askLink(d, same);
 }
+function askLink(d, other){
+  const m=$('#linkModal'); $('#linkMsg').innerHTML=`「${esc(d.name)}」與「${esc(other.name)}」尺寸相同（${fmt(S.vb[0])}×${fmt(S.vb[1])}）。要把它們連結為<b>正反面</b>嗎？連結後「${esc(d.name)}」當背面：不再單獨進版面，改由「翻面比例」決定哪些卡翻到背面；「並排比較」會正反各放一張。`;
+  m.classList.add('on');
+  $('#linkYes').onclick=()=>{ d.backOf=other.id; other.frontOf=d.id; m.classList.remove('on'); clearMasks(); sceneChanged(true,true); toast('已連結為正反面'); };
+  $('#linkNo').onclick=()=>m.classList.remove('on');
+}
+function unlinkDoc(d){ const o=S.docs.find(x=>x.id===(d.backOf||d.frontOf)); if(o){ delete o.backOf; delete o.frontOf; } delete d.backOf; delete d.frontOf; clearMasks(); sceneChanged(true,true); }
 function removeDoc(id){
   if(S.docs.length<=1) return toast('至少要保留一份 SVG');
-  const i=S.docs.findIndex(d=>d.id===id); if(i<0) return; const wasActive=id===S.docId;
+  const i=S.docs.findIndex(d=>d.id===id); if(i<0) return; const wasActive=id===S.docId; const rm=S.docs[i];
+  const o=S.docs.find(x=>x.id===(rm.backOf||rm.frontOf)); if(o){ delete o.backOf; delete o.frontOf; }
   S.docs.splice(i,1); if(docStore[id]){ docStore[id].root.remove(); delete docStore[id]; }
-  if(wasActive){ S.docId=null; switchDoc(S.docs[Math.max(0,i-1)].id); } else { clearMasks(); sceneChanged(true); renderDocList(); }
+  if(wasActive){ S.docId=null; switchDoc(S.docs[Math.max(0,i-1)].id); } else { clearMasks(); sceneChanged(true,true); }
 }
 function renderDocList(){
   syncDocFromS();
@@ -900,11 +942,13 @@ function renderDocList(){
     (S.docs||[]).forEach((d,i)=>{
       const row=document.createElement('div'); row.className='doc'+(d.id===S.docId?' on':'');
       const vb=d.vb||(docStore[d.id]?.vb)||[]; const dim=vb.length?`${fmt(vb[0])}×${fmt(vb[1])}`:'';
-      row.innerHTML=`<label class="toggle" title="在版面中使用"><input type="checkbox" ${d.use!==false?'checked':''}></label><span class="dn" title="切換編輯這份">${esc(d.name||'SVG')}</span><span class="dim">${dim}</span>${d.id===S.docId?'<span class="tag">編輯中</span>':''}<button class="ib up" title="順序往前">↑</button><button class="ib down" title="順序往後">↓</button><button class="ib del" title="移除">✕</button>`;
-      row.querySelector('input').addEventListener('change',e=>{ d.use=e.target.checked; sceneChanged(true); });
+      const side=d.backOf?'背面':(d.frontOf?'正面':'');
+      row.innerHTML=`<label class="toggle" title="在版面中使用"><input type="checkbox" ${d.use!==false?'checked':''} ${d.backOf?'disabled':''}></label><span class="dn" title="${dim}｜點一下切換編輯這份">${esc(d.name||'SVG')}</span>${side?`<span class="tag" title="正反面已連結">${side}</span>`:''}${d.id===S.docId?'<span class="tag">編輯中</span>':''}${side?'<button class="ib unl" title="解除正反面連結">解除</button>':''}<button class="ib up" title="順序往前">↑</button><button class="ib down" title="順序往後">↓</button><button class="ib del" title="移除">✕</button>`;
+      row.querySelector('.unl')?.addEventListener('click',()=>unlinkDoc(d));
+      row.querySelector('input').addEventListener('change',e=>{ d.use=e.target.checked; sceneChanged(true,true); });
       row.querySelector('.dn').addEventListener('click',()=>switchDoc(d.id));
-      row.querySelector('.up').addEventListener('click',()=>{ if(i>0){ S.docs.splice(i,1); S.docs.splice(i-1,0,d); sceneChanged(true); } });
-      row.querySelector('.down').addEventListener('click',()=>{ if(i<S.docs.length-1){ S.docs.splice(i,1); S.docs.splice(i+1,0,d); sceneChanged(true); } });
+      row.querySelector('.up').addEventListener('click',()=>{ if(i>0){ S.docs.splice(i,1); S.docs.splice(i-1,0,d); sceneChanged(true,true); } });
+      row.querySelector('.down').addEventListener('click',()=>{ if(i<S.docs.length-1){ S.docs.splice(i,1); S.docs.splice(i+1,0,d); sceneChanged(true,true); } });
       row.querySelector('.del').addEventListener('click',()=>removeDoc(d.id));
       host.appendChild(row);
     });
@@ -915,7 +959,9 @@ let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
 const VIEW_PRESETS=[['正上方',0,0],['俯 30°',30,0],['俯 45°',45,0],['左前 45°',45,-35],['右前 45°',45,35],['等角',55,45],['低角 65°',65,0]];
 const SCENE_BG=[['#2a2a2e','深灰'],['#141416','黑'],['#6b6b70','中灰'],['#c9c4bb','暖灰'],['#e9e4da','米白'],['#f5f5f5','白'],['#1f2a3a','深藍'],['#3d2f2a','深棕']];
-const defaultScene = () => ({W:1080,H:1350,roll:0,gx:.3,gy:.25,tx:.5,ty:.5,lightDist:1,lsize:1,intensity:1,spot:.35,soft:.6,kelvin:5500,useLightColor:false,lightColor:'#ffe9c8',elev:8,thick:2,tilt:2,lightMode:'merged',mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,shiftX:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6,rn:0,fanD:160,fanA0:-30,fanA1:30,fanGuide:true,dfx:.5,dfy:.5,aperture:0,ev:0,bgMat:'solid',stoneKind:'marble',bgScale:1,bgTex:.6,reflOn:true,bgGloss:.3});
+const LAYOUT_KEYS=['layout','cols','rows','n','rn','size','gap','rot','rot2','bleed','jitter','seed','fanD','fanA0','fanA1','fanGuide','fanCx','fanCy','fanRx','fanRy','brickOff','tossSpread','tossTilt','tossAir','tossH','randRx','randRy','tilt3'];
+const LIGHT_KEYS=['lx','ly','lz','ax','ay','lsize','intensity','spot','soft','kelvin','useLightColor','lightColor','elev','thick','shadow','bg','bgMat','stoneKind','bgScale','bgTex','reflOn','bgGloss','glow','vig'];
+const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lz:.6,ax:.5,ay:.5,lsize:1,intensity:1,spot:.35,soft:.6,kelvin:5500,useLightColor:false,lightColor:'#ffe9c8',elev:8,thick:2,tilt:2,lightMode:'merged',mix:'current',includeCurrent:true,exportScale:1,layout:'grid',cols:2,rows:3,n:7,size:44,gap:36,rot:6,bleed:15,seed:3,pitch:30,yaw:-15,fov:2200,zoom:1,shift:0,shiftX:0,bg:'#2a2a2e',glow:.35,vig:.4,shadow:.6,rn:0,fanD:160,fanA0:-30,fanA1:30,fanGuide:true,fanCx:0,fanCy:0,fanRx:0,fanRy:0,brickOff:50,tossSpread:60,tossTilt:25,tossAir:40,tossH:120,randRx:0,randRy:0,tilt3:3,flipRatio:50,dfx:.5,dfy:.5,aperture:0,ev:0,bgMat:'solid',stoneKind:'marble',bgScale:1,bgTex:.6,reflOn:true,bgGloss:.3});
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
@@ -1304,7 +1350,10 @@ function layerSVG(keep, color, gap, blur=0){
 const blobMap = new Map();
 function svgBlobURL(str){ const u=URL.createObjectURL(new Blob([str],{type:'image/svg+xml;charset=utf-8'})); blobMap.set(u,str); return u; }
 const toURI = el => `url("${svgBlobURL(new XMLSerializer().serializeToString(el))}")`;
-function clearMasks(){ for(const u of blobMap.keys()) URL.revokeObjectURL(u); blobMap.clear(); maskCache={}; }
+function clearMasks(){ for(const u of blobMap.keys()) URL.revokeObjectURL(u); blobMap.clear(); maskCache={}; maskOrder.length=0; prefixCache.clear(); sceneRev++; }
+/* 遮罩快取：最多留 96 筆，超過就把最舊的 blob 釋放掉（否則每次換鋪法都留一份幾 MB 的 SVG） */
+const maskOrder=[], prefixCache=new Map();
+function cachePut(key,val){ maskCache[key]=val; maskOrder.push(key); while(maskOrder.length>96){ const k=maskOrder.shift(); const v=maskCache[k]; delete maskCache[k]; const m=v&&String(v).match(/blob:[^"')]+/); if(m){ URL.revokeObjectURL(m[0]); blobMap.delete(m[0]); } } return val; }
 function inlineBlobs(html){ return html.replace(/blob:[^"'&)\s]+/g, u=>{ const str=blobMap.get(u); return str ? 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(str) : u; }); }
 /* 匯出前：把 clone 裡每個效果層的向量遮罩（可能好幾 MB）先點陣化成 PNG data URL——
    foreignObject 內超過約 2MB 的 data: 影像會直接失效，整層箔面就會沒遮罩地蓋滿畫面。 */
@@ -1393,7 +1442,7 @@ function fxDOM(L, fast=false){
   return h;
 }
 function renderFx(){
-  computeEffective();
+  sceneRev++; computeEffective();
   renderFxInto($('#fxs'), S.layers, effLayer, '', S.paper);
   renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene(); attachHelp();
 }
@@ -1724,36 +1773,55 @@ function kelvinRGB(k){ const t=Math.max(1000,Math.min(12000,k))/100; let r,g,b;
   b = t>=66 ? 255 : (t<=19 ? 0 : 138.5177312231*Math.log(t-10)-305.0447927307);
   const c=[r,g,b].map(v=>Math.max(0,Math.min(255,v))); const m=Math.max(...c)||1; return c.map(v=>Math.round(v/m*255)); }
 function lightRGB(){ const C=S.scene; return C.useLightColor ? rgb(C.lightColor||'#ffffff') : kelvinRGB(C.kelvin||5500); }
-/* 燈 → 焦點 → 反光區 → 視角，四者用鏡面幾何綁在一起：
-   焦點 T 是主要參數（燈照向、也是相機看到反光區的地方）；燈的位置 G 由「相機 → T 的連線延伸到 z=-h 的鏡像點」反推，
-   所以不管俯角、方位怎麼轉，反光區永遠落在焦點上，燈會自己移到能把光反射進相機的位置。拖燈則反過來把焦點算出來。 */
-function lightModel(tx,ty){
-  const C=S.scene; const h=Math.max(40,(C.lightDist??1)*0.6*C.W);
-  let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:C.W/2,y:C.H/2,z:C.fov||2200}; }
-  const T={x:tx*C.W, y:ty*C.H};
-  const sc = cam.z>1 ? (cam.z+h)/cam.z : 1;
-  const G={x:cam.x+sc*(T.x-cam.x), y:cam.y+sc*(T.y-cam.y)};
-  const P={x:T.x, y:T.y};
-  return {G,h,cam,P,T};
+/* 固定 3D 主燈（像 3D 軟體的點光／聚光燈）：燈 L=(lx,ly,lz) 固定在桌面空間、照向目標 A=(ax,ay,0)，只有使用者拖曳或滑桿會改變它。
+   改視角時燈不動；反光區 P 由真實鏡面幾何算出——把燈以桌面為鏡面鏡像到 z=-Lz，連到相機的線與桌面的交點：
+   P = Lxy + (camxy − Lxy)·Lz/(Lz+camz)。所以俯角、方位一改，高光會落到不同的卡上（這才是真 3D）。 */
+function lightModel(){
+  const C=S.scene; const W=C.W, H=C.H;
+  const L={x:(C.lx??.3)*W, y:(C.ly??.25)*H, z:Math.max(40,(C.lz??.6)*W)};
+  const A={x:(C.ax??.5)*W, y:(C.ay??.5)*H};
+  let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:W/2,y:H/2,z:C.fov||2200}; }
+  const cz=Math.max(1,cam.z); const t=L.z/(L.z+cz);
+  const P = cam.z>0 ? {x:L.x+(cam.x-L.x)*t, y:L.y+(cam.y-L.y)*t} : {x:A.x,y:A.y};
+  return {L, A, P, cam, h:L.z, G:{x:L.x,y:L.y}, T:A};
 }
-function lampToFocus(gx,gy){ // 燈的落點 → 焦點（鏡像交點）
-  const C=S.scene; const h=Math.max(40,(C.lightDist??1)*0.6*C.W); let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:C.W/2,y:C.H/2,z:C.fov||2200}; }
-  const t = cam.z>1 ? cam.z/(cam.z+h) : 1; const G={x:gx*C.W,y:gy*C.H};
-  return {tx:(cam.x+t*(G.x-cam.x))/C.W, ty:(cam.y+t*(G.y-cam.y))/C.H};
+/* 聚光錐衰減：燈→卡片 與 燈→目標 的夾角，超過半角就變暗；柔光決定邊緣漸變寬度 */
+function spotFalloff(L, A, c3){
+  const C=S.scene, spot=C.spot??.35, soft=C.soft??.6;
+  const ax=A.x-L.x, ay=A.y-L.y, az=-L.z, al=Math.hypot(ax,ay,az)||1;
+  const dx=c3.x-L.x, dy=c3.y-L.y, dz=(c3.z||0)-L.z, dl=Math.hypot(dx,dy,dz)||1;
+  const cosT=(ax*dx+ay*dy+az*dz)/(al*dl); const th0=(70-58*spot)*Math.PI/180;
+  const c1=Math.cos(th0), c0=Math.cos(th0*(1+0.9*soft)); // c0 = 完全暗，c1 = 全亮
+  const u=Math.max(0,Math.min(1,(cosT-c0)/Math.max(1e-6,c1-c0))); const sm=u*u*(3-2*u);
+  return 0.15+0.85*sm;
 }
-let dragWhat='light';
+/* 傾斜卡片的高光：把相機以卡片平面鏡像，燈→鏡像相機 的線與卡片平面的交點，再轉回卡片自己的座標 */
+function cardHighlight(sl, L, cam){
+  const m=slotMatrix(sl), n=m.n, c3={x:sl.x,y:sl.y,z:sl.z||0};
+  const d=(cam.x-c3.x)*n[0]+(cam.y-c3.y)*n[1]+(cam.z-c3.z)*n[2];
+  const cm={x:cam.x-2*d*n[0], y:cam.y-2*d*n[1], z:cam.z-2*d*n[2]};
+  const den=(cm.x-L.x)*n[0]+(cm.y-L.y)*n[1]+(cm.z-L.z)*n[2]; if(Math.abs(den)<1e-6) return {u:0,v:0};
+  const t=((c3.x-L.x)*n[0]+(c3.y-L.y)*n[1]+(c3.z-L.z)*n[2])/den;
+  const px=L.x+t*(cm.x-L.x)-c3.x, py=L.y+t*(cm.y-L.y)-c3.y, pz=L.z+t*(cm.z-L.z)-c3.z;
+  return {u:m.a*px+m.b*py+m.r20*pz, v:m.c*px+m.d*py+m.r21*pz}; // Rᵀ·(Ph−c3)
+}
+let dragWhat='lamp', dragStart=null;
 function scenePt(e){ const r=$('#scene').getBoundingClientRect(); return {sx:(e.clientX-r.left)/view.zoom, sy:(e.clientY-r.top)/view.zoom}; }
-function pickLightHandle(e){ // 離哪個把手近就拖哪個：燈（在高度 h 的投影）或焦點（桌面上）
-  const C=S.scene, {sx,sy}=scenePt(e); const {G,h,T}=lightModel(C.tx??.5,C.ty??.5);
-  const sL=tableToScreen(G.x,G.y,h), sT=tableToScreen(T.x,T.y,0);
-  return Math.hypot(sx-sL.x,sy-sL.y) <= Math.hypot(sx-sT.x,sy-sT.y) ? 'light' : 'target';
+function lightScreenPts(){ const C=S.scene, {L,A}=lightModel(); return {sL:tableToScreen(L.x,L.y,L.z), sF:tableToScreen(L.x,L.y,0), sA:tableToScreen(A.x,A.y,0), zOff:C.W*.04}; }
+function pickLightHandle(e){ // 離哪個把手近就拖哪個：燈球、燈上方的高度把手、目標十字；Shift = 一律調高度
+  const {sx,sy}=scenePt(e); const {sL,sA,zOff}=lightScreenPts();
+  if(e.shiftKey) return 'lz';
+  const dL=Math.hypot(sx-sL.x,sy-sL.y), dZ=Math.hypot(sx-sL.x,sy-(sL.y-zOff)), dA=Math.hypot(sx-sA.x,sy-sA.y);
+  const m=Math.min(dL,dZ,dA); return m===dZ ? 'lz' : (m===dL ? 'lamp' : 'aim');
 }
 function sceneLightFrom(e){
-  const C=S.scene, {sx,sy}=scenePt(e);
-  if(dragWhat==='target'){ const t=screenToTable(sx,sy,0); C.tx=Math.min(1.6,Math.max(-.6,t.x/C.W)); C.ty=Math.min(1.6,Math.max(-.6,t.y/C.H)); return; }
-  const h=Math.max(40,(C.lightDist??1)*0.6*C.W); const g=screenToTable(sx,sy,h); // 燈在高度 h：沿視線與 z=h 的平面相交
-  C.gx=Math.min(2.5,Math.max(-1.5,g.x/C.W)); C.gy=Math.min(2.5,Math.max(-1.5,g.y/C.H));
-  const f=lampToFocus(C.gx,C.gy); C.tx=Math.min(1.6,Math.max(-.6,f.tx)); C.ty=Math.min(1.6,Math.max(-.6,f.ty));
+  const C=S.scene, {sx,sy}=scenePt(e); const cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+  if(dragWhat==='aim'){ const t=screenToTable(sx,sy,0); C.ax=cl(t.x/C.W,-.6,1.6); C.ay=cl(t.y/C.H,-.6,1.6); }
+  else if(dragWhat==='lz'){ // 高度：沿立柱的螢幕像素換算
+    if(!dragStart){ const {sL,sF}=lightScreenPts(); const stem=Math.hypot(sL.x-sF.x,sL.y-sF.y); const L=lightModel().L; dragStart={sy0:sy, lz0:C.lz??.6, k: stem>4 ? stem/L.z : 0.6}; }
+    C.lz=cl(dragStart.lz0+(dragStart.sy0-sy)/dragStart.k/C.W, .1, 3);
+  } else { const {L}=lightModel(); const g=screenToTable(sx,sy,L.z); C.lx=cl(g.x/C.W,-1.5,2.5); C.ly=cl(g.y/C.H,-1.5,2.5); } // 燈：沿視線與 z=Lz 的平面相交
+  applySceneLight(); syncSceneValues();
 }
 stage.addEventListener('pointermove', e=>{
   if(viewMode==='scene'){ if(lightDrag) sceneLightFrom(e); return; }
@@ -1764,23 +1832,23 @@ stage.addEventListener('pointermove', e=>{
 stage.addEventListener('pointerdown', e=>{
   if(viewMode!=='scene' || e.button!==0 || e.altKey || spaceDown || e.target.closest('.stage-tools')) return;
   if(focusPick){ const C=S.scene, {sx,sy}=scenePt(e), t=screenToTable(sx,sy,0); C.dfx=t.x/C.W; C.dfy=t.y/C.H; if(!C.aperture) C.aperture=.5; focusPick=false; stage.classList.remove('picking'); $('#sFocusPick').textContent='點畫布對焦'; sceneChanged(false); e.preventDefault(); return; }
-  dragWhat=pickLightHandle(e); lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} sceneLightFrom(e); e.preventDefault();
+  dragWhat=pickLightHandle(e); dragStart=null; lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} if(dragWhat!=='lz') sceneLightFrom(e); e.preventDefault();
 });
-const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; stage.classList.remove('dragging-light'); save(); };
+const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; dragStart=null; stage.classList.remove('dragging-light'); save(); };
 stage.addEventListener('pointerup', endLightDrag); stage.addEventListener('pointercancel', endLightDrag);
 stage.addEventListener('pointerleave', ()=>{ hovering=false; lastMove=performance.now(); });
 function loop(){
   requestAnimationFrame(loop); if(!S) return;
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(viewMode==='scene'){ const C=S.scene; target.px=C.tx ?? .5; target.py=C.ty ?? .5; target.hov=1; }
-  else if(!hovering){
+  if(viewMode==='scene') return; // 版面：燈固定，沒有任何自動移動；只在使用者操作時重算
+  if(!hovering){
     if(S.paper.auto && !reduce && performance.now()-lastMove>1800){ autoT+=0.006; target.px=.5+.38*Math.cos(autoT); target.py=.5+.3*Math.sin(autoT*.8); target.hov=.8; }
     else { target.px=.5; target.py=.5; target.hov=0; }
   }
-  const k = (hovering||lightDrag) ? .4 : (viewMode==='scene' ? .25 : (reduce ? 1 : .06));
+  const k = hovering ? .4 : (reduce ? 1 : .06);
   let moved=false;
   for(const key of ['px','py','hov']){ const d=target[key]-cur[key]; if(Math.abs(d)>1e-4){ cur[key]+=d*k; moved=true; } }
-  if(moved || (lightDrag && viewMode==='scene')){ setPointer(cur.px,cur.py,cur.hov); if(viewMode==='scene') applySceneLight(cur.px,cur.py,cur.hov); }
+  if(moved) setPointer(cur.px,cur.py,cur.hov);
 }
 requestAnimationFrame(loop);
 new ResizeObserver(()=>{ if(S){ fitCard(); fitScene(); } }).observe(stage);
@@ -1840,13 +1908,14 @@ const HELP = {
   knockout:'被上層圖形挖空：關掉的話這一層會完整印出，上層直接疊在上面（例如白墨打底再印彩色時要關掉底層的挖空）。',
   /* 版面 */
   'sec-size':'畫布尺寸、匯出倍率與預覽品質。線框 = 只畫卡片外框與編號，換鋪法、視角最順；快速 = 略過壓痕／挖空／紙紋；完整 = 所見即所得。匯出時一律以完整品質重算。',
-  'sec-layout':'單張／格狀／磚牆／隨機鋪滿／扇形／階梯。隨機鋪滿與版本分配由「種子」決定，按 🎲 換一組。單張旋轉 = 每張在鋪法算出的角度上再加同一個角度。',
+  'sec-layout':'單張／格狀／鋪磚／隨機鋪滿／扇形／階梯／空中灑落。3 軸旋轉以正交投影落到桌面（仿射變換），合併光場與匯出都支援。隨機鋪滿與版本分配由「種子」決定，按 🎲 換一組。單張旋轉 = 每張在鋪法算出的角度上再加同一個角度。',
   'sec-view':'相機：俯角（0° 平視俯拍）、方位（桌面自轉）、整體旋轉（成像後再轉）、縮放與 X／Y 位移。透視後常需要把版面往上拉一點。',
   'sec-lens':'焦段 = 35mm 等效焦距：短 = 廣角、近大遠小；長 = 望遠、接近等角。對焦：按下後點畫布上要清楚的位置；光圈越大（f 值越小）景深越淺，離對焦線越遠越糊；曝光 ±EV 調整整體亮度。景深在預覽是近似，匯出時逐像素計算。',
   'sec-docs':'同時載入多份 SVG（例如正面／背面、A／B 稿）。點名稱切換要編輯的那份；勾選 = 參與版面；↑↓ 決定順序（依序輪流、對照時的左右／上下順序）。「並排比較」把每份各放一張排成一列。頂端「上傳 SVG」與拖放的第一個檔會取代目前這份，「＋ 加入 SVG」與拖放的其餘檔會新增。',
+  sFlip:'翻面比例：正反面連結後，版面上有多少比例的卡翻到背面（依序／逐列／逐欄輪流時改為正反交替）。',
   'sec-variants':'每個版本 = 一組完整的紙張＋效果設定（例如燙金版、燙銀版）。版面上的每張卡依序輪流或隨機套用不同版本，而不是同一張複製多份。',
   'sec-bg':'桌面材質：素色／霧面／亮面只差在反光；木材、石材、布、皮革會疊上程序紋理（可調尺寸與強度），顏色仍由色盤決定（木材另有深淺快選）。反光關掉 = 消光桌面（絨布），光只照亮卡片；光斑 = 燈在桌面上留下的漫反射；光澤 = 鏡面高光（落在反光區）。',
-  'sec-light':'燈 → 焦點 → 反光區 → 視角以鏡面幾何綁定：焦點（十字）是你要反光的位置，燈會自動移到能把光經桌面反射進相機的地方；拖燈則反推焦點。改俯角或方位時反光區留在焦點上。高度 = Z × 0.6 × 畫布寬；大小 = 燈的面積：小燈高光銳利、影子硬，大燈（柔光箱）反光帶寬、影子軟。壓痕與打凸打凹的明暗方向也跟著燈走。',
+  'sec-light':'單一主燈固定在桌面空間（像 3D 軟體的聚光燈）：燈球 = 位置（拖曳在同高度移動）、▲▼ 或 Shift+拖曳 = 高度、十字 = 照向的目標。改視角時燈不動，反光區（小白點）由真實鏡面幾何算出，所以俯角、方位一改，高光會落到不同的卡上。聚焦 = 光錐大小（虛線圓）、柔光 = 錐緣漸變；大小 = 燈的面積：小燈高光銳利、影子硬。壓痕與打凸打凹的明暗方向跟著燈走；背光或傾斜的卡會變暗。',
   'sec-card':'紙厚：卡片下緣露出實心紙邊，交疊時後放的卡依厚度墊高；卡片依疊放順序繪製，微傾也不會互相穿透。離桌越高影子越遠、越糊、越淡。',
   'sec-pcolor':'紙張本身的顏色。上傳時若偵測到滿版底色矩形，會自動當成紙色並移到「不印」圖層。',
   'sec-ptex':'紙質決定表面凹凸；紋理以高度圖打光生成，可調強度、深度、顆粒、尺寸、光源角度與混合方式。',
@@ -1857,6 +1926,19 @@ const HELP = {
   'sec-ko':'多層燙箔／油墨重疊時，下層沿上層圖形外擴「安全空間」後挖空，避免箔面互疊起皺。每個圖層可個別關閉。',
   'sec-layers':'圖層由上往下 = 印刷順序由下往上（列表最下方最先印）。同一元素若被多個圖層指派，以最接近的群組指派為準。',
   'sec-tree':'點一個群組 → 整組指派到目前圖層。右側圓點是該節點目前的效果（淡色 = 從上層群組繼承）。',
+  sLayoutReset:'把排列相關設定（鋪法、欄列、張數、卡片寬、間距、旋轉、扇形、灑落、微傾、種子）回復成預設值；視角、光源、背景不動。',
+  sBrickOff:'鋪磚：奇偶列互相錯開的比例。50% = 標準磚牆（錯半張），0% = 整齊格狀，100% = 錯一整張（等於格狀）。',
+  sFanCx:'扇形圓心的水平位移（畫布寬的 %）。',
+  sFanCy:'扇形圓心的垂直位移（畫布高的 %）。',
+  sFanRx:'扇形每張卡繞自己 X 軸（水平軸）的傾斜，讓卡片像從桌面翹起。',
+  sFanRy:'扇形每張卡繞自己 Y 軸（垂直軸）的傾斜。',
+  sTossSpread:'空中灑落的散布範圍：卡片離畫布中心的分布寬度。',
+  sTossTilt:'空中灑落每張卡 X／Y 軸的隨機傾斜範圍。',
+  sTossAir:'有多少比例的卡片懸在空中（z > 0）：影子更遠、更糊、更淡，卡片略放大。',
+  sTossH:'懸空卡片的最大高度（px）。',
+  sRandRx:'隨機鋪滿每張卡繞 X 軸的隨機傾斜範圍。',
+  sRandRy:'隨機鋪滿每張卡繞 Y 軸的隨機傾斜範圍。',
+  sTilt3:'自然微傾：所有鋪法每張卡再加一點隨機的 3 軸旋轉（±度），看起來不那麼機械；0 = 完全整齊。',
   sRN:'隨機鋪滿的張數：0 = 鋪滿——卡片彼此交疊到看不見背景（旋轉與位移越大排得越密）；指定張數則從格子裡隨機挑並推開重疊。',
   sFanD:'扇形弧線的直徑，以卡片高度的 % 計。小 = 卡片幾乎繞同一個軸心；大 = 接近平放成一排弧。',
   sFanA0:'扇形起點角度：第一張卡在弧上的方位（0° = 正上方，順時針為正）。',
@@ -1904,12 +1986,12 @@ const HELP = {
   sSoft:'柔光：光錐邊緣的漸變寬度與影子的軟硬。柔光箱高、裸燈低。',
   sKelvin:'色溫：2200K 燭光偏橘、5500K 日光中性、9000K 藍天偏藍。只保留一半色偏，模擬相機白平衡。',
   sUseLC:'用色盤自訂光的顏色，取代色溫。',
-  sLx:'燈在桌面上的落點 X。燈與焦點以鏡面幾何綁定：拖燈會反推焦點。',
-  sLy:'燈在桌面上的落點 Y。',
-  sTx:'焦點 X：燈照向的桌面點，也是相機看到反光區的位置。改視角時反光區留在焦點上，燈自動換位。',
-  sTy:'焦點 Y。',
-  sTcenter:'把焦點放回畫布中心。',
-  sDist:'燈的高度：Z × 0.6 × 畫布寬。越低各卡反光差異越大、影子越長；越高越像遠處的大燈。',
+  sLx:'燈在桌面上的落點 X（畫布寬的 %）。',
+  sLy:'燈在桌面上的落點 Y（畫布高的 %）。',
+  sTx:'目標 X：燈照向的桌面點（光錐中心、光斑中心）。反光區的位置另由鏡面幾何決定。',
+  sTy:'目標 Y。',
+  sTcenter:'把目標放回畫布中心。',
+  sDist:'燈的高度（× 畫布寬）。越低各卡受光差異越大、影子越長；越高越均勻。',
   sLsize:'燈的面積：小燈高光銳利、影子硬；大燈（柔光箱）反光帶寬、影子軟。',
   sThick:'紙厚：卡片下緣露出的實心紙邊，交疊時看得出厚度。350g 象牙卡約 0.4mm，這裡 2px 左右。',
   sElev:'離地高度：卡片墊高的程度，影子離卡越遠、越糊、越淡。',
@@ -1979,7 +2061,7 @@ $('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayer
 $('#btnSample').addEventListener('click', ()=>{ start($('#sampleSvg').textContent, SAMPLE_NAME, true); });
 $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=''; });
 ['#fileAdd','#fileAdd2'].forEach(sel=>$(sel).addEventListener('change', e=>{ [...e.target.files].forEach(f=>readFile(f,true)); e.target.value=''; }));
-$('#btnCompare').addEventListener('click',()=>{ const C=S.scene; const n=Math.max(1,(S.docs||[]).filter(d=>d.use!==false).length); C.layout='grid'; C.cols=n; C.rows=1; C.mix='cycle'; C.includeCurrent=true; C.size=Math.min(60, Math.floor(90/n)); sceneChanged(true); if(viewMode!=='scene') setViewMode('scene'); });
+$('#btnCompare').addEventListener('click',()=>{ const C=S.scene; const n=Math.max(1,(S.docs||[]).filter(d=>d.use!==false && !d.backOf).length+(S.docs||[]).filter(d=>d.frontOf).length); C.layout='grid'; C.cols=n; C.rows=1; C.mix='cycle'; C.includeCurrent=true; C.size=Math.min(60, Math.floor(90/n)); sceneChanged(true); if(viewMode!=='scene') setViewMode('scene'); });
 function readFile(f, add=false){ if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg 檔'); const r=new FileReader(); r.onload=()=>{ if(add) addDoc(r.result,f.name); else { const d=activeDoc(); if(d) delete docStore[d.id]; start(r.result,f.name,true); } }; r.readAsText(f); }
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); stage.classList.add('dragging'); }));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); if(ev==='drop'||e.target===stage) stage.classList.remove('dragging'); }));
@@ -2105,9 +2187,49 @@ function prefixIds(str, pre){
             .replace(/(xlink:)?href="#([^"]+)"/g, (m,x,id)=>`${x||''}href="#${pre}${id}"`);
 }
 function innerXML(el){ return [...el.childNodes].map(n=>new XMLSerializer().serializeToString(n)).join(''); }
-window.foilProof = { get state(){ return S; }, parseLayerName, addDoc, switchDoc }; // 供外部腳本／除錯使用
+window.foilProof = { get state(){ return S; }, parseLayerName, addDoc, switchDoc, exportParams, importParams }; // 供外部腳本／除錯使用
 $('#modalClose').addEventListener('click', ()=>$('#modal').classList.remove('on'));
 $('#btnAbout').addEventListener('click', ()=>$('#about').classList.add('on'));
+/* ---------- 參數 JSON 匯出／匯入 ---------- */
+const VIEW_KEYS=['W','H','exportScale','quality','pitch','yaw','roll','fov','zoom','shift','shiftX','dfx','dfy','aperture','ev','mix','includeCurrent','flipRatio'];
+function paramSel(){ const o={}; $('#paramSel').querySelectorAll('input').forEach(i=>o[i.dataset.k]=i.checked); return o; }
+function exportParams(){
+  const sel=paramSel(), C=S.scene, pick=(keys)=>Object.fromEntries(keys.filter(k=>C[k]!==undefined).map(k=>[k,C[k]]));
+  const out={app:'foil-proof',ver:1,name:S.name,exported:new Date().toISOString()};
+  if(sel.paper) out.paper=deep(S.paper);
+  if(sel.layers){ out.layers=deep(S.layers.map(({_count,...l})=>l)); out.assign=deep(S.assign); out.koGap=S.koGap; }
+  if(sel.layout) out.layout=pick(LAYOUT_KEYS.concat(VIEW_KEYS));
+  if(sel.light) out.light=pick(LIGHT_KEYS);
+  if(sel.variants) out.variants=deep((S.variants||[]).map(v=>({...v, layers:v.layers.map(({_count,...l})=>l)})));
+  if(sel.docs){ syncDocFromS(); out.docs=deep(S.docs.map(d=>({...d, layers:(d.layers||[]).map(({_count,...l})=>l)}))); out.docId=S.docId; }
+  return out;
+}
+async function downloadJSON(obj, fname){
+  const text=JSON.stringify(obj,null,1); const blob=new Blob([text],{type:'application/json'});
+  if(dlCap){ try{ await dlCap.save({filename:fname,data:blob}); toast('已儲存 '+fname); return; }catch(e){ if(e&&e.code==='declined') return; } }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+}
+function importParams(obj){
+  if(!obj || obj.app!=='foil-proof') return toast('這不是本工具的參數檔');
+  const sel=paramSel(); let applied=[];
+  if(sel.docs && obj.docs && obj.docs.length){ // 換整組檔案：其餘項目跟著檔案走
+    Object.values(docStore).forEach(st=>st.root.remove()); for(const k in docStore) delete docStore[k];
+    S.docs=deep(obj.docs); S.docId=null; const id=obj.docId && S.docs.find(d=>d.id===obj.docId) ? obj.docId : S.docs[0].id; switchDoc(id,false); applied.push('檔案');
+  }
+  if(sel.paper && obj.paper){ S.paper=Object.assign(defaultPaper(),obj.paper); applied.push('紙張'); }
+  if(sel.layers && obj.layers){ S.layers=deep(obj.layers); S.layers.forEach(normalizeLayer); const ok=new Set(Object.keys(shapes).concat(Object.keys(shapes).map(k=>k))); const ids=new Set(S.layers.map(l=>l.id));
+    S.assign={}; Object.entries(obj.assign||{}).forEach(([k,v])=>{ if(ids.has(v) && (shapes[k] || svgRoot.querySelector(`[data-k="${k}"]`))) S.assign[k]=v; });
+    if(obj.koGap!=null) S.koGap=obj.koGap; S.active=S.layers.find(l=>l.type!=='hide')?.id||S.layers[0]?.id; uid=Math.max(uid,...S.layers.map(l=>+String(l.id).slice(1)+1)); applied.push('效果圖層'); }
+  if(sel.layout && obj.layout){ Object.assign(S.scene,obj.layout); applied.push('版面'); } // 換過檔案後 S.scene 是新物件，不要用上面的 C
+  if(sel.light && obj.light){ Object.assign(S.scene,obj.light); applied.push('光源'); }
+  if(sel.variants && obj.variants){ S.variants=deep(obj.variants); S.variants.forEach(v=>(v.layers||[]).forEach(normalizeLayer)); applied.push('版本'); }
+  setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyPaper(); clearMasks(); renderFx(); sceneChanged(true,true); save();
+  toast(applied.length?`已匯入：${applied.join('、')}`:'檔案裡沒有勾選的項目');
+}
+$('#btnParams').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#paramModal').classList.add('on'); });
+$('#paramClose').addEventListener('click',()=>$('#paramModal').classList.remove('on'));
+$('#paramExport').addEventListener('click',()=>{ downloadJSON(exportParams(), (S.name||'proof').replace(/\.svg$/i,'')+'-params.json'); });
+$('#paramFile').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ importParams(JSON.parse(r.result)); $('#paramModal').classList.remove('on'); }catch(x){ toast('JSON 解析失敗：'+x.message); } }; r.readAsText(f); });
 $('#aboutClose').addEventListener('click', ()=>$('#about').classList.remove('on'));
 $('#about').addEventListener('click', e=>{ if(e.target===$('#about')) $('#about').classList.remove('on'); });
 $('#modal').addEventListener('click', e=>{ if(e.target===$('#modal')) $('#modal').classList.remove('on'); });
@@ -2134,23 +2256,32 @@ function currentCardClone(){
   return c;
 }
 /* 版面要用的卡片池：依設定回傳 [{name, el}] */
+let sceneRev=0; const poolCache={key:null,pool:null};
 function variantPool(){
-  const C=S.scene, pool=[]; syncDocFromS();
+  const C=S.scene; syncDocFromS();
+  const key=[S.docId,C.mix,C.includeCurrent,(S.docs||[]).map(d=>d.id+':'+(d.use!==false)+':'+(d.backOf||'')).join(),(S.variants||[]).map(v=>v.id+(v.use!==false)).join(),sceneRev].join('|');
+  if(poolCache.key===key && poolCache.pool) return poolCache.pool;
+  const pool=[]; poolCache.key=key; poolCache.pool=pool;
   const cur={name:'目前設定', el:currentCardClone(), layers:S.layers, paper:S.paper, vk:'', doc:S.docId, vb:S.vb};
-  if(C.mix==='current'){ pool.push(cur); return pool; }
-  const docs=(S.docs||[]).filter(d=>d.use!==false || d.id===S.docId); const multi=docs.length>1;
+  // 某份文件「目前設定」的卡片（正面或背面都用這個建）
+  const docEntry=(d)=>{ if(d.id===S.docId) return Object.assign({},cur,{name:d.name});
+    return withDoc(d.id, ()=>{ const st=docStore[d.id]; if(!st) return null; return {name:d.name, el:buildVariantCard({id:'cur',layers:d.layers||[],paper:d.paper||defaultPaper()}, d.id+':'), layers:d.layers||[], paper:d.paper||defaultPaper(), vk:d.id+':cur:', doc:d.id, vb:st.vb}; }); };
+  const backOf=(d)=>{ const b=d.frontOf && S.docs.find(x=>x.id===d.frontOf); return b ? docEntry(b) : null; };
+  if(C.mix==='current'){ const e=cur; const a=activeDoc(); if(a){ if(a.backOf){ const f=S.docs.find(x=>x.id===a.backOf); const fe=f&&docEntry(f); if(fe){ fe.back=e; pool.push(fe); return pool; } } const b=backOf(a); if(b) e.back=b; } pool.push(e); return pool; }
+  const docs=(S.docs||[]).filter(d=>(d.use!==false || d.id===S.docId) && !d.backOf); const multi=docs.length>1; // 背面不獨立進池
   docs.forEach(d=>{
+    const back=backOf(d); const withBack=e=>{ if(back) e.back=back; return e; };
     if(d.id===S.docId){
       const use=(S.variants||[]).filter(v=>v.use!==false);
-      if(C.includeCurrent!==false || !use.length) pool.push(multi?Object.assign({},cur,{name:d.name}):cur);
-      use.forEach(v=>pool.push({name:(multi?d.name+' · ':'')+v.name, el:buildVariantCard(v), layers:v.layers, paper:v.paper, vk:v.id+':', doc:d.id, vb:S.vb}));
+      if(C.includeCurrent!==false || !use.length) pool.push(withBack(multi?Object.assign({},cur,{name:d.name}):Object.assign({},cur)));
+      use.forEach(v=>pool.push(withBack({name:(multi?d.name+' · ':'')+v.name, el:buildVariantCard(v), layers:v.layers, paper:v.paper, vk:v.id+':', doc:d.id, vb:S.vb})));
     } else {
       if(d.use===false) return;
       withDoc(d.id, ()=>{
         const st=docStore[d.id]; if(!st) return;
         const use=(d.variants||[]).filter(v=>v.use!==false);
-        if(C.includeCurrent!==false || !use.length) pool.push({name:d.name, el:buildVariantCard({id:'cur',layers:d.layers||[],paper:d.paper||defaultPaper()}, d.id+':'), layers:d.layers||[], paper:d.paper||defaultPaper(), vk:d.id+':cur:', doc:d.id, vb:st.vb});
-        use.forEach(v=>pool.push({name:d.name+' · '+v.name, el:buildVariantCard(v, d.id+':'), layers:v.layers, paper:v.paper, vk:d.id+':'+v.id+':', doc:d.id, vb:st.vb}));
+        if(C.includeCurrent!==false || !use.length) pool.push(withBack({name:d.name, el:buildVariantCard({id:'cur',layers:d.layers||[],paper:d.paper||defaultPaper()}, d.id+':'), layers:d.layers||[], paper:d.paper||defaultPaper(), vk:d.id+':cur:', doc:d.id, vb:st.vb}));
+        use.forEach(v=>pool.push(withBack({name:d.name+' · '+v.name, el:buildVariantCard(v, d.id+':'), layers:v.layers, paper:v.paper, vk:d.id+':'+v.id+':', doc:d.id, vb:st.vb})));
       });
     }
   });
@@ -2159,17 +2290,35 @@ function variantPool(){
 }
 /* ---------- 合併光場：整個版面每個效果圖層只做一張遮罩（symbol + N 個 use），一盞燈連續掃過所有卡 ---------- */
 function slotPivot(sl){ const m=(sl.pivot||'50% 50%').split(/\s+/).map(parseFloat); return {x: sl.x-sl.w/2+sl.w*m[0]/100, y: sl.y-sl.h/2+sl.h*m[1]/100}; }
-function slotRectSVG(sl, fill, grow=0){ const pv=slotPivot(sl); return `<rect x="${(sl.x-sl.w/2-grow).toFixed(2)}" y="${(sl.y-sl.h/2-grow).toFixed(2)}" width="${(sl.w+2*grow).toFixed(2)}" height="${(sl.h+2*grow).toFixed(2)}" fill="${fill}" transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)})"/>`; }
+/* 每張卡的 3 軸旋轉（rx, ry, rz）以正交投影落到桌面 = 一個仿射矩陣；合併遮罩、可見遮罩、CSS transform、匯出全部用同一個矩陣。
+   R = Rz·Ry·Rx 取前兩列；CSS matrix(a,b,c,d,e,f)：x' = a·x + c·y + e，y' = b·x + d·y + f（卡片中心為原點）。n = 法向量。 */
+function slotMatrix(sl){
+  if(sl._m) return sl._m;
+  const D=Math.PI/180, rx=(sl.rx||0)*D, ry=(sl.ry||0)*D, rz=((sl.rz ?? sl.r) || 0)*D;
+  const cx=Math.cos(rx), sx=Math.sin(rx), cy=Math.cos(ry), sy=Math.sin(ry), cz=Math.cos(rz), sz=Math.sin(rz);
+  const a=cz*cy, b=sz*cy, c=cz*sy*sx-sz*cx, d=sz*sy*sx+cz*cx;
+  const n=[cz*sy*cx+sz*sx, sz*sy*cx-cz*sx, cy*cx];
+  const pv=slotPivot(sl), plx=pv.x-sl.x, ply=pv.y-sl.y;
+  const e=sl.x+plx-(a*plx+c*ply), f=sl.y+ply-(b*plx+d*ply);
+  let det=a*d-b*c; if(Math.abs(det)<1e-4) det=det<0?-1e-4:1e-4;
+  return sl._m={a,b,c,d,e,f,n,r20:-sy,r21:cy*sx,ia:d/det,ib:-b/det,ic:-c/det,id:a/det};
+}
+function tableToSlot(sl,X,Y){ const m=slotMatrix(sl); const dx=X-m.e, dy=Y-m.f; return {x:m.ia*dx+m.ic*dy, y:m.ib*dx+m.id*dy}; } // 桌面 → 卡片自己的座標（中心原點）
+function slotCorners(sl){ const m=slotMatrix(sl), w=sl.w/2, h=sl.h/2; return [[-w,-h],[w,-h],[w,h],[-w,h]].map(([x,y])=>[m.a*x+m.c*y+m.e, m.b*x+m.d*y+m.f]); }
+function slotMatrixSVG(sl){ const m=slotMatrix(sl); return `matrix(${m.a.toFixed(5)} ${m.b.toFixed(5)} ${m.c.toFixed(5)} ${m.d.toFixed(5)} ${m.e.toFixed(2)} ${m.f.toFixed(2)})`; }
+function slotKey(sl){ const m=slotMatrix(sl); return [Math.round(m.e/2),Math.round(m.f/2),sl.w|0,sl.h|0,Math.round(m.a*100),Math.round(m.b*100),Math.round(m.c*100),Math.round(m.d*100)].join(','); }
+function slotRectSVG(sl, fill, grow=0){ return `<rect x="${(-sl.w/2-grow).toFixed(2)}" y="${(-sl.h/2-grow).toFixed(2)}" width="${(sl.w+2*grow).toFixed(2)}" height="${(sl.h+2*grow).toFixed(2)}" fill="${fill}" transform="${slotMatrixSVG(sl)}"/>`; }
 /* 合併層的範圍：所有卡片（含旋轉後的外接框）與畫布的聯集——透視或出血時卡片會落在畫布外，遮罩若只有畫布大小那些卡就會沒內容 */
 function slotsExtent(slots){
   const C=S.scene; let minX=0,minY=0,maxX=C.W,maxY=C.H;
-  slots.forEach(sl=>{ const r=Math.hypot(sl.w,sl.h)/2+4; const pv=slotPivot(sl); const d=Math.hypot(sl.x-pv.x,sl.y-pv.y);
-    minX=Math.min(minX,sl.x-r-d); minY=Math.min(minY,sl.y-r-d); maxX=Math.max(maxX,sl.x+r+d); maxY=Math.max(maxY,sl.y+r+d); });
-  return {minX:Math.floor(minX),minY:Math.floor(minY),w:Math.ceil(maxX-minX),h:Math.ceil(maxY-minY)};
+  slots.forEach(sl=>{ slotCorners(sl).forEach(([x,y])=>{ minX=Math.min(minX,x-6); minY=Math.min(minY,y-6); maxX=Math.max(maxX,x+6); maxY=Math.max(maxY,y+6); }); });
+  const q=8; minX=Math.floor(minX/q)*q; minY=Math.floor(minY/q)*q; maxX=Math.ceil(maxX/q)*q; maxY=Math.ceil(maxY/q)*q; // 對齊 8px，遮罩快取鍵才穩定
+  return {minX,minY,w:maxX-minX,h:maxY-minY};
 }
+function prefixed(keyBase,i,inner){ const k=keyBase+':'+i+':'+inner.length; let v=prefixCache.get(k); if(!v){ v=prefixIds(inner,'s'+i+'_'); if(prefixCache.size>400) prefixCache.clear(); prefixCache.set(k,v); } return v; }
 function buildMergedMask(keep, gap, keyBase, slots, idxs, blur=0){
   const C=S.scene, E=slotsExtent(slots);
-  const key='mg:'+keyBase+':'+gap+':'+blur+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1),s.pivot||''].join(',')).join(';')+':'+idxs.join(',')+':'+[E.minX,E.minY,E.w,E.h].join(',');
+  const key='mg:'+keyBase+':'+gap+':'+blur+':'+slots.map(slotKey).join(';')+':'+idxs.join(',')+':'+[E.minX,E.minY,E.w,E.h].join(',');
   if(maskCache[key]) return maskCache[key];
   const root=layerSVG(keep,'#fff',gap,blur); const vb=(root.getAttribute('viewBox')||'0 0 1000 700').trim().split(/[\s,]+/).map(Number);
   const vx=vb[0]||0, vy=vb[1]||0, vw=vb[2]||1, vh=vb[3]||1;
@@ -2178,29 +2327,30 @@ function buildMergedMask(keep, gap, keyBase, slots, idxs, blur=0){
   const inner=innerXML(root); const rootStyle=esc(root.getAttribute('style')||'');
   let defs='', body='';
   idxs.forEach(i=>{
-    const sl=slots[i], pv=slotPivot(sl), above=slots.slice(i+1); const sx=sl.w/vw, sy=sl.h/vh;
+    const sl=slots[i], above=slots.slice(i+1); const sx=sl.w/vw, sy=sl.h/vh;
     // 每張卡只畫「沒被後放的卡蓋住」的部分（遮擋遮罩），交疊鋪法才不會讓下面那張的效果浮到上面
     defs+=`<mask id="o${i}" maskUnits="userSpaceOnUse" x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}"><rect x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}" fill="#fff"/>${above.map(a=>slotRectSVG(a,'#000')).join('')}</mask>`;
     defs+=`<clipPath id="cp${i}" clipPathUnits="userSpaceOnUse"><rect x="${vx}" y="${vy}" width="${vw}" height="${vh}"/></clipPath>`;
-    body+=`<g mask="url(#o${i})"><g transform="rotate(${sl.r.toFixed(3)} ${pv.x.toFixed(2)} ${pv.y.toFixed(2)}) translate(${(sl.x-sl.w/2).toFixed(2)} ${(sl.y-sl.h/2).toFixed(2)}) scale(${sx.toFixed(6)} ${sy.toFixed(6)}) translate(${-vx} ${-vy})" clip-path="url(#cp${i})">${prefixIds(inner,'s'+i+'_')}</g></g>`;
+    body+=`<g mask="url(#o${i})"><g transform="${slotMatrixSVG(sl)} translate(${(-sl.w/2).toFixed(2)} ${(-sl.h/2).toFixed(2)}) scale(${sx.toFixed(6)} ${sy.toFixed(6)}) translate(${-vx} ${-vy})" clip-path="url(#cp${i})">${prefixed(keyBase,i,inner)}</g></g>`;
   });
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" viewBox="${E.minX} ${E.minY} ${E.w} ${E.h}" width="${E.w}" height="${E.h}" style="${rootStyle}"><defs>${defs}</defs>${body}</svg>`;
-  return maskCache[key]=`url("${svgBlobURL(svg)}")`;
+  return cachePut(key,`url("${svgBlobURL(svg)}")`);
 }
 /* 卡片可見區域遮罩（白：該卡片矩形；黑：後放的卡片矩形）——套在 .fx 外層，讓壓痕／投影不會穿到上面那張卡 */
 function visibleRectsMask(slots, idxs){
-  const E=slotsExtent(slots); const key='vis:'+idxs.join(',')+':'+slots.map(s=>[s.x|0,s.y|0,s.w|0,s.r.toFixed(1)].join(',')).join(';');
+  const E=slotsExtent(slots); const key='vis:'+idxs.join(',')+':'+slots.map(slotKey).join(';')+':'+(S.scene.thick??2);
   if(maskCache[key]) return maskCache[key];
   const th=(S.scene.thick??2);
   let body=''; idxs.forEach(i=>{ const above=slots.slice(i+1); body+=`<g mask="url(#v${i})">${slotRectSVG(slots[i],'#fff',Math.max(6,th*3))}</g>`; });
   let defs=''; idxs.forEach(i=>{ defs+=`<mask id="v${i}" maskUnits="userSpaceOnUse" x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}"><rect x="${E.minX}" y="${E.minY}" width="${E.w}" height="${E.h}" fill="#fff"/>${slots.slice(i+1).map(a=>slotRectSVG(a,'#000')).join('')}</mask>`; });
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${E.minX} ${E.minY} ${E.w} ${E.h}" width="${E.w}" height="${E.h}"><defs>${defs}</defs>${body}</svg>`;
-  return maskCache[key]=`url("${svgBlobURL(svg)}")`;
+  return cachePut(key,`url("${svgBlobURL(svg)}")`);
 }
 function buildMergedFx(host, pool, slotOwner, slots){
   host.innerHTML='';
-  pool.forEach((pe,pi)=>withDoc(pe.doc, ()=>{
-    const idxs=slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi); if(!idxs.length) return;
+  const groups=[]; pool.forEach((pe,pi)=>{ groups.push({pe, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side!=='back')}); if(pe.back) groups.push({pe:pe.back, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side==='back')}); });
+  groups.forEach(({pe,idxs})=>withDoc(pe.doc, ()=>{
+    if(!idxs.length) return;
     const layers=pe.layers, eff = pe.vk ? computeEffectiveFor(layers) : effLayer;
     const counts={}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; }); layers.forEach(L=>{ L._count=counts[L.id]||0; });
     [...layers].reverse().forEach(L=>{
@@ -2227,22 +2377,41 @@ function renderVariantList(){
     const foils=v.layers.filter(l=>l.type!=='hide' && l.visible).map(l=>`<span class="sw" style="background:${l.tint||'#888'}"></span>`).join('');
     row.innerHTML=`<label class="toggle" title="在版面中使用"><input type="checkbox" ${v.use!==false?'checked':''}></label><span class="psw" style="background:${v.paper.color}" title="紙色 ${v.paper.color}"></span><input class="vname" value="${esc(v.name)}" spellcheck="false"><span class="sws">${foils}</span>
       <button class="ib load" title="把這個版本載入成目前設定來編輯">載入</button><button class="ib upd" title="用目前設定覆蓋這個版本">更新</button><button class="ib del" title="刪除">✕</button>`;
-    row.querySelector('input[type=checkbox]').addEventListener('change',e=>{ v.use=e.target.checked; sceneChanged(true); });
+    row.querySelector('input[type=checkbox]').addEventListener('change',e=>{ v.use=e.target.checked; sceneChanged(true,true); });
     row.querySelector('.vname').addEventListener('change',e=>{ v.name=e.target.value; save(); });
     row.querySelector('.load').addEventListener('click',()=>{ S.paper=deep(v.paper); S.layers=deep(v.layers); S.active=S.layers.find(l=>l.type!=='hide')?.id; clearMasks(); applyPaper(); renderFx(); save(); toast(`已載入版本「${v.name}」`); });
-    row.querySelector('.upd').addEventListener('click',()=>{ const nv=snapshotVariant(v.name); v.paper=nv.paper; v.layers=nv.layers; clearMasks(); sceneChanged(true); toast(`版本「${v.name}」已更新`); });
-    row.querySelector('.del').addEventListener('click',()=>{ S.variants.splice(i,1); sceneChanged(true); });
+    row.querySelector('.upd').addEventListener('click',()=>{ const nv=snapshotVariant(v.name); v.paper=nv.paper; v.layers=nv.layers; clearMasks(); sceneChanged(true,true); toast(`版本「${v.name}」已更新`); });
+    row.querySelector('.del').addEventListener('click',()=>{ S.variants.splice(i,1); sceneChanged(true,true); });
     host.appendChild(row);
   });
   if(!(S.variants||[]).length) host.innerHTML='<p class="note">還沒有版本。調好一組效果（例如燙金版）後按「＋ 存成版本」，再調另一組存第二個版本，版面就會混搭排列。</p>';
 }
-$('#btnAddVariant').addEventListener('click',()=>{ S.variants=S.variants||[]; const n=S.variants.length+1; S.variants.push(snapshotVariant(`版本 ${String.fromCharCode(64+n)}`)); if(S.scene.mix==='current') S.scene.mix='cycle'; sceneChanged(true); toast('已存成版本'); });
+$('#btnAddVariant').addEventListener('click',()=>{ S.variants=S.variants||[]; const n=S.variants.length+1; S.variants.push(snapshotVariant(`版本 ${String.fromCharCode(64+n)}`)); if(S.scene.mix==='current') S.scene.mix='cycle'; sceneChanged(true,true); toast('已存成版本'); });
 $('#sMix').addEventListener('change',e=>{ S.scene.mix=e.target.value; sceneChanged(true); });
 $('#sIncCur').addEventListener('change',e=>{ S.scene.includeCurrent=e.target.checked; sceneChanged(true); });
+$('#sFlip').addEventListener('input',e=>{ S.scene.flipRatio=+e.target.value; sceneChanged(true); });
 
 /* ---------- scene (mockup) ---------- */
 let viewMode='single', sceneDirty=true, renderQuality='fast'; // 版面預覽預設「快速」：略過壓痕／圓頂濾鏡、挖空與紙紋；匯出時自動切完整
 function mulberry(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+/* 相機看得到的桌面範圍：畫布四角反投影到桌面（限制在畫布外 1.5 倍內），再依出血比例外擴 */
+function visibleQuad(bleed=0){
+  const C=S.scene, W=C.W, H=C.H; let pts;
+  try{ pts=[[0,0],[W,0],[W,H],[0,H]].map(([sx,sy])=>{ const q=screenToTable(sx,sy,0); return [q.x,q.y]; }); }catch(e){ pts=null; }
+  if(!pts || pts.some(([x,y])=>!isFinite(x)||!isFinite(y)||Math.abs(x-W/2)>2*W||Math.abs(y-H/2)>2*H)) pts=[[0,0],[W,0],[W,H],[0,H]];
+  pts=pts.map(([x,y])=>[Math.max(-1.5*W,Math.min(2.5*W,x)), Math.max(-1.5*H,Math.min(2.5*H,y))]);
+  // 與畫布取聯集的近似：把畫布四角也納入凸包（簡化：取兩者外接框的四角與可見四角，用凸包）
+  const all=pts.concat([[0,0],[W,0],[W,H],[0,H]]); const hull=convexHull(all);
+  if(!bleed) return hull;
+  const cx=hull.reduce((a,p)=>a+p[0],0)/hull.length, cy=hull.reduce((a,p)=>a+p[1],0)/hull.length;
+  return hull.map(([x,y])=>[cx+(x-cx)*(1+2*bleed), cy+(y-cy)*(1+2*bleed)]);
+}
+function convexHull(pts){ const P=[...pts].sort((a,b)=>a[0]-b[0]||a[1]-b[1]); const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[]; for(const p of P){ while(lo.length>=2 && cross(lo[lo.length-2],lo[lo.length-1],p)<=0) lo.pop(); lo.push(p); }
+  const up=[]; for(let i=P.length-1;i>=0;i--){ const p=P[i]; while(up.length>=2 && cross(up[up.length-2],up[up.length-1],p)<=0) up.pop(); up.push(p); }
+  up.pop(); lo.pop(); return lo.concat(up); }
+function pointInPoly(x,y,poly){ let inside=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const [xi,yi]=poly[i], [xj,yj]=poly[j]; if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-9)+xi)) inside=!inside; } return inside; }
+function polyBBox(poly){ const xs=poly.map(p=>p[0]), ys=poly.map(p=>p[1]); const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys); return {minX,maxX,minY,maxY,w:maxX-minX,h:maxY-minY}; }
 function layoutSlots(){
   const C=S.scene, [vw,vh]=S.vb, ar=vw/vh, W=C.W, H=C.H;
   const cw=W*C.size/100, ch=cw/ar, out=[];
@@ -2252,29 +2421,30 @@ function layoutSlots(){
     const cols=C.cols, rows=C.rows, tw=cols*cw+(cols-1)*C.gap, th=rows*ch+(rows-1)*C.gap;
     const x0=(W-tw)/2+cw/2, y0=(H-th)/2+ch/2;
     for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-      const off = C.layout==='brick' ? ((r%2? .25:-.25)*(cw+C.gap)) : 0;
+      const off = C.layout==='brick' ? ((r%2?1:-1)*((C.brickOff??50)/100)*(cw+C.gap)/2) : 0; // 鋪磚：奇偶列各往左右錯開 錯開%/2 張
       out.push({x:x0+c*(cw+C.gap)+off,y:y0+r*(ch+C.gap),w:cw,h:ch,r:C.rot,row:r,col:c});
     }
   } else if(C.layout==='random'){
-    // 隨機鋪滿：先以「卡片＋間距」算出能蓋滿畫布（含出血）的格子，再把每張從格子中心隨機位移、隨機旋轉
+    // 隨機鋪滿：只鋪在「相機看得到的桌面範圍 ∪ 畫布」外擴出血的區域；鋪滿時卡片交疊到看不見背景，且任兩張中心不會太近
     const m=C.bleed/100, jit=(C.jitter??50)/100, rn=C.rn|0, fill=rn===0;
-    // 鋪滿（張數 0）：格子必須比卡片小，卡片彼此交疊才看不到背景。旋轉越大、位移越大，可保證覆蓋的範圍越小 → 格子越密
+    const Q=visibleQuad(m); const inQ=(x,y)=>pointInPoly(x,y,Q); const bb=polyBBox(Q);
     const rr=Math.abs(C.rot||0)*Math.PI/180, cover=Math.max(.45, Math.cos(rr)-Math.min(cw,ch)/Math.max(cw,ch)*Math.sin(rr));
     const cellW = fill ? Math.max(cw*.4, cw*cover*(0.9-0.25*jit)+Math.min(0,C.gap)) : cw+Math.max(0,C.gap);
     const cellH = fill ? Math.max(ch*.4, ch*cover*(0.9-0.25*jit)+Math.min(0,C.gap)) : ch+Math.max(0,C.gap);
-    const spanW=W*(1+2*m), spanH=H*(1+2*m); const cols=Math.max(1,Math.ceil(spanW/cellW)+(fill?1:0)), rows=Math.max(1,Math.ceil(spanH/cellH)+(fill?1:0));
-    const x0=-m*W+(spanW-cols*cellW)/2, y0=-m*H+(spanH-rows*cellH)/2;
-    const cells=[]; for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) cells.push([x0+c*cellW+cellW/2, y0+r*cellH+cellH/2]);
-    // 指定張數：隨機挑格子（不夠時再隨機補位置），之後再鬆弛推開
-    if(rn>0){ for(let i=cells.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [cells[i],cells[j]]=[cells[j],cells[i]]; } cells.length=Math.min(cells.length,rn); while(cells.length<rn) cells.push([-m*W+rnd()*spanW, -m*H+rnd()*spanH]); }
-    cells.forEach(([cx,cy])=>out.push({x:cx+(rnd()-.5)*cellW*jit, y:cy+(rnd()-.5)*cellH*jit, w:cw,h:ch, r:(rnd()*2-1)*C.rot}));
-    if(fill){ // 補洞：抽樣檢查畫布每個點是否被某張卡蓋住，沒蓋到就在那裡再放一張（保證看不到背景）
+    const cols=Math.max(1,Math.ceil(bb.w/cellW)+1), rows=Math.max(1,Math.ceil(bb.h/cellH)+1);
+    const x0=bb.minX+(bb.w-cols*cellW)/2, y0=bb.minY+(bb.h-rows*cellH)/2;
+    const cells=[]; for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const cx=x0+c*cellW+cellW/2, cy=y0+r*cellH+cellH/2; if(inQ(cx,cy)) cells.push([cx,cy]); }
+    if(rn>0){ for(let i=cells.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [cells[i],cells[j]]=[cells[j],cells[i]]; } cells.length=Math.min(cells.length,rn); let guard=0; while(cells.length<rn && guard++<2000){ const x=bb.minX+rnd()*bb.w, y=bb.minY+rnd()*bb.h; if(inQ(x,y)) cells.push([x,y]); } }
+    const minD=0.35*Math.min(cw,ch), tooClose=(x,y)=>out.some(o=>Math.hypot(o.x-x,o.y-y)<minD);
+    const mk=(x,y)=>({x,y,w:cw,h:ch,r:(rnd()*2-1)*C.rot,rx:(rnd()*2-1)*(C.randRx||0),ry:(rnd()*2-1)*(C.randRy||0)});
+    cells.forEach(([cx,cy])=>{ let x,y,ok=false; for(let t=0;t<6;t++){ x=cx+(rnd()-.5)*cellW*jit; y=cy+(rnd()-.5)*cellH*jit; if(!tooClose(x,y)){ ok=true; break; } } if(ok||!fill) out.push(mk(x,y)); });
+    if(fill){ // 補洞：抽樣檢查可見範圍每個點是否被某張卡蓋住，沒蓋到就在那裡再放一張（保證看不到背景）
       const inside=(px,py,sl)=>{ const a=-sl.r*Math.PI/180, dx=px-sl.x, dy=py-sl.y; const lx=dx*Math.cos(a)-dy*Math.sin(a), ly=dx*Math.sin(a)+dy*Math.cos(a); return Math.abs(lx)<=sl.w*.44 && Math.abs(ly)<=sl.h*.44; }; // 以 88% 大小檢查：旋轉卡片之間的細縫也會被補到
-      const step=Math.max(4, Math.min(cw,ch)/9); let added=0;
-      for(let y=0;y<=H && added<400;y+=step) for(let x=0;x<=W && added<400;x+=step){ if(out.some(sl=>inside(x,y,sl))) continue; out.push({x:x+(rnd()-.5)*step, y:y+(rnd()-.5)*step, w:cw,h:ch, r:(rnd()*2-1)*C.rot}); added++; }
+      const V=visibleQuad(0), vb2=polyBBox(V); const step=Math.max(4, Math.min(cw,ch)/9); let added=0;
+      for(let y=vb2.minY;y<=vb2.maxY && added<400;y+=step) for(let x=vb2.minX;x<=vb2.maxX && added<400;x+=step){ if(!pointInPoly(x,y,V) || out.some(sl=>inside(x,y,sl))) continue; out.push(mk(x+(rnd()-.5)*step*.5, y+(rnd()-.5)*step*.5)); added++; }
     }
-    // 鬆弛（只在指定張數時）：把重疊太多的卡互相推開（以卡片對角線 0.42 為半徑的圓近似），仍限制在出血範圍內
-    const rad=Math.hypot(cw,ch)*0.42, minX=-m*W+cw*.3, maxX=(1+m)*W-cw*.3, minY=-m*H+ch*.3, maxY=(1+m)*H-ch*.3;
+    // 鬆弛（只在指定張數時）：把重疊太多的卡互相推開（以卡片對角線 0.42 為半徑的圓近似），仍限制在範圍內
+    const rad=Math.hypot(cw,ch)*0.42, minX=bb.minX+cw*.3, maxX=bb.maxX-cw*.3, minY=bb.minY+ch*.3, maxY=bb.maxY-ch*.3;
     for(let it=0;it<(fill?0:80);it++){ let moved=false;
       for(let i=0;i<out.length;i++) for(let j=i+1;j<out.length;j++){ const a=out[i], b=out[j]; let dx=b.x-a.x, dy=b.y-a.y; let d=Math.hypot(dx,dy); if(d<1e-3){ dx=1; dy=0; d=1; }
         const over=rad*2*0.9-d; if(over>0){ const px=dx/d*over/2, py=dy/d*over/2; a.x-=px; a.y-=py; b.x+=px; b.y+=py; moved=true; } }
@@ -2283,18 +2453,25 @@ function layoutSlots(){
   } else if(C.layout==='fan'){
     // 扇形：卡片中心沿一段圓弧等距排列，卡片朝外（角度 = 弧上的方位角）；直徑以卡片高度的 % 計，起點／終點是弧的角度範圍（0° = 正上方，順時針為正）
     const n=C.n, R=Math.max(1,(C.fanD??160)/200*ch), a0=C.fanA0??-30, a1=C.fanA1??30, am=(a0+a1)/2, D=Math.PI/180;
-    const px=W/2-R*Math.sin(am*D), py=H/2+R*Math.cos(am*D); // 圓心：讓弧的中點落在畫布中心
-    for(let i=0;i<n;i++){ const a=n>1 ? a0+(a1-a0)*i/(n-1) : am; out.push({x:px+R*Math.sin(a*D), y:py-R*Math.cos(a*D), w:cw,h:ch, r:a}); }
+    const px=W/2-R*Math.sin(am*D)+(C.fanCx||0)/100*W*.5, py=H/2+R*Math.cos(am*D)+(C.fanCy||0)/100*H*.5; // 圓心：弧的中點落在畫布中心，再加圓心位移
+    for(let i=0;i<n;i++){ const a=n>1 ? a0+(a1-a0)*i/(n-1) : am; out.push({x:px+R*Math.sin(a*D), y:py-R*Math.cos(a*D), w:cw,h:ch, r:a, rx:C.fanRx||0, ry:C.fanRy||0}); }
     out.fan={px,py,R,a0,a1};
   } else if(C.layout==='cascade'){
     const n=C.n, dx=C.gap, dy=C.gap*ar*.6;
     const x0=W/2-(n-1)*dx/2, y0=H/2-(n-1)*dy/2;
     for(let i=0;i<n;i++) out.push({x:x0+i*dx,y:y0+i*dy,w:cw,h:ch,r:(rnd()*2-1)*C.rot*.3});
+  } else if(C.layout==='toss'){
+    // 空中灑落：像一疊卡從空中灑下——位置高斯分布在中心附近、每張隨機 3 軸旋轉、一部分懸空（z>0：影子更遠更淡、卡片略放大），高的畫在上面
+    const n=C.n, sp=(C.tossSpread??60)/100, tilt=C.tossTilt??25, air=(C.tossAir??40)/100, hmax=C.tossH??120;
+    const gauss=()=>{ let u=0,v=0; while(!u) u=rnd(); while(!v) v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+    for(let i=0;i<n;i++){ const z = rnd()<air ? rnd()*hmax : 0; const k=1+z/2000;
+      out.push({x:W/2+gauss()*sp*W*.28, y:H/2+gauss()*sp*H*.28, w:cw*k, h:ch*k, r:rnd()*360-180, rx:(rnd()*2-1)*tilt, ry:(rnd()*2-1)*tilt, z}); }
+    out.sort((a,b)=>(a.z||0)-(b.z||0));
   }
   out.forEach(sl=>{ sl.r=(sl.r||0)+(C.rot2||0); }); // 單張旋轉：每張再加同一個角度（扇形也適用）
-  // 每張卡各自的微小差異（僅供隨機用）
-  const jr=mulberry(C.seed*977+3);
-  out.forEach(sl=>{ sl.tx=(jr()*2-1); sl.ty=(jr()*2-1); sl.ph=(jr()*2-1); });
+  // 自然微傾：每張再加一點隨機的 3 軸旋轉，看起來不那麼機械（跟種子走）
+  const jr=mulberry(C.seed*977+3), t3=C.tilt3??3;
+  out.forEach(sl=>{ sl.rz=sl.r; sl.rx=(sl.rx||0)+(jr()*2-1)*t3; sl.ry=(sl.ry||0)+(jr()*2-1)*t3; sl.rz+= (jr()*2-1)*t3*.5; sl.r=sl.rz; sl._m=null; });
   return out;
 }
 function renderScene(){
@@ -2303,22 +2480,29 @@ function renderScene(){
   sceneDirty=false;
   const C=S.scene, sc=$('#scene'), tb=$('#table');
   sc.style.width=C.W+'px'; sc.style.height=C.H+'px';
+  applySceneView(); // 可見範圍（隨機鋪滿）要用目前的桌面矩陣
   tb.innerHTML='';
   const slots=layoutSlots(); tb._slots=slots;
   const pool=variantPool(); const rnd=mulberry(C.seed*131+7); tb._merged=true;
   const owner=[];
-  const wire = renderQuality==='fast' && (C.quality||'fast')==='wire'; // 線框：只畫外框與編號，換鋪法／視角最快
+  const wire = renderQuality==='fast' && ((C.quality||'fast')==='wire' || (interacting && (C.quality||'fast')!=='full') || ((C.quality||'fast')==='fast' && slots.length>60)); // 線框：只畫外框與編號；拖曳滑桿期間與超過 60 張時自動線框
   // 分配：哪張卡用哪個檔案／版本（依序、隨機、逐列、逐欄、左右對照、上下對照）
-  const n=pool.length, pickIdx=(sl,i)=>{ if(n===1) return 0; const cl=v=>Math.max(0,Math.min(n-1,v));
-    switch(C.mix){ case 'random': return Math.floor(rnd()*n); case 'rows': return (sl.row??i)%n; case 'cols': return (sl.col??i)%n;
-      case 'half': return cl(Math.floor(sl.x/C.W*n)); case 'halfv': return cl(Math.floor(sl.y/C.H*n)); default: return i%n; } };
-  slots.forEach((sl,i)=>{ owner[i]=pickIdx(sl,i); const vb=pool[owner[i]].vb; if(vb && vb[1]) sl.h=sl.w*vb[1]/vb[0]; }); // 不同檔案比例不同：高度依各自 viewBox
+  // 正反面：有背面的池項目展開成「正、反」兩個單位；依序／逐列／逐欄輪流時正反交替，其餘依「翻面比例」隨機翻
+  const units=[]; pool.forEach((pe,pi)=>{ units.push({pi,side:'front'}); if(pe.back) units.push({pi,side:'back'}); });
+  const n=pool.length, nu=units.length, flip=(C.flipRatio??50)/100, cl=(v,m)=>Math.max(0,Math.min(m-1,v));
+  const pickUnit=(sl,i)=>{
+    const byUnit=k=>units[((k%nu)+nu)%nu]; const bySide=pi=>({pi, side:(pool[pi].back && rnd()<flip)?'back':'front'});
+    if(nu===1) return units[0];
+    switch(C.mix){ case 'random': return bySide(Math.floor(rnd()*n)); case 'rows': return byUnit(sl.row??i); case 'cols': return byUnit(sl.col??i);
+      case 'half': return bySide(cl(Math.floor(sl.x/C.W*n),n)); case 'halfv': return bySide(cl(Math.floor(sl.y/C.H*n),n)); default: return byUnit(i); } };
+  slots.forEach((sl,i)=>{ const u=pickUnit(sl,i); owner[i]=u.pi; sl.side=u.side; const vb=pool[u.pi].vb; if(vb && vb[1]) sl.h=sl.w*vb[1]/vb[0]; sl._m=null; }); // 不同檔案比例不同：高度依各自 viewBox
   slots.forEach((sl,i)=>{
     const d=document.createElement('div'); d.className='slot'+(wire?' wire':'');
-    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`rotate(${sl.r}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
+    const m=slotMatrix(sl); // 3 軸旋轉的正交投影 = 仿射矩陣（原點在卡片中心）
+    Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`matrix(${m.a.toFixed(5)},${m.b.toFixed(5)},${m.c.toFixed(5)},${m.d.toFixed(5)},${(m.e-sl.x).toFixed(2)},${(m.f-sl.y).toFixed(2)})`,transformOrigin:'50% 50%',zIndex:i+1});
     const pi=owner[i];
-    const pick=pool[pi];
-    if(wire){ d.innerHTML=`<div class="wirecard">${i+1}${pool.length>1?`<small>${pick.name}</small>`:''}</div>`; tb.appendChild(d); return; }
+    const pick=sl.side==='back' && pool[pi].back ? pool[pi].back : pool[pi];
+    if(wire){ d.innerHTML=`<div class="wirecard">${i+1}${(nu>1)?`<small>${pick.name}${sl.side==='back'?'（背）':''}</small>`:''}</div>`; tb.appendChild(d); return; }
     const c=pick.el.cloneNode(true); c.title=pick.name;
     const f=c.querySelector('.fxs'); if(f) f.innerHTML='';
     d.appendChild(c); tb.appendChild(d);
@@ -2343,7 +2527,7 @@ function renderScene(){
   }
   const fall=document.createElement('div'); fall.className='tfall'; fall.style.zIndex=slots.length+3; tb.appendChild(fall);
   const cast=document.createElement('div'); cast.className='tcast'; cast.style.zIndex=slots.length+4; tb.appendChild(cast);
-  applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); fitScene();
+  applySceneView(); applySceneLight(); fitScene();
 }
 function applySceneView(){
   const C=S.scene, sc=$('#scene'), tb=$('#table');
@@ -2351,60 +2535,61 @@ function applySceneView(){
   sc.style.setProperty('--sbg',C.bg); tb.style.setProperty('--sbg',C.bg); tb.style.setProperty('--ev',Math.pow(2,C.ev||0).toFixed(3)); sc.querySelector('.floor').style.opacity=C.vig;
   const tt=tb.querySelector('.tbgtex'); if(tt) applyBgMaterial(tt);
 }
-function applySceneLight(px,py,hov){
+function applySceneLight(hov=1){
   const C=S.scene, tb=$('#table'), slots=tb._slots||[];
-  const {G,h,cam,P,T}=lightModel(px,py);
-  const dist=C.lightDist??1, inten=C.intensity??1, lsz=C.lsize??1, elev=C.elev??8, tri=v=>{ const t=((v%4)+4)%4; return t<2 ? t-1 : 3-t; };
-  // 畫布上的標示：燈（投影）、燈的落點、鏡面高光點
-  C.gx=G.x/C.W; C.gy=G.y/C.H; // 燈的落點由焦點反推，回寫給滑桿顯示
-  const sG=tableToScreen(G.x,G.y,0), sL=tableToScreen(G.x,G.y,h), sP=tableToScreen(P.x,P.y,0), sT=tableToScreen(T.x,T.y,0);
+  const {L,A,P,cam,h}=lightModel();
+  const inten=C.intensity??1, lsz=C.lsize??1, elev=C.elev??8;
+  // 畫布上的 gizmo：燈球（高度 Lz）、立柱、落點、高度把手、目標十字、光錐底圓、鏡面反光區
+  const sL=tableToScreen(L.x,L.y,L.z), sF=tableToScreen(L.x,L.y,0), sP=tableToScreen(P.x,P.y,0), sA=tableToScreen(A.x,A.y,0);
   const hd=$('#lightHandle'); if(hd){ hd.style.left=(sL.x/C.W*100).toFixed(2)+'%'; hd.style.top=(sL.y/C.H*100).toFixed(2)+'%'; }
+  const spot=C.spot??.35, soft=C.soft??.6, lc=lightRGB(), lcs=lc.join(',');
+  const Rg=h*lsz*(2.2-1.5*spot), innerG=Math.round((0.1+0.55*(1-soft))*100);
   const svg=$('#lightSvg'); if(svg){ svg.setAttribute('viewBox',`0 0 ${C.W} ${C.H}`);
     const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(6,C.W*.008));
     const fs=Math.max(11,C.W*.014); const lbl=(id,x,y,t)=>{ const e=$(id); e.setAttribute('x',x); e.setAttribute('y',y); e.setAttribute('font-size',fs); e.textContent=t; };
-    lbl('#lblL',sL.x+C.W*.02,sL.y-C.W*.012,'燈'); lbl('#lblP',sP.x+C.W*.015,sP.y+fs*.35,'反光區'); lbl('#lblT',sT.x+C.W*.025,sT.y-C.W*.012,'焦點');
-    const bm=$('#lightBeam'); bm.setAttribute('x1',sL.x); bm.setAttribute('y1',sL.y); bm.setAttribute('x2',sT.x); bm.setAttribute('y2',sT.y);
-    const tg=$('#lightT'), tr=Math.max(8,C.W*.016); const tc=tg.querySelector('circle'); tc.setAttribute('cx',sT.x); tc.setAttribute('cy',sT.y); tc.setAttribute('r',tr);
-    const [l1,l2]=tg.querySelectorAll('line'); l1.setAttribute('x1',sT.x-tr*1.6); l1.setAttribute('x2',sT.x+tr*1.6); l1.setAttribute('y1',sT.y); l1.setAttribute('y2',sT.y); l2.setAttribute('x1',sT.x); l2.setAttribute('x2',sT.x); l2.setAttribute('y1',sT.y-tr*1.6); l2.setAttribute('y2',sT.y+tr*1.6); }
-  // 桌面層：光斑（落點）、衰減
-  // 聚焦：光錐大小；柔光：光錐邊緣的漸變寬度；色溫／自訂色：光斑與整體色偏
-  const spot=C.spot??.35, soft=C.soft??.6, lc=lightRGB(), lcs=lc.join(','); const cx=(T.x+C.W).toFixed(1), cy=(T.y+C.H).toFixed(1);
-  const Rg=h*lsz*(2.2-1.5*spot), innerG=Math.round((0.1+0.55*(1-soft))*100);
-  // 光斑亮度要看桌面的反射率：黑絨布再強的燈也只會微微發灰，白桌才會亮到發白
+    lbl('#lblL',sL.x+C.W*.02,sL.y-C.W*.012,'燈'); lbl('#lblP',sP.x+C.W*.015,sP.y+fs*.35,'反光區'); lbl('#lblT',sA.x+C.W*.025,sA.y-C.W*.012,'目標');
+    const bm=$('#lightBeam'); bm.setAttribute('x1',sL.x); bm.setAttribute('y1',sL.y); bm.setAttribute('x2',sA.x); bm.setAttribute('y2',sA.y);
+    const st=$('#lightStem'); st.setAttribute('x1',sL.x); st.setAttribute('y1',sL.y); st.setAttribute('x2',sF.x); st.setAttribute('y2',sF.y);
+    const ft=$('#lightFoot'); ft.setAttribute('cx',sF.x); ft.setAttribute('cy',sF.y); ft.setAttribute('r',Math.max(4,C.W*.005));
+    const zh=$('#lightZ'); const zo=C.W*.04, zs=Math.max(6,C.W*.009); zh.setAttribute('transform',`translate(${sL.x.toFixed(1)} ${(sL.y-zo).toFixed(1)})`); zh.querySelector('path').setAttribute('d',`M0 ${-zs*1.4} l${zs} ${zs} h${-zs*2} z M0 ${zs*1.4} l${zs} ${-zs} h${-zs*2} z`);
+    const cone=$('#lightCone'); const pts=[]; for(let k=0;k<32;k++){ const a=k/32*Math.PI*2; const q=tableToScreen(A.x+Rg*.55*Math.cos(a), A.y+Rg*.55*Math.sin(a), 0); pts.push(q.x.toFixed(1)+','+q.y.toFixed(1)); } cone.setAttribute('points',pts.join(' '));
+    const tg=$('#lightT'), tr=Math.max(8,C.W*.016); const tc=tg.querySelector('circle'); tc.setAttribute('cx',sA.x); tc.setAttribute('cy',sA.y); tc.setAttribute('r',tr);
+    const [l1,l2]=tg.querySelectorAll('line'); l1.setAttribute('x1',sA.x-tr*1.6); l1.setAttribute('x2',sA.x+tr*1.6); l1.setAttribute('y1',sA.y); l1.setAttribute('y2',sA.y); l2.setAttribute('x1',sA.x); l2.setAttribute('x2',sA.x); l2.setAttribute('y1',sA.y-tr*1.6); l2.setAttribute('y2',sA.y+tr*1.6); }
+  // 桌面層：光斑（以目標為中心）、衰減、色偏
+  const cx=(A.x+C.W).toFixed(1), cy=(A.y+C.H).toFixed(1);
   const refl=0.12+0.88*Math.pow(hsl(C.bg||'#2a2a2e').l,1.3);
-  const reflOn=C.reflOn!==false, Rs=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); // 桌面反光：光斑（漫反射）＋ 光澤高光（鏡面點，落在反光區 P）
+  const reflOn=C.reflOn!==false, Rs=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W));
   const glow=tb.querySelector('.tglow'); if(glow){ const a=reflOn?Math.min(.75,(C.glow??.35)*inten*refl):0, ga=reflOn?Math.min(.9,(C.bgGloss??.3)*inten*(0.35+0.65*refl)):0, sr=Rs*(0.5+0.5*lsz)*(1.3-0.6*(C.bgGloss??.3));
     const spec=ga>0.005 ? `radial-gradient(circle ${sr.toFixed(0)}px at ${(P.x+C.W).toFixed(1)}px ${(P.y+C.H).toFixed(1)}px, rgba(${lcs},${ga.toFixed(2)}) 0%, rgba(${lcs},${(ga*.45).toFixed(2)}) ${Math.round(25+30*soft)}%, rgba(${lcs},0) 100%), ` : '';
     glow.style.background=spec+`radial-gradient(circle ${Rg.toFixed(0)}px at ${cx}px ${cy}px, rgba(${lcs},${a.toFixed(2)}) 0%, rgba(${lcs},${(a*.75).toFixed(2)}) ${innerG}%, rgba(${lcs},0) 100%)`; }
   applyDoF();
-  const fall=tb.querySelector('.tfall'); if(fall){ const Rf=Rg*(1.3+1.6*(1-spot)), a=Math.min(.75,(.22+spot*.5)/Math.max(.5,dist)), innerF=Math.round((0.15+0.6*(1-soft))*100);
+  const fall=tb.querySelector('.tfall'); if(fall){ const Rf=Rg*(1.3+1.6*(1-spot)), a=Math.min(.75,(.22+spot*.5)/Math.max(.5,h/(0.6*C.W))), innerF=Math.round((0.15+0.6*(1-soft))*100);
     fall.style.background=`radial-gradient(circle ${Rf.toFixed(0)}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${innerF}%, rgba(0,0,0,${a.toFixed(2)}) 100%)`; fall.style.opacity=(1/(0.75+inten*.25)).toFixed(2); }
   const cast=tb.querySelector('.tcast'); if(cast){ cast.style.background=`rgb(${lcs})`; }
-  const merged=!!tb._merged;
-  const R=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); const gsz=R/(1.2*C.W); // 高光半徑（桌面 px）與合併層的 --gsz（相對桌面）
-  if(merged){ const host=tb.querySelector('.fxs.merged'); if(host){
+  const R=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); // 高光半徑（桌面 px）
+  const host=tb.querySelector('.fxs.merged'); if(host){
     const E=tb._ext||{minX:0,minY:0,w:C.W,h:C.H};
-    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); setLightDir(d, T.x-G.x, T.y-G.y); });
-  } }
+    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); setLightDir(d, A.x-L.x, A.y-L.y); });
+  }
   [...tb.querySelectorAll(':scope > .slot')].forEach((d,i)=>{
-    const sl=slots[i]; if(!sl) return; const c=d.firstElementChild;
-    const rad=(sl.r||0)*Math.PI/180, cs=Math.cos(rad), sn=Math.sin(rad);
-    // 鏡面高光點 P 轉到卡片自己的座標（卡片有旋轉）
-    const dx=P.x-sl.x, dy=P.y-sl.y; const lx=dx*cs+dy*sn, ly=-dx*sn+dy*cs;
-    const lpx=.5+lx/sl.w, lpy=.5+ly/sl.h;
+    const sl=slots[i]; if(!sl) return; const c=d.firstElementChild; const m=slotMatrix(sl); const z=sl.z||0;
+    // 高光：傾斜卡片用鏡像相機求交點，再轉回卡片座標
+    const hl=cardHighlight(sl,L,cam); const lpx=.5+hl.u/sl.w, lpy=.5+hl.v/sl.h;
     c.style.setProperty('--px',(lpx*100).toFixed(1)+'%'); c.style.setProperty('--py',(lpy*100).toFixed(1)+'%');
-    c.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); c.style.setProperty('--gsz',(R/(1.2*sl.w)).toFixed(2));
-    { const gx2=sl.x-G.x, gy2=sl.y-G.y; setLightDir(c, gx2*cs+gy2*sn, -gx2*sn+gy2*cs); }
+    // 聚光錐衰減 × 法向量對光的餘弦（背光的卡變暗）
+    const f=spotFalloff(L,A,{x:sl.x,y:sl.y,z}); const ll=Math.hypot(L.x-sl.x,L.y-sl.y,L.z-z)||1; const ndl=Math.max(0,(m.n[0]*(L.x-sl.x)+m.n[1]*(L.y-sl.y)+m.n[2]*(L.z-z))/ll);
+    const lit=f*(0.35+0.65*ndl);
+    c.style.setProperty('--hov',Math.min(1.6,hov*inten*lit).toFixed(3)); c.style.setProperty('--gsz',(R/(1.2*sl.w)).toFixed(2));
+    { const v=tableToSlot(sl, sl.x+(sl.x-L.x), sl.y+(sl.y-L.y)); setLightDir(c, v.x, v.y); } // 光→卡片 方向，轉到卡片座標
     c.style.setProperty('--hfall', (1-0.55*Math.min(1,Math.hypot(lpx-.5,lpy-.5)/.9)).toFixed(3));
-    c.style.filter=`brightness(${(0.75+inten*.25).toFixed(3)})`;
-    // 投影：從燈的落點 G 背向而去，長度 = 離地高度 × 水平距離 / 燈高（相似三角形），再轉回卡片座標
-    const vx=sl.x-G.x, vy=sl.y-G.y, dd=Math.hypot(vx,vy)||1; const len=Math.min(60, elev*dd/h*1.4 + elev*.2);
-    const ux=vx/dd*len, uy=vy/dd*len; const ox=(ux*cs+uy*sn)*C.shadow*2, oy=(-ux*sn+uy*cs)*C.shadow*2+elev*.4*C.shadow;
-    const bl=(2+elev*1.2)*(0.5+lsz*0.8)*(0.5+C.shadow*.5)*(0.6+0.8*(C.soft??.6)), a=Math.max(.08,(.6-elev*.008)*C.shadow/(0.7+lsz*0.3));
-    // 紙厚：卡片下緣露出一條實心的紙邊（顏色 = 紙色壓暗），厚度越大越明顯
-    const th=C.thick??2, pc=(c.querySelector('.paper')?.style.getPropertyValue('--paper')||'#888').trim(), edge=mix(pc.startsWith('#')&&pc.length===7?pc:'#888888','#000000',.42);
-    const edgeSh = th>0 ? `0 ${(th*.9).toFixed(1)}px 0 0 ${edge}, ` : '';
-    c.style.setProperty('--sh',`${edgeSh}${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elev*.15+th).toFixed(1)}px ${(2+elev*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`);
+    c.style.filter=`brightness(${(0.75+inten*.25*(0.4+0.6*lit)).toFixed(3)})`;
+    // 投影：從燈的落點背向而去，長度 = 離地高度 × 水平距離 / 燈高（相似三角形），再轉回卡片座標；懸空的卡影子更遠、更糊、更淡
+    const elevT=elev+z*.6; const vx=sl.x-L.x, vy=sl.y-L.y, dd=Math.hypot(vx,vy)||1; const len=Math.min(90, elevT*dd/h*1.4 + elevT*.2);
+    const ux=vx/dd*len, uy=vy/dd*len; const o=tableToSlot(sl, sl.x+ux, sl.y+uy); const ox=o.x*C.shadow*2, oy=o.y*C.shadow*2+elevT*.4*C.shadow;
+    const bl=(2+elevT*1.2)*(0.5+lsz*0.8)*(0.5+C.shadow*.5)*(0.6+0.8*soft), a=Math.max(.06,(.6-elevT*.008)*C.shadow/(0.7+lsz*0.3)/(1+z/80));
+    const th=C.thick??2; if(sl._edge==null){ const pc=(c.querySelector('.paper')?.style.getPropertyValue('--paper')||'#888').trim(); sl._edge=mix(pc.startsWith('#')&&pc.length===7?pc:'#888888','#000000',.42); }
+    const edgeSh = th>0 ? `0 ${(th*.9).toFixed(1)}px 0 0 ${sl._edge}, ` : '';
+    c.style.setProperty('--sh',`${edgeSh}${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elevT*.15+th).toFixed(1)}px ${(2+elevT*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`);
   });
 }
 /* 景深（預覽）：桌面是平面，相機深度 w 在桌面座標裡是線性的，所以「對焦線」是桌面上的一條直線；
@@ -2435,45 +2620,73 @@ function setViewMode(v){
   viewMode=v; $('#viewmode').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   $('#cardwrap').style.display = v==='scene'?'none':''; $('#scenewrap').hidden = v!=='scene';
   $('#btnExport').textContent = v==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG';
-  $('.stage-hint').innerHTML = v==='scene' ? '拖曳<b>燈</b>／<b>焦點</b> · 滾輪 = 縮放 · Alt+拖曳 = 平移' : '滑鼠 = 光線 · 滾輪 = 縮放 · 拖曳 = 平移';
+  $('.stage-hint').innerHTML = v==='scene' ? '拖曳<b>燈</b>／<b>▲▼ 高度</b>／<b>目標</b> · Shift+拖曳 = 高度 · 滾輪 = 縮放 · Alt+拖曳 = 平移' : '滑鼠 = 光線 · 滾輪 = 縮放 · 拖曳 = 平移';
   view.mode='fit';
   if(v==='scene' && sceneDirty) renderScene(); else if(v==='scene') { applySceneView(); }
   applyZoom();
 }
 $('#viewmode').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setViewMode(b.dataset.v); });
-function syncSceneControls(){
+function syncSceneControls(){ buildSceneLists(); syncSceneValues(); }
+/* 只在啟動、版本／檔案變動時重建的清單與預設按鈕 */
+function buildSceneLists(){
   const C=S.scene;
-  $('#sizePresets').innerHTML=''; SIZE_PRESETS.forEach(([v,n])=>{ const [w,h]=v.split('x').map(Number); const b=document.createElement('button'); b.textContent=`${n} ${w}×${h}`; b.classList.toggle('on',C.W===w&&C.H===h); b.addEventListener('click',()=>{ C.W=w; C.H=h; sceneChanged(true); }); $('#sizePresets').appendChild(b); });
+  $('#sizePresets').innerHTML=''; SIZE_PRESETS.forEach(([v,n])=>{ const [w,h]=v.split('x').map(Number); const b=document.createElement('button'); b.textContent=`${n} ${w}×${h}`; b.dataset.v=v; b.addEventListener('click',()=>{ C.W=w; C.H=h; sceneChanged(true); }); $('#sizePresets').appendChild(b); });
+  $('#sWoodTone').innerHTML=''; WOOD_TONES.forEach(([n,c])=>{ const b=document.createElement('button'); b.textContent=n; b.style.borderColor=c; b.dataset.v=c; b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sWoodTone').appendChild(b); });
+  $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.dataset.v=p+','+y; b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
+  $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.dataset.v=k; b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); });
+  $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.dataset.v=c; b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
+  renderVariantList(); renderDocList();
+}
+/* 每次變更都同步的數值、可見性與選取狀態（便宜） */
+function syncSceneValues(){
+  const C=S.scene;
+  $('#sizePresets').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===C.W+'x'+C.H));
+  $('#sWoodTone').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===C.bg));
+  $('#viewPresets').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===C.pitch+','+C.yaw));
+  $('#kelvinPresets').querySelectorAll('button').forEach(b=>b.classList.toggle('on', +b.dataset.v===(C.kelvin||5500)&&!C.useLightColor));
+  $('#sBgSwatches').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===C.bg));
+  setRange('#sBrickOff',C.brickOff??50,v=>v+'%'); setRange('#sFanCx',C.fanCx||0,v=>v+'%'); setRange('#sFanCy',C.fanCy||0,v=>v+'%'); setRange('#sFanRx',C.fanRx||0,v=>v+'°'); setRange('#sFanRy',C.fanRy||0,v=>v+'°');
+  setRange('#sTossSpread',C.tossSpread??60,v=>v+'%'); setRange('#sTossTilt',C.tossTilt??25,v=>'±'+v+'°'); setRange('#sTossAir',C.tossAir??40,v=>v+'%'); setRange('#sTossH',C.tossH??120,v=>v+'px'); setRange('#sRandRx',C.randRx||0,v=>'±'+v+'°'); setRange('#sRandRy',C.randRy||0,v=>'±'+v+'°'); setRange('#sTilt3',C.tilt3??3,v=>'±'+v+'°');
   $('#sW').value=C.W; $('#sH').value=C.H; $('#sExport').value=C.exportScale; $('#sQuality').value=C.quality||'fast'; $('#sLayout').value=C.layout;
   setRange('#sRN',C.rn||0,v=>+v?v+' 張':'鋪滿'); setRange('#sFanD',C.fanD??160,v=>v+'%'); setRange('#sFanA0',C.fanA0??-30,v=>v+'°'); setRange('#sFanA1',C.fanA1??30,v=>v+'°'); $('#sFanGuide').checked=C.fanGuide!==false;
   setRange('#sShiftX',C.shiftX||0,v=>v+'%'); setRange('#sAperture',C.aperture||0,v=>+v?('f/'+(16*Math.pow(1.4/16,+v)).toFixed(1)):'關'); setRange('#sEV',C.ev||0,v=>(+v>0?'+':'')+(+v).toFixed(2)+' EV');
   $('#sBgMat').value=C.bgMat||'solid'; $('#sStoneKind').value=C.stoneKind||'marble'; setRange('#sBgScale',C.bgScale??1,v=>(+v).toFixed(2)+'×'); setRange('#sBgTex',C.bgTex??.6,PCT); $('#sReflOn').checked=C.reflOn!==false; setRange('#sBgGloss',C.bgGloss??.3,PCT);
-  $('#sWoodTone').innerHTML=''; WOOD_TONES.forEach(([n,c])=>{ const b=document.createElement('button'); b.textContent=n; b.style.borderColor=c; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sWoodTone').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-mat]').forEach(r=>{ r.style.display = r.dataset.mat.split(' ').includes(C.bgMat||'solid')?'':'none'; });
   document.querySelectorAll('#tab-scene [data-refl]').forEach(r=>{ r.style.opacity = C.reflOn===false?.4:1; });
   $('#sFocusPick').classList.toggle('primary',!!focusPick);
   setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sJitter',C.jitter??50,v=>v+'%'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sRot2',C.rot2||0,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>Math.round(v/C.W*36)+'mm'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
-  $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList(); renderDocList();
-  $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
-  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.gx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sLsize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sSpot',C.spot??.35,PCT); setRange('#sSoft',C.soft??.6,PCT); setRange('#sKelvin',C.kelvin??5500,v=>v+'K');
+  $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; setRange('#sFlip',C.flipRatio??50,v=>v+'%'); document.querySelectorAll('#tab-scene [data-link]').forEach(r=>{ r.style.display=(S.docs||[]).some(d=>d.backOf)?'':'none'; });
+  $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.lx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lz??.6,v=>(+v).toFixed(2)+'×W'); setRange('#sLsize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sSpot',C.spot??.35,PCT); setRange('#sSoft',C.soft??.6,PCT); setRange('#sKelvin',C.kelvin??5500,v=>v+'K');
   $('#sUseLC').checked=!!C.useLightColor; $('#sLC').value=C.lightColor||'#ffe9c8'; $('#sLCHex').textContent=C.lightColor||'#ffe9c8';
-  $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.classList.toggle('on',(C.kelvin||5500)===k&&!C.useLightColor); b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); }); setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
-  $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
+  setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sLy',C.ly ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.ax ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ay ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
-  const notes_unused={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'隨機鋪滿：依卡片寬與間距鋪滿整個畫布（含出血），每張再隨機位移與旋轉；旋轉 = 隨機角度的最大範圍；位置與角度由「種子」決定，按 🎲 換一組。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角，間距 = 相鄰兩張的水平位移，單張旋轉 = 每張再加的角度。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
 }
-function sceneChanged(structural){ syncSceneControls(); if(viewMode==='scene'){ if(structural) renderScene(); else { applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); } } else sceneDirty=true; $('#btnExport').textContent = viewMode==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG'; save(); }
+/* 更新排程：同一幀多次變更只做一次；0 = 只重算光、1 = 視角＋光、2 = 重建版面 */
+let pendingLevel=-1, pendingRaf=0, interacting=false, interactT=0, interactDirty=false;
+function requestSceneUpdate(level){
+  pendingLevel=Math.max(pendingLevel,level); if(pendingRaf) return;
+  pendingRaf=requestAnimationFrame(()=>{ pendingRaf=0; const lv=pendingLevel; pendingLevel=-1;
+    if(viewMode!=='scene'){ if(lv>=2) sceneDirty=true; return; }
+    if(lv>=2){ renderScene(); if(interacting) interactDirty=true; } else if(lv===1){ applySceneView(); applySceneLight(); } else applySceneLight(); });
+}
+function beginInteract(){ interacting=true; clearTimeout(interactT); $('#table').classList.add('interacting'); }
+function endInteract(){ clearTimeout(interactT); interactT=setTimeout(()=>{ interacting=false; $('#table').classList.remove('interacting'); if(interactDirty){ interactDirty=false; if(viewMode==='scene') renderScene(); } save(); },250); }
+document.addEventListener('pointerdown', e=>{ if(e.target.closest('#tab-scene input[type=range]')) beginInteract(); }, true);
+document.addEventListener('pointerup', e=>{ if(interacting) endInteract(); }, true);
+let saveT=0; function saveSoon(){ clearTimeout(saveT); saveT=setTimeout(save,500); }
+function sceneChanged(structural, lists=false){ if(lists) buildSceneLists(); syncSceneValues(); requestSceneUpdate(structural?2:1); $('#btnExport').textContent = viewMode==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG'; saveSoon(); }
 [['#sW','W',true],['#sH','H',true]].forEach(([sel,p])=>$(sel).addEventListener('change',e=>{ const v=Math.max(200,Math.min(6000,+e.target.value||1080)); S.scene[p]=v; sceneChanged(true); }));
 $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value; save(); });
 $('#sQuality').addEventListener('change',e=>{ S.scene.quality=e.target.value; sceneChanged(true); });
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
-[['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sRN','rn'],['#sFanD','fanD'],['#sFanA0','fanA0'],['#sFanA1','fanA1'],['#sJitter','jitter'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sRot2','rot2'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
-[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sShiftX','shiftX'],['#sAperture','aperture'],['#sEV','ev'],['#sBgScale','bgScale'],['#sBgTex','bgTex'],['#sBgGloss','bgGloss'],['#sRoll','roll'],['#sLx','gx'],['#sLy','gy'],['#sTx','tx'],['#sTy','ty'],['#sDist','lightDist'],['#sLsize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; if(p==='gx'||p==='gy'){ const f=lampToFocus(S.scene.gx,S.scene.gy); S.scene.tx=f.tx; S.scene.ty=f.ty; } sceneChanged(false); }));
+$('#sLayoutReset').addEventListener('click',()=>{ const d=defaultScene(); LAYOUT_KEYS.forEach(k=>{ S.scene[k]=d[k]; }); sceneChanged(true); toast('排列已回復預設'); });
+[['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sRN','rn'],['#sFanD','fanD'],['#sFanA0','fanA0'],['#sFanA1','fanA1'],['#sFanCx','fanCx'],['#sFanCy','fanCy'],['#sFanRx','fanRx'],['#sFanRy','fanRy'],['#sBrickOff','brickOff'],['#sTossSpread','tossSpread'],['#sTossTilt','tossTilt'],['#sTossAir','tossAir'],['#sTossH','tossH'],['#sRandRx','randRx'],['#sRandRy','randRy'],['#sTilt3','tilt3'],['#sJitter','jitter'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sRot2','rot2'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
+[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sShiftX','shiftX'],['#sAperture','aperture'],['#sEV','ev'],['#sBgScale','bgScale'],['#sBgTex','bgTex'],['#sBgGloss','bgGloss'],['#sRoll','roll'],['#sLx','lx'],['#sLy','ly'],['#sTx','ax'],['#sTy','ay'],['#sDist','lz'],['#sLsize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; sceneChanged(false); }));
 $('#sUseLC').addEventListener('change',e=>{ S.scene.useLightColor=e.target.checked; sceneChanged(false); });
 $('#sLC').addEventListener('input',e=>{ S.scene.lightColor=e.target.value; S.scene.useLightColor=true; sceneChanged(false); });
-$('#sTcenter').addEventListener('click',()=>{ S.scene.tx=.5; S.scene.ty=.5; sceneChanged(false); });
+$('#sTcenter').addEventListener('click',()=>{ S.scene.ax=.5; S.scene.ay=.5; sceneChanged(false); });
 $('#sElev').addEventListener('input',e=>{ S.scene.elev=+e.target.value; sceneChanged(true); });
 $('#sThick').addEventListener('input',e=>{ S.scene.thick=+e.target.value; sceneChanged(true); });
 $('#sBg').addEventListener('input',e=>{ S.scene.bg=e.target.value; sceneChanged(false); });
@@ -2486,7 +2699,7 @@ $('#sFocusPick').addEventListener('click',()=>{ focusPick=!focusPick; stage.clas
 
 /* ---------- boot ---------- */
 function start(svgText, name, fresh){
-  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); if(S.scene){ S.scene.gx ??= S.scene.lx; S.scene.gy ??= S.scene.ly; } (S.layers||[]).forEach(normalizeLayer); (S.variants||[]).forEach(v=>(v.layers||[]).forEach(normalizeLayer)); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
+  S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); if(S.scene && S.scene.lz==null){ const c=S.scene; c.lx=c.gx??c.lx??.3; c.ly=c.gy??c.ly??.25; c.lz=(c.lightDist??1)*.6; c.ax=c.tx??.5; c.ay=c.ty??.5; delete c.gx; delete c.gy; delete c.tx; delete c.ty; delete c.lightDist; } (S.layers||[]).forEach(normalizeLayer); (S.variants||[]).forEach(v=>(v.layers||[]).forEach(normalizeLayer)); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
   ensureDocs(name); syncDocFromS();
