@@ -97,7 +97,7 @@ button{cursor:pointer}
 .m.rim{background:var(--pcol,#000)} /* 壓痕用的形狀本身填紙色：油墨半透明或濃度 0 時透出來的是紙，不是黑 */
 
 /* foil */
-.m.foil .f-base{background-image:var(--grad);background-size:280% 280%;background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
+.m.foil .f-base{background-image:var(--grad);background-size:var(--fbs,280%) var(--fbs,280%);background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
 .m.foil .f-brush{opacity:var(--brush,.3);mix-blend-mode:soft-light;
   background-image:var(--brushtex),repeating-linear-gradient(var(--brushang,35deg),rgba(255,255,255,.22) 0 1px,rgba(0,0,0,.18) 1px 2px,transparent 2px 3px);
   background-size:160px 160px,auto}
@@ -110,7 +110,7 @@ button{cursor:pointer}
 /* 雷射層：疊在金屬底色上的彩虹／亮粉／星空，隨光源位移 */
 .m.foil .h-rain{mix-blend-mode:color-dodge;opacity:var(--holo,.8);display:none}
 .holo-lines .h-rain:not(.b){display:block;background-image:repeating-linear-gradient(115deg,#ff0a54 0,#ff8c00 calc(var(--hs,1)*7px),#ffef00 calc(var(--hs,1)*14px),#2bff6f calc(var(--hs,1)*21px),#00d4ff calc(var(--hs,1)*28px),#8a5cff calc(var(--hs,1)*35px),#ff0a54 calc(var(--hs,1)*42px));background-size:200% 200%;background-position:var(--px) var(--py);filter:blur(.3px) saturate(1.4) brightness(.74)}
-.holo-rainbow .h-rain:not(.b){display:block;background-image:linear-gradient(115deg,transparent 0%,#ff0a54 14%,#ff8c00 26%,#ffef00 38%,#2bff6f 50%,#00d4ff 62%,#8a5cff 74%,#ff0a54 86%,transparent 100%);background-size:calc(var(--hs,1)*260%) calc(var(--hs,1)*260%);background-position:var(--px) var(--py);filter:saturate(1.3) brightness(.85)}
+.holo-rainbow .h-rain:not(.b){display:block;background-image:linear-gradient(115deg,transparent 0%,#ff0a54 14%,#ff8c00 26%,#ffef00 38%,#2bff6f 50%,#00d4ff 62%,#8a5cff 74%,#ff0a54 86%,transparent 100%);background-size:calc(var(--hs,1)*var(--fbs,260%)) calc(var(--hs,1)*var(--fbs,260%));background-position:var(--px) var(--py);filter:saturate(1.3) brightness(.85)}
 .holo-glitter .h-rain{display:block;background-image:var(--glit);background-size:calc(var(--hs,1)*120px) calc(var(--hs,1)*120px);background-position:calc(var(--px)*1.8) calc(var(--py)*1.2);filter:brightness(1.05)}
 .holo-glitter .h-rain.b{background-position:calc(var(--px)*-1.3) calc(var(--py)*-0.8);opacity:calc(var(--holo,.8)*.7);filter:hue-rotate(90deg)}
 .holo-cosmos .h-rain:not(.b){display:block;background-image:var(--cosmos);background-size:calc(var(--hs,1)*400px) calc(var(--hs,1)*400px);background-position:calc(var(--px)*.6) calc(var(--py)*.6);filter:saturate(1.6) brightness(.9)}
@@ -201,6 +201,7 @@ button{cursor:pointer}
 @keyframes lh{0%{box-shadow:0 0 0 0 rgba(255,85,17,.6)}100%{box-shadow:0 0 0 14px rgba(255,85,17,0)}}
 @media (prefers-reduced-motion:reduce){.light-handle span{animation:none}}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
+.table .tbg{position:absolute;inset:-100%;background:var(--sbg,#2a2a2e);pointer-events:none}
 .table .tglow{position:absolute;inset:-100%;pointer-events:none}   /* 桌面上的光斑（在桌面座標系，會跟著視角變換）；放大到 3×，桌面旋轉後不露邊 */
 .table .tfall{position:absolute;inset:-100%;mix-blend-mode:multiply;pointer-events:none} /* 離燈越遠越暗（漫反射衰減） */
 .table .tcast{position:absolute;inset:-100%;mix-blend-mode:multiply;opacity:.55;pointer-events:none} /* 相機會做白平衡，色偏只留一半 */ /* 光的顏色（色溫）對整個畫面的色偏 */
@@ -543,15 +544,16 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
           <option value="single">單張置中</option>
           <option value="grid">整齊格狀</option>
           <option value="brick">錯開（磚牆）</option>
-          <option value="random">隨機散落</option>
+          <option value="random">隨機鋪滿</option>
           <option value="fan">扇形展開</option>
           <option value="cascade">階梯堆疊</option>
         </select></div>
         <div class="row" data-for="grid brick"><label>欄數</label><input type="range" id="sCols" min="1" max="8" step="1"><span class="val"></span></div>
         <div class="row" data-for="grid brick"><label>列數</label><input type="range" id="sRows" min="1" max="10" step="1"><span class="val"></span></div>
-        <div class="row" data-for="random fan cascade"><label>張數</label><input type="range" id="sN" min="1" max="24" step="1"><span class="val"></span></div>
+        <div class="row" data-for="fan cascade"><label>張數</label><input type="range" id="sN" min="1" max="24" step="1"><span class="val"></span></div>
+        <div class="row" data-for="random"><label>隨機位移</label><input type="range" id="sJitter" min="0" max="100" step="1"><span class="val"></span></div>
         <div class="row"><label>卡片寬</label><input type="range" id="sSize" min="8" max="120" step="1"><span class="val"></span></div>
-        <div class="row" data-for="grid brick cascade fan"><label>間距</label><input type="range" id="sGap" min="-200" max="300" step="2"><span class="val"></span></div>
+        <div class="row" data-for="grid brick cascade fan random"><label>間距</label><input type="range" id="sGap" min="-200" max="300" step="2"><span class="val"></span></div>
         <div class="row" data-for="random fan cascade brick grid single"><label>旋轉</label><input type="range" id="sRot" min="0" max="90" step="1"><span class="val"></span></div>
         <div class="row" data-for="random fan cascade brick grid single"><label>單張旋轉</label><input type="range" id="sRot2" min="-90" max="90" step="1"><span class="val"></span></div>
         <div class="row" data-for="random"><label>出血</label><input type="range" id="sBleed" min="0" max="60" step="1"><span class="val"></span></div>
@@ -848,7 +850,8 @@ function foilShades(tint, c=.45){
 }
 function foilGradient(tint, c=.45){
   const {dark,deep,mid,light,spec}=foilShades(tint,c);
-  return `linear-gradient(112deg,${dark} 0%,${deep} 10%,${mid} 24%,${light} 36%,${spec} 41%,${light} 46%,${mid} 58%,${deep} 70%,${dark} 78%,${mid} 90%,${light} 100%)`;
+  // 頭尾同色（dark），合併版面時以卡片尺寸平鋪不會有接縫
+  return `linear-gradient(112deg,${dark} 0%,${deep} 12%,${mid} 26%,${light} 38%,${spec} 45%,${light} 52%,${mid} 64%,${deep} 78%,${dark} 90%,${dark} 100%)`;
 }
 function noiseURI(opts){
   const {bf='0.9', oct=2, op=.5, size=220, sat=0} = opts;
@@ -1557,9 +1560,10 @@ const HELP = {
   sN:'隨機、扇形、階梯的張數。',
   sSize:'卡片寬度佔畫布寬的百分比。',
   sGap:'間距：格狀／磚牆是卡片之間的距離（可為負值交疊）；階梯是每張錯位距離；扇形是相鄰兩張的水平位移。',
-  sRot:'旋轉：格狀／磚牆／單張是每張同一角度；隨機是角度的最大隨機範圍；扇形是相鄰兩張的夾角；階梯是微小隨機擺動。',
+  sRot:'旋轉：格狀／磚牆／單張是每張同一角度；隨機鋪滿是每張隨機角度的最大範圍（±）；扇形是相鄰兩張的夾角；階梯是微小隨機擺動。',
   sRot2:'單張旋轉：在鋪法算出的角度上，每張再加同一個角度（扇形時可讓每張卡不對正軸心）。',
-  sBleed:'出血：隨機散落允許卡片超出畫布多少比例，讓邊緣有被切到的卡片。',
+  sBleed:'出血：隨機鋪滿允許卡片超出畫布多少比例，讓邊緣有被切到的卡片。',
+  sJitter:'隨機位移：每張卡離自己格子中心的最大偏移（100% = 可以移到格子邊緣）。0% 就是整齊格狀加隨機旋轉。',
   sShuffle:'換一組隨機種子：隨機散落的位置、角度與版本分配會整組重排。',
   sPitch:'俯角：相機從正上方往前傾的角度。0° = 平視俯拍，45° 左右最像產品照。',
   sYaw:'方位：桌面繞自己的法線旋轉，改變光線與卡片的相對方向。',
@@ -1679,7 +1683,7 @@ async function exportScene3D(k){
   const clone=$('#scene').cloneNode(true); clone.id=''; clone.style.transform=`scale(${sA})`; clone.style.width=E.w+'px'; clone.style.height=E.h+'px'; clone.style.boxShadow='none';
   clone.querySelector('.floor')?.remove(); clone.querySelectorAll('.light-svg,.light-handle').forEach(n=>n.remove());
   const tbl=clone.querySelector('.table'); tbl.style.transform=`translate(${-E.minX}px,${-E.minY}px)`; tbl.style.transformOrigin='0 0'; tbl.style.width=C.W+'px'; tbl.style.height=C.H+'px'; tbl.style.inset='auto'; tbl.style.left='0'; tbl.style.top='0';
-  clone.querySelectorAll('.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
+  clone.querySelectorAll('.tbg,.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
   toast('合成 2/4：點陣化遮罩…', true); await new Promise(r=>setTimeout(r,20));
   // 合併效果層原本涵蓋所有卡片的聯集（可能比畫布大很多倍）；匯出只裁到看得到的區域，遮罩圖才不會大到失效
   const hostEl=clone.querySelector('.fxs.merged'); let crop=null;
@@ -1852,6 +1856,8 @@ function buildMergedFx(host, pool, slotOwner, slots){
       // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
       const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
       d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); host.appendChild(d); styleFx(d,L,pe.paper);
+      // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
+      const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');
     });
   });
 }
@@ -1891,8 +1897,11 @@ function layoutSlots(){
       out.push({x:x0+c*(cw+C.gap)+off,y:y0+r*(ch+C.gap),w:cw,h:ch,r:C.rot});
     }
   } else if(C.layout==='random'){
-    const m=C.bleed/100;
-    for(let i=0;i<C.n;i++) out.push({x:(-m+rnd()*(1+2*m))*W,y:(-m+rnd()*(1+2*m))*H,w:cw,h:ch,r:(rnd()*2-1)*C.rot});
+    // 隨機鋪滿：先以「卡片＋間距」算出能蓋滿畫布（含出血）的格子，再把每張從格子中心隨機位移、隨機旋轉
+    const m=C.bleed/100, jit=(C.jitter??50)/100, cellW=cw+Math.max(0,C.gap), cellH=ch+Math.max(0,C.gap);
+    const spanW=W*(1+2*m), spanH=H*(1+2*m); const cols=Math.max(1,Math.ceil(spanW/cellW)), rows=Math.max(1,Math.ceil(spanH/cellH));
+    const x0=-m*W+(spanW-cols*cellW)/2, y0=-m*H+(spanH-rows*cellH)/2;
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) out.push({x:x0+c*cellW+cellW/2+(rnd()-.5)*cellW*jit, y:y0+r*cellH+cellH/2+(rnd()-.5)*cellH*jit, w:cw,h:ch, r:(rnd()*2-1)*C.rot});
     // 鬆弛：把重疊太多的卡互相推開（以卡片對角線 0.42 為半徑的圓近似），仍限制在出血範圍內
     const rad=Math.hypot(cw,ch)*0.42, minX=-m*W+cw*.3, maxX=(1+m)*W-cw*.3, minY=-m*H+ch*.3, maxY=(1+m)*H-ch*.3;
     for(let it=0;it<80;it++){ let moved=false;
@@ -1938,7 +1947,10 @@ function renderScene(){
     buildMergedFx(host, pool, owner, slots);
     tb.appendChild(host);
   }
-  const glow=document.createElement('div'); glow.className='tglow'; tb.insertBefore(glow, tb.firstChild);
+  // 桌面底色放在桌面群組「裡面」：桌面因為遮罩／混合被獨立成合成群組時，multiply 的衰減與色偏才有東西可以乘，
+  // 否則會乘在透明上、變成一層直接蓋上去的灰白（黑桌被照成白的元兇）
+  const tbg=document.createElement('div'); tbg.className='tbg'; tb.insertBefore(tbg, tb.firstChild);
+  const glow=document.createElement('div'); glow.className='tglow'; tb.insertBefore(glow, tbg.nextSibling);
   const fall=document.createElement('div'); fall.className='tfall'; fall.style.zIndex=slots.length+3; tb.appendChild(fall);
   const cast=document.createElement('div'); cast.className='tcast'; cast.style.zIndex=slots.length+4; tb.appendChild(cast);
   applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); fitScene();
@@ -1946,7 +1958,7 @@ function renderScene(){
 function applySceneView(){
   const C=S.scene, sc=$('#scene'), tb=$('#table');
   tb.style.transform=`rotate(${C.roll||0}deg) perspective(${C.fov}px) translateY(${C.shift}%) scale(${C.zoom}) rotateX(${C.pitch}deg) rotateZ(${C.yaw}deg)`;
-  sc.style.setProperty('--sbg',C.bg); sc.querySelector('.floor').style.opacity=C.vig;
+  sc.style.setProperty('--sbg',C.bg); tb.style.setProperty('--sbg',C.bg); sc.querySelector('.floor').style.opacity=C.vig;
 }
 function applySceneLight(px,py,hov){
   const C=S.scene, tb=$('#table'), slots=tb._slots||[];
@@ -2019,7 +2031,7 @@ function syncSceneControls(){
   const C=S.scene;
   $('#sizePresets').innerHTML=''; SIZE_PRESETS.forEach(([v,n])=>{ const [w,h]=v.split('x').map(Number); const b=document.createElement('button'); b.textContent=`${n} ${w}×${h}`; b.classList.toggle('on',C.W===w&&C.H===h); b.addEventListener('click',()=>{ C.W=w; C.H=h; sceneChanged(true); }); $('#sizePresets').appendChild(b); });
   $('#sW').value=C.W; $('#sH').value=C.H; $('#sExport').value=C.exportScale; $('#sQuality').value=C.quality||'fast'; $('#sLayout').value=C.layout;
-  setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sRot2',C.rot2||0,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
+  setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sJitter',C.jitter??50,v=>v+'%'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sRot2',C.rot2||0,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>v+'px'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
   $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
@@ -2028,7 +2040,7 @@ function syncSceneControls(){
   $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.classList.toggle('on',(C.kelvin||5500)===k&&!C.useLightColor); b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); }); setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
-  const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角，間距 = 相鄰兩張的水平位移，單張旋轉 = 每張再加的角度。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
+  const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'隨機鋪滿：依卡片寬與間距鋪滿整個畫布（含出血），每張再隨機位移與旋轉；旋轉 = 隨機角度的最大範圍；位置與角度由「種子」決定，按 🎲 換一組。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角，間距 = 相鄰兩張的水平位移，單張旋轉 = 每張再加的角度。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
   $('#sLayoutNote').textContent=notes[C.layout]||'';
 }
 function sceneChanged(structural){ syncSceneControls(); if(viewMode==='scene'){ if(structural) renderScene(); else { applySceneView(); applySceneLight(cur.px,cur.py,Math.max(cur.hov,.6)); } } else sceneDirty=true; $('#btnExport').textContent = viewMode==='scene' ? `匯出 PNG ${S.scene.W}×${S.scene.H}` : '匯出 PNG'; save(); }
@@ -2037,7 +2049,7 @@ $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value
 $('#sQuality').addEventListener('change',e=>{ S.scene.quality=e.target.value; sceneChanged(true); });
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
-[['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sRot2','rot2'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
+[['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sJitter','jitter'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sRot2','rot2'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
 [['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','gx'],['#sLy','gy'],['#sTx','tx'],['#sTy','ty'],['#sDist','lightDist'],['#sLsize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; if(p==='gx'||p==='gy'){ const f=lampToFocus(S.scene.gx,S.scene.gy); S.scene.tx=f.tx; S.scene.ty=f.ty; } sceneChanged(false); }));
 $('#sUseLC').addEventListener('change',e=>{ S.scene.useLightColor=e.target.checked; sceneChanged(false); });
 $('#sLC').addEventListener('input',e=>{ S.scene.lightColor=e.target.value; S.scene.useLightColor=true; sceneChanged(false); });
