@@ -1038,24 +1038,30 @@ function inlineBlobs(html){ return html.replace(/blob:[^"'&)\s]+/g, u=>{ const s
 /* 匯出前：把 clone 裡每個效果層的向量遮罩（可能好幾 MB）先點陣化成 PNG data URL——
    foreignObject 內超過約 2MB 的 data: 影像會直接失效，整層箔面就會沒遮罩地蓋滿畫面。 */
 const loadImg = url => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('mask load')); i.src=url; });
-async function maskPNG(urls, cw, ch){
+/* draw = 來源遮罩在目標畫布上的位置（裁切用）；輸出優先用 webp（帶 alpha、體積約 PNG 的 1/4，避免撞 data: URL 2MB 上限） */
+async function maskPNG(urls, cw, ch, draw){
   const cv=document.createElement('canvas'); cv.width=Math.max(1,Math.round(cw)); cv.height=Math.max(1,Math.round(ch)); const ctx=cv.getContext('2d');
-  for(let i=0;i<urls.length;i++){ const img=await loadImg(urls[i]); ctx.globalCompositeOperation = i===0 ? 'source-over' : 'destination-out'; ctx.drawImage(img,0,0,cv.width,cv.height); }
-  return cv.toDataURL('image/png');
+  const d=draw||{x:0,y:0,w:cv.width,h:cv.height};
+  for(let i=0;i<urls.length;i++){ const img=await loadImg(urls[i]); ctx.globalCompositeOperation = i===0 ? 'source-over' : 'destination-out'; ctx.drawImage(img,d.x,d.y,d.w,d.h); }
+  let out=cv.toDataURL('image/webp',.92); if(!out.startsWith('data:image/webp')) out=cv.toDataURL('image/png');
+  return out;
 }
-async function rasterizeMasks(rootClone, k, singleW, singleH){
+async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {src:{minX,minY,w,h}, dst:{minX,minY,w,h}}：合併層只點陣化看得到的區域
   const cache=new Map(); const all=[...rootClone.querySelectorAll('.fx')]; let done=0;
   for(const fx of all){ done++; if(done%2===0){ toast(`合成 2/4：點陣化遮罩 ${done}/${all.length}…`, true); await new Promise(r=>setTimeout(r,0)); }
     const grab=v=>[...(v||'').matchAll(/url\("?([^")]+)"?\)/g)].map(m=>m[1]);
     const own=grab(fx.style.getPropertyValue('--own')), mask=grab(fx.style.getPropertyValue('--mask')), vis=grab(fx.style.getPropertyValue('--vis'));
     if(!own.length && !mask.length && !vis.length) continue;
-    let cw,ch; const slot=fx.closest('.slot');
+    let cw,ch,draw=null; const slot=fx.closest('.slot');
     if(slot){ cw=parseFloat(slot.style.width)*k; ch=parseFloat(slot.style.height)*k; }
-    else if(fx.closest('.fxs.merged')){ const hostEl=fx.closest('.fxs.merged'); cw=parseFloat(hostEl.style.width)*k; ch=parseFloat(hostEl.style.height)*k; }
+    else if(fx.closest('.fxs.merged')){
+      if(crop){ cw=crop.dst.w*k; ch=crop.dst.h*k; draw={x:(crop.src.minX-crop.dst.minX)*k, y:(crop.src.minY-crop.dst.minY)*k, w:crop.src.w*k, h:crop.src.h*k}; }
+      else { const hostEl=fx.closest('.fxs.merged'); cw=parseFloat(hostEl.style.width)*k; ch=parseFloat(hostEl.style.height)*k; }
+    }
     else { cw=singleW; ch=singleH; }
-    const lim=4096; const sc=Math.min(1, lim/Math.max(cw,ch)); cw*=sc; ch*=sc;
+    const lim=4096; const sc=Math.min(1, lim/Math.max(cw,ch)); cw*=sc; ch*=sc; if(draw){ draw={x:draw.x*sc,y:draw.y*sc,w:draw.w*sc,h:draw.h*sc}; }
     const key=u=>u.join('|')+'@'+cw+'x'+ch;
-    const get=async urls=>{ const kk=key(urls); if(!cache.has(kk)) cache.set(kk, await maskPNG(urls,cw,ch)); return cache.get(kk); };
+    const get=async urls=>{ const kk=key(urls); if(!cache.has(kk)) cache.set(kk, await maskPNG(urls,cw,ch,draw)); return cache.get(kk); };
     if(mask.length){ fx.style.setProperty('--mask', `url("${await get(mask)}")`); fx.classList.remove('ko'); }
     if(own.length){ fx.style.setProperty('--own', `url("${await get(own)}")`); }
     if(vis.length){ fx.style.setProperty('--vis', `url("${await get(vis)}")`); }
@@ -1675,7 +1681,13 @@ async function exportScene3D(k){
   const tbl=clone.querySelector('.table'); tbl.style.transform=`translate(${-E.minX}px,${-E.minY}px)`; tbl.style.transformOrigin='0 0'; tbl.style.width=C.W+'px'; tbl.style.height=C.H+'px'; tbl.style.inset='auto'; tbl.style.left='0'; tbl.style.top='0';
   clone.querySelectorAll('.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
   toast('合成 2/4：點陣化遮罩…', true); await new Promise(r=>setTimeout(r,20));
-  await rasterizeMasks(clone, sA);
+  // 合併效果層原本涵蓋所有卡片的聯集（可能比畫布大很多倍）；匯出只裁到看得到的區域，遮罩圖才不會大到失效
+  const hostEl=clone.querySelector('.fxs.merged'); let crop=null;
+  if(hostEl){ const src={minX:parseFloat(hostEl.style.left)||0, minY:parseFloat(hostEl.style.top)||0, w:parseFloat(hostEl.style.width)||C.W, h:parseFloat(hostEl.style.height)||C.H};
+    crop={src, dst:{minX:E.minX,minY:E.minY,w:E.w,h:E.h}}; Object.assign(hostEl.style,{left:E.minX+'px',top:E.minY+'px',width:E.w+'px',height:E.h+'px'});
+    // 高光位置以 % 表示，裁切後要換算到新的參考框
+    hostEl.querySelectorAll('.fx').forEach(d=>{ const px=parseFloat(d.style.getPropertyValue('--px'))/100*src.w+src.minX, py=parseFloat(d.style.getPropertyValue('--py'))/100*src.h+src.minY; d.style.setProperty('--px',((px-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((py-E.minY)/E.h*100).toFixed(2)+'%'); const g=parseFloat(d.style.getPropertyValue('--gsz'))||1; d.style.setProperty('--gsz',(g*src.w/E.w).toFixed(3)); }); }
+  await rasterizeMasks(clone, sA, undefined, undefined, crop);
   toast('合成 3/4：平視渲染桌面…', true); await new Promise(r=>setTimeout(r,20));
   const aw=Math.round(E.w*sA), ah=Math.round(E.h*sA);
   const imgA0=await renderHTMLImage(new XMLSerializer().serializeToString(clone), aw, ah);
