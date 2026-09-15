@@ -224,6 +224,17 @@ button{cursor:pointer}
 .tn .tl.layer{color:var(--accent);font-weight:500}
 .row.three{grid-template-columns:76px 1fr 1fr}
 .row input[type=number]{height:26px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:0 6px;width:100%;font:12px var(--mono)}
+#docstore{position:absolute;left:-100000px;top:0;width:1000px;visibility:hidden;pointer-events:none;overflow:hidden}
+#docstore svg{width:1000px;height:auto;display:block}
+.doclist{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+.doc{display:flex;align-items:center;gap:6px;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);font-size:12px}
+.doc.on{border-color:var(--accent)}
+.doc .dn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.doc.on .dn{color:var(--text)}
+.doc .tag{font:10px var(--mono);color:var(--accent);letter-spacing:.08em}
+.doc .dim{font:10px var(--mono);color:var(--faint)}
+.doc .ib{height:20px;padding:0 5px;border:1px solid var(--line-2);background:transparent;color:var(--muted);border-radius:4px;font-size:11px}
+.doc .ib:hover{color:var(--text);border-color:var(--accent-dim)}
 .variant{display:flex;align-items:center;gap:6px;padding:6px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);margin-bottom:6px}
 .variant .psw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex:none}
 .variant .vname{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;height:22px;font-weight:500}
@@ -466,6 +477,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="paper-vignette"></div>
       </div>
     </div>
+    <div id="docstore" aria-hidden="true"></div>
     <div class="scenewrap" id="scenewrap" hidden><div class="scenebox" id="scenebox"><div class="scene" id="scene"><div class="table" id="table"></div><div class="floor"></div></div><svg class="light-svg" id="lightSvg" preserveAspectRatio="none"><line id="lightBeam" x1="0" y1="0" x2="0" y2="0"/><circle id="lightSpec" r="0"/><g id="lightT"><circle r="0"/><line/><line/></g><g id="dofT" hidden><rect/></g><text id="lblL"></text><text id="lblT"></text><text id="lblP"></text></svg><div class="light-handle" id="lightHandle" title="燈：拖曳移動（離燈近就拖燈，離焦點近就拖焦點）"><span></span></div></div></div>
     <div class="stage-tools right"><span class="lbl">背景</span><div class="seg" id="stagebg"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div><span class="lbl">檢視</span><div class="seg" id="viewmode"><button data-v="single" class="on">單張</button><button data-v="scene">版面 Mockup</button></div></div>
     <div class="stage-hint">滑鼠 = 光線 · 滾輪 = 縮放 · 拖曳 = 平移</div>
@@ -515,7 +527,8 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row two"><label>閒置</label><label class="toggle"><input type="checkbox" id="pAuto"> 無滑鼠時自動掃光</label></div>
       </div>
       <div class="sec">
-        <div class="sec-h" data-help="sec-file">檔案</div>
+        <div class="sec-h" data-help="sec-file">檔案 <label class="btn small ghost">＋ 加入 SVG<input type="file" id="fileAdd" accept=".svg,image/svg+xml" multiple hidden></label></div>
+        <div class="doclist" id="docListA"></div>
         <p class="note" id="fileNote"></p>
       </div>
     </div>
@@ -593,9 +606,13 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row"><label>光圈</label><input type="range" id="sAperture" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>曝光</label><input type="range" id="sEV" min="-2" max="2" step="0.05"><span class="val"></span></div>
       </div>
+      <div class="sec" data-sec="docs">
+        <div class="sec-h" data-help="sec-docs">檔案 <span><button class="btn small ghost" id="btnCompare" title="每個檔案各一張、並排一列">並排比較</button><label class="btn small">＋ 加入 SVG<input type="file" id="fileAdd2" accept=".svg,image/svg+xml" multiple hidden></label></span></div>
+        <div class="doclist" id="docListB"></div>
+      </div>
       <div class="sec" data-sec="variants">
         <div class="sec-h" data-help="sec-variants">版本混搭 <button class="btn small" id="btnAddVariant">＋ 存成版本</button></div>
-        <div class="row two"><label>分配</label><select id="sMix"><option value="current">全部用目前設定</option><option value="cycle">依序輪流</option><option value="random">隨機</option></select></div>
+        <div class="row two"><label>分配</label><select id="sMix"><option value="current">只用目前檔案的目前設定</option><option value="cycle">依序輪流</option><option value="random">隨機</option><option value="rows">逐列輪流</option><option value="cols">逐欄輪流</option><option value="half">左右對照</option><option value="halfv">上下對照</option></select></div>
         <div class="row two"><label>目前</label><label class="toggle"><input type="checkbox" id="sIncCur"> 目前設定也算一個版本</label></div>
         <div id="variantList" style="margin-top:8px"></div>
       </div>
@@ -760,6 +777,93 @@ const PAPER_SWATCHES = [['#121214','黑卡'],['#1c2230','深藍'],['#1e2b24','�
 /* ---------- state ---------- */
 let S = null;      // {paper, layers, assign, pickMode, svgText, name}
 let svgRoot = null, shapes = {}, colorIndex = {}, effLayer = {}, maskCache = {}, uid = 1;
+/* ---------- 多個 SVG（文件）：S.docs = [{id,name,svgText,assign,layers,paper,variants,koGap,use}]，S.docId = 編輯中的那份。
+   編輯中的文件的欄位同時掛在 S 頂層（S.layers、S.assign…，既有程式碼不動）；非編輯中的文件另外解析一份放在 #docstore，
+   版面要畫它們時用 withDoc() 暫時把全域切過去。 ---------- */
+const docStore = {};
+function parseSVGRoot(text){
+  const clean = text.replace(/<!DOCTYPE[^>]*(\[[\s\S]*?\])?>/i,'').replace(/<\?xml[^>]*\?>/,'');
+  const doc = new DOMParser().parseFromString(clean,'image/svg+xml');
+  const err = doc.querySelector('parsererror'); const root = doc.documentElement;
+  if(err || root.nodeName.toLowerCase()!=='svg') return null;
+  root.querySelectorAll('script').forEach(n=>n.remove());
+  let k=1; root.setAttribute('data-k','0'); root.querySelectorAll('*').forEach(el=>el.setAttribute('data-k',String(k++)));
+  let vb = root.getAttribute('viewBox'); let W,H;
+  if(vb){ const p=vb.trim().split(/[\s,]+/).map(Number); W=p[2]; H=p[3]; }
+  else { W=parseFloat(root.getAttribute('width'))||1000; H=parseFloat(root.getAttribute('height'))||700; root.setAttribute('viewBox',`0 0 ${W} ${H}`); }
+  root.setAttribute('width','100%'); root.setAttribute('height','100%');
+  return {root:document.adoptNode(root), W, H};
+}
+function indexShapesOf(root){ // 同 indexShapes，但不動全域
+  const sh={}, ci={};
+  root.querySelectorAll(SHAPES).forEach(el=>{
+    if(el.closest(NONRENDER)) return;
+    const cs=getComputedStyle(el);
+    const fill=(el.tagName==='line'||el.tagName==='polyline')?null:toHex(cs.fill), stroke=toHex(cs.stroke);
+    if(!fill && !stroke && el.tagName!=='image' && el.tagName!=='use') return;
+    const key=el.getAttribute('data-k'); let sc=1; try{ const m=el.getScreenCTM(), r=root.getScreenCTM(); sc=Math.sqrt(Math.abs(m.a*m.d-m.b*m.c))/Math.sqrt(Math.abs(r.a*r.d-r.b*r.c)); }catch(e){}
+    sh[key]={el, fill, stroke, tag:el.tagName, sw:parseFloat(cs.strokeWidth)||1, sc};
+    for(const c of new Set([fill,stroke].filter(Boolean))) (ci[c] ||= []).push(key);
+  });
+  return {shapes:sh, colorIndex:ci};
+}
+function activeDoc(){ return (S.docs||[]).find(d=>d.id===S.docId); }
+function ensureDocs(name){
+  S.docs = S.docs || []; if(!S.docs.length){ S.docs.push({id:'D'+Date.now().toString(36), name:name||S.name, use:true}); }
+  if(!S.docs.find(d=>d.id===S.docId)) S.docId=S.docs[0].id;
+}
+function syncDocFromS(){ const d=activeDoc(); if(!d) return; Object.assign(d,{name:S.name, svgText:S.svgText, assign:S.assign, layers:S.layers, paper:S.paper, variants:S.variants||[], koGap:S.koGap, vb:S.vb}); }
+function ensureDocParsed(d){
+  if(docStore[d.id]) return docStore[d.id];
+  const pr=parseSVGRoot(d.svgText||''); if(!pr) return null;
+  $('#docstore').appendChild(pr.root); const ix=indexShapesOf(pr.root);
+  return docStore[d.id]={root:pr.root, shapes:ix.shapes, colorIndex:ix.colorIndex, vb:[pr.W,pr.H]};
+}
+function withDoc(id, fn){
+  if(!id || id===S.docId) return fn();
+  const d=S.docs.find(x=>x.id===id); const st=d && ensureDocParsed(d); if(!st) return fn();
+  const keep={svgRoot,shapes,colorIndex,assign:S.assign,layers:S.layers,paper:S.paper,vb:S.vb,koGap:S.koGap,variants:S.variants};
+  svgRoot=st.root; shapes=st.shapes; colorIndex=st.colorIndex; S.assign=d.assign||{}; S.layers=d.layers||[]; S.paper=d.paper||defaultPaper(); S.vb=st.vb; S.koGap=d.koGap??2; S.variants=d.variants||[];
+  try{ return fn(); }
+  finally{ svgRoot=keep.svgRoot; shapes=keep.shapes; colorIndex=keep.colorIndex; S.assign=keep.assign; S.layers=keep.layers; S.paper=keep.paper; S.vb=keep.vb; S.koGap=keep.koGap; S.variants=keep.variants; }
+}
+function switchDoc(id, fresh=false){
+  if(id===S.docId && !fresh) return;
+  syncDocFromS(); const d=S.docs.find(x=>x.id===id); if(!d) return;
+  if(docStore[id]){ docStore[id].root.remove(); delete docStore[id]; }
+  const prev=activeDoc(); if(prev && prev.id!==id){ delete docStore[prev.id]; }
+  S.docId=id; S.name=d.name; S.svgText=d.svgText; S.assign=d.assign||{}; S.layers=d.layers||[]; S.paper=Object.assign(defaultPaper(), d.paper||{}); S.variants=d.variants||[]; S.koGap=d.koGap??2;
+  S.layers.forEach(normalizeLayer); S.active=S.layers.find(l=>l.type!=='hide')?.id || S.layers[0]?.id;
+  uid=Math.max(uid, ...S.docs.flatMap(x=>(x.layers||[]).map(l=>+String(l.id).slice(1)+1)), 1);
+  start(S.svgText, S.name, fresh);
+}
+function addDoc(text, name){
+  syncDocFromS(); if(!parseSVGRoot(text)) return toast('這不是可解析的 SVG');
+  const d={id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1e3), name, svgText:text, assign:{}, layers:[], paper:defaultPaper(), variants:[], koGap:2, use:true};
+  S.docs.push(d); switchDoc(d.id, true);
+}
+function removeDoc(id){
+  if(S.docs.length<=1) return toast('至少要保留一份 SVG');
+  const i=S.docs.findIndex(d=>d.id===id); if(i<0) return; const wasActive=id===S.docId;
+  S.docs.splice(i,1); if(docStore[id]){ docStore[id].root.remove(); delete docStore[id]; }
+  if(wasActive){ S.docId=null; switchDoc(S.docs[Math.max(0,i-1)].id); } else { clearMasks(); sceneChanged(true); renderDocList(); }
+}
+function renderDocList(){
+  syncDocFromS();
+  ['#docListA','#docListB'].forEach(sel=>{ const host=$(sel); if(!host) return; host.innerHTML='';
+    (S.docs||[]).forEach((d,i)=>{
+      const row=document.createElement('div'); row.className='doc'+(d.id===S.docId?' on':'');
+      const vb=d.vb||(docStore[d.id]?.vb)||[]; const dim=vb.length?`${fmt(vb[0])}×${fmt(vb[1])}`:'';
+      row.innerHTML=`<label class="toggle" title="在版面中使用"><input type="checkbox" ${d.use!==false?'checked':''}></label><span class="dn" title="切換編輯這份">${esc(d.name||'SVG')}</span><span class="dim">${dim}</span>${d.id===S.docId?'<span class="tag">編輯中</span>':''}<button class="ib up" title="順序往前">↑</button><button class="ib down" title="順序往後">↓</button><button class="ib del" title="移除">✕</button>`;
+      row.querySelector('input').addEventListener('change',e=>{ d.use=e.target.checked; sceneChanged(true); });
+      row.querySelector('.dn').addEventListener('click',()=>switchDoc(d.id));
+      row.querySelector('.up').addEventListener('click',()=>{ if(i>0){ S.docs.splice(i,1); S.docs.splice(i-1,0,d); sceneChanged(true); } });
+      row.querySelector('.down').addEventListener('click',()=>{ if(i<S.docs.length-1){ S.docs.splice(i,1); S.docs.splice(i+1,0,d); sceneChanged(true); } });
+      row.querySelector('.del').addEventListener('click',()=>removeDoc(d.id));
+      host.appendChild(row);
+    });
+  });
+}
 let hovering = false, autoT = 0, autoRaf = 0, lastMove = performance.now();
 
 const SIZE_PRESETS=[['1080x1080','1:1 貼文'],['1080x1350','4:5 貼文'],['1080x1440','3:4'],['1080x1920','9:16 限動'],['1920x1080','16:9'],['1200x628','FB 連結'],['2480x3508','A4 300dpi']];
@@ -885,18 +989,9 @@ function noiseURI(opts){
 
 /* ---------- load SVG ---------- */
 function loadSVG(text, name){
-  const clean = text.replace(/<!DOCTYPE[^>]*(\[[\s\S]*?\])?>/i,'').replace(/<\?xml[^>]*\?>/,'');
-  const doc = new DOMParser().parseFromString(clean,'image/svg+xml');
-  const err = doc.querySelector('parsererror'); const root = doc.documentElement;
-  if(err || root.nodeName.toLowerCase()!=='svg'){ toast('這不是可解析的 SVG'); return false; }
-  root.querySelectorAll('script').forEach(n=>n.remove());
-  let k=1; root.setAttribute('data-k','0'); root.querySelectorAll('*').forEach(el=>el.setAttribute('data-k',String(k++)));
-  // viewBox
-  let vb = root.getAttribute('viewBox'); let W,H;
-  if(vb){ const p=vb.trim().split(/[\s,]+/).map(Number); W=p[2]; H=p[3]; }
-  else { W=parseFloat(root.getAttribute('width'))||1000; H=parseFloat(root.getAttribute('height'))||700; root.setAttribute('viewBox',`0 0 ${W} ${H}`); }
-  root.setAttribute('width','100%'); root.setAttribute('height','100%');
-  const base = $('#base'); base.innerHTML=''; base.appendChild(document.adoptNode(root));
+  const pr=parseSVGRoot(text); if(!pr){ toast('這不是可解析的 SVG'); return false; }
+  const {root,W,H}=pr;
+  const base = $('#base'); base.innerHTML=''; base.appendChild(root);
   svgRoot = root; S.svgText = text; S.name = name; S.vb=[W,H];
   $('#card').style.setProperty('--ar', `${W}/${H}`);
   fitCard();
@@ -1702,6 +1797,7 @@ const HELP = {
   'sec-layout':'單張／格狀／磚牆／隨機鋪滿／扇形／階梯。隨機鋪滿與版本分配由「種子」決定，按 🎲 換一組。單張旋轉 = 每張在鋪法算出的角度上再加同一個角度。',
   'sec-view':'相機：俯角（0° 平視俯拍）、方位（桌面自轉）、整體旋轉（成像後再轉）、縮放與 X／Y 位移。透視後常需要把版面往上拉一點。',
   'sec-lens':'焦段 = 35mm 等效焦距：短 = 廣角、近大遠小；長 = 望遠、接近等角。對焦：按下後點畫布上要清楚的位置；光圈越大（f 值越小）景深越淺，離對焦線越遠越糊；曝光 ±EV 調整整體亮度。景深在預覽是近似，匯出時逐像素計算。',
+  'sec-docs':'同時載入多份 SVG（例如正面／背面、A／B 稿）。點名稱切換要編輯的那份；勾選 = 參與版面；↑↓ 決定順序（依序輪流、對照時的左右／上下順序）。「並排比較」把每份各放一張排成一列。頂端「上傳 SVG」與拖放的第一個檔會取代目前這份，「＋ 加入 SVG」與拖放的其餘檔會新增。',
   'sec-variants':'每個版本 = 一組完整的紙張＋效果設定（例如燙金版、燙銀版）。版面上的每張卡依序輪流或隨機套用不同版本，而不是同一張複製多份。',
   'sec-bg':'桌面材質：素色／霧面／亮面只差在反光；木材、石材、布、皮革會疊上程序紋理（可調尺寸與強度），顏色仍由色盤決定（木材另有深淺快選）。反光關掉 = 消光桌面（絨布），光只照亮卡片；光斑 = 燈在桌面上留下的漫反射；光澤 = 鏡面高光（落在反光區）。',
   'sec-light':'燈 → 焦點 → 反光區 → 視角以鏡面幾何綁定：焦點（十字）是你要反光的位置，燈會自動移到能把光經桌面反射進相機的地方；拖燈則反推焦點。改俯角或方位時反光區留在焦點上。高度 = Z × 0.6 × 畫布寬；大小 = 燈的面積：小燈高光銳利、影子硬，大燈（柔光箱）反光帶寬、影子軟。壓痕與打凸打凹的明暗方向也跟著燈走。',
@@ -1751,7 +1847,8 @@ const HELP = {
   sZoom:'整體縮放：整個版面在畫布裡的大小。',
   sShift:'垂直位移：整個版面在畫布裡上下移動，透視後常需要往上拉一點。',
   sRoll:'整體旋轉：最後成像再旋轉，跟「方位」不同（方位是桌面本身轉）。',
-  sMix:'版本分配：多個效果版本存好後，版面上的卡片依序輪流或隨機套用。',
+  sMix:'分配：版面上每張卡用哪個檔案／版本。依序輪流、隨機、逐列／逐欄輪流（格狀），左右／上下對照（畫布分成幾等份各用一個）。',
+  sMix_old:'版本分配：多個效果版本存好後，版面上的卡片依序輪流或隨機套用。',
   sIncCur:'目前設定也算一個版本，跟存好的版本一起輪流。',
   sBg:'桌面／背景顏色。',
   sGlow:'背景反光：燈在桌面上留下的光斑強度。0% = 消光桌面（絨布、霧面），光只照亮卡片。實際亮度會再乘上桌面顏色的反射率：黑桌只會微微發灰，白桌才會亮到發白。',
@@ -1835,10 +1932,12 @@ $('#btnCollapse').addEventListener('click', ()=>{ treeOpen.clear(); svgRoot.quer
 $('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayers(); clearMasks(); applyPaper(); renderFx(); save(); toast('已重新偵測顏色並建立圖層'); });
 $('#btnSample').addEventListener('click', ()=>{ start($('#sampleSvg').textContent, SAMPLE_NAME, true); });
 $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=''; });
-function readFile(f){ if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg 檔'); const r=new FileReader(); r.onload=()=>start(r.result,f.name,true); r.readAsText(f); }
+['#fileAdd','#fileAdd2'].forEach(sel=>$(sel).addEventListener('change', e=>{ [...e.target.files].forEach(f=>readFile(f,true)); e.target.value=''; }));
+$('#btnCompare').addEventListener('click',()=>{ const C=S.scene; const n=Math.max(1,(S.docs||[]).filter(d=>d.use!==false).length); C.layout='grid'; C.cols=n; C.rows=1; C.mix='cycle'; C.includeCurrent=true; C.size=Math.min(60, Math.floor(90/n)); sceneChanged(true); if(viewMode!=='scene') setViewMode('scene'); });
+function readFile(f, add=false){ if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg 檔'); const r=new FileReader(); r.onload=()=>{ if(add) addDoc(r.result,f.name); else { const d=activeDoc(); if(d) delete docStore[d.id]; start(r.result,f.name,true); } }; r.readAsText(f); }
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); stage.classList.add('dragging'); }));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); if(ev==='drop'||e.target===stage) stage.classList.remove('dragging'); }));
-stage.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) readFile(f); });
+stage.addEventListener('drop', e=>{ const fs=[...e.dataTransfer.files]; fs.forEach((f,i)=>readFile(f, i>0)); }); // 拖多個：第一個取代目前這份，其餘加入
 
 let toastT; function toast(m,sticky){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); if(!sticky) toastT=setTimeout(()=>t.classList.remove('on'),2200); }
 function toastOff(){ $('#toast').classList.remove('on'); }
@@ -1847,8 +1946,8 @@ function fmt(n){ return Number.isInteger(n)?n:n.toFixed(1); }
 
 /* ---------- persistence ---------- */
 let saveWarned=false;
-function save(){ try{ const {svgText,...rest}=S; localStorage.setItem(LS_KEY, JSON.stringify(rest)); localStorage.setItem(LS_KEY+':svg', svgText); }catch(e){ if(!saveWarned){ saveWarned=true; toast('設定太大，瀏覽器存不下（超過 localStorage 上限）；本次操作不會保留到下次開啟'); } } }
-function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStorage.getItem(LS_KEY+':svg'); if(j&&svg){ const o=JSON.parse(j); o.svgText=svg; return o; } }catch(e){} return null; }
+function save(){ try{ syncDocFromS(); const {svgText,docs,...rest}=S; rest.docs=(docs||[]).map(({svgText,...d})=>d); localStorage.setItem(LS_KEY, JSON.stringify(rest)); localStorage.setItem(LS_KEY+':svg', svgText); (docs||[]).forEach(d=>{ if(d.svgText) localStorage.setItem(LS_KEY+':svg:'+d.id, d.svgText); }); }catch(e){ if(!saveWarned){ saveWarned=true; toast('設定太大，瀏覽器存不下（超過 localStorage 上限）；本次操作不會保留到下次開啟'); } } }
+function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStorage.getItem(LS_KEY+':svg'); if(j&&svg){ const o=JSON.parse(j); o.svgText=svg; (o.docs||[]).forEach(d=>{ d.svgText=localStorage.getItem(LS_KEY+':svg:'+d.id)||(d.id===o.docId?svg:''); }); o.docs=(o.docs||[]).filter(d=>d.svgText); return o; } }catch(e){} return null; }
 
 /* ---------- export ---------- */
 let dlCap=null; try{ window.claude?.use?.('downloads').then(d=>{ dlCap=d; }).catch(()=>{}); }catch(e){}
@@ -1960,7 +2059,7 @@ function prefixIds(str, pre){
             .replace(/(xlink:)?href="#([^"]+)"/g, (m,x,id)=>`${x||''}href="#${pre}${id}"`);
 }
 function innerXML(el){ return [...el.childNodes].map(n=>new XMLSerializer().serializeToString(n)).join(''); }
-window.foilProof = { get state(){ return S; }, parseLayerName }; // 供外部腳本／除錯使用
+window.foilProof = { get state(){ return S; }, parseLayerName, addDoc, switchDoc }; // 供外部腳本／除錯使用
 $('#modalClose').addEventListener('click', ()=>$('#modal').classList.remove('on'));
 $('#btnAbout').addEventListener('click', ()=>$('#about').classList.add('on'));
 $('#aboutClose').addEventListener('click', ()=>$('#about').classList.remove('on'));
@@ -1970,7 +2069,7 @@ $('#modal').addEventListener('click', e=>{ if(e.target===$('#modal')) $('#modal'
 /* ---------- 版本（同一份稿的不同效果組合，供版面混搭） ---------- */
 const deep = o => JSON.parse(JSON.stringify(o));
 function snapshotVariant(name){ return {id:'V'+Date.now().toString(36), name, paper:deep(S.paper), layers:deep(S.layers.map(({_count,...l})=>l))}; }
-function buildVariantCard(v){
+function buildVariantCard(v, vkPre=''){
   const c=document.createElement('div'); c.className='card inst'; c.dataset.v=v.id;
   c.innerHTML='<div class="paper"></div><div class="base"></div><div class="fxs"></div><div class="paper-glare"></div><div class="paper-vignette"></div>';
   const eff=computeEffectiveFor(v.layers);
@@ -1978,8 +2077,8 @@ function buildVariantCard(v){
   base.querySelectorAll('[data-k]').forEach(el=>{ const k=el.getAttribute('data-k'); if(shapes[k]) el.classList.toggle('is-assigned', !!eff[k]); });
   c.querySelector('.base').appendChild(base);
   paperApply([c], v.paper);
-  renderFxInto(c.querySelector('.fxs'), v.layers, eff, v.id+':', v.paper);
-  c.style.setProperty('--w','100%'); c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg');
+  renderFxInto(c.querySelector('.fxs'), v.layers, eff, vkPre+v.id+':', v.paper);
+  c.style.setProperty('--w','100%'); c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg'); if(S.vb) c.style.setProperty('--ar', `${S.vb[0]}/${S.vb[1]}`); // 比例跟該份 SVG 走
   return c;
 }
 function currentCardClone(){
@@ -1990,12 +2089,26 @@ function currentCardClone(){
 }
 /* 版面要用的卡片池：依設定回傳 [{name, el}] */
 function variantPool(){
-  const C=S.scene, pool=[];
-  const use=(S.variants||[]).filter(v=>v.use!==false);
-  const cur={name:'目前設定', el:currentCardClone(), layers:S.layers, paper:S.paper, vk:''};
-  if(C.mix==='current' || !use.length){ pool.push(cur); return pool; }
-  if(C.includeCurrent!==false) pool.push(cur);
-  use.forEach(v=>pool.push({name:v.name, el:buildVariantCard(v), layers:v.layers, paper:v.paper, vk:v.id+':'}));
+  const C=S.scene, pool=[]; syncDocFromS();
+  const cur={name:'目前設定', el:currentCardClone(), layers:S.layers, paper:S.paper, vk:'', doc:S.docId, vb:S.vb};
+  if(C.mix==='current'){ pool.push(cur); return pool; }
+  const docs=(S.docs||[]).filter(d=>d.use!==false || d.id===S.docId); const multi=docs.length>1;
+  docs.forEach(d=>{
+    if(d.id===S.docId){
+      const use=(S.variants||[]).filter(v=>v.use!==false);
+      if(C.includeCurrent!==false || !use.length) pool.push(multi?Object.assign({},cur,{name:d.name}):cur);
+      use.forEach(v=>pool.push({name:(multi?d.name+' · ':'')+v.name, el:buildVariantCard(v), layers:v.layers, paper:v.paper, vk:v.id+':', doc:d.id, vb:S.vb}));
+    } else {
+      if(d.use===false) return;
+      withDoc(d.id, ()=>{
+        const st=docStore[d.id]; if(!st) return;
+        const use=(d.variants||[]).filter(v=>v.use!==false);
+        if(C.includeCurrent!==false || !use.length) pool.push({name:d.name, el:buildVariantCard({id:'cur',layers:d.layers||[],paper:d.paper||defaultPaper()}, d.id+':'), layers:d.layers||[], paper:d.paper||defaultPaper(), vk:d.id+':cur:', doc:d.id, vb:st.vb});
+        use.forEach(v=>pool.push({name:d.name+' · '+v.name, el:buildVariantCard(v, d.id+':'), layers:v.layers, paper:v.paper, vk:d.id+':'+v.id+':', doc:d.id, vb:st.vb}));
+      });
+    }
+  });
+  if(!pool.length) pool.push(cur);
   return pool;
 }
 /* ---------- 合併光場：整個版面每個效果圖層只做一張遮罩（symbol + N 個 use），一盞燈連續掃過所有卡 ---------- */
@@ -2040,7 +2153,7 @@ function visibleRectsMask(slots, idxs){
 }
 function buildMergedFx(host, pool, slotOwner, slots){
   host.innerHTML='';
-  pool.forEach((pe,pi)=>{
+  pool.forEach((pe,pi)=>withDoc(pe.doc, ()=>{
     const idxs=slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi); if(!idxs.length) return;
     const layers=pe.layers, eff = pe.vk ? computeEffectiveFor(layers) : effLayer;
     const counts={}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; }); layers.forEach(L=>{ L._count=counts[L.id]||0; });
@@ -2059,7 +2172,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
       // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
       const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');
     });
-  });
+  }));
 }
 function renderVariantList(){
   const host=$('#variantList'); if(!host) return; host.innerHTML='';
@@ -2094,7 +2207,7 @@ function layoutSlots(){
     const x0=(W-tw)/2+cw/2, y0=(H-th)/2+ch/2;
     for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
       const off = C.layout==='brick' ? ((r%2? .25:-.25)*(cw+C.gap)) : 0;
-      out.push({x:x0+c*(cw+C.gap)+off,y:y0+r*(ch+C.gap),w:cw,h:ch,r:C.rot});
+      out.push({x:x0+c*(cw+C.gap)+off,y:y0+r*(ch+C.gap),w:cw,h:ch,r:C.rot,row:r,col:c});
     }
   } else if(C.layout==='random'){
     // 隨機鋪滿：先以「卡片＋間距」算出能蓋滿畫布（含出血）的格子，再把每張從格子中心隨機位移、隨機旋轉
@@ -2149,10 +2262,15 @@ function renderScene(){
   const pool=variantPool(); const rnd=mulberry(C.seed*131+7); tb._merged=true;
   const owner=[];
   const wire = renderQuality==='fast' && (C.quality||'fast')==='wire'; // 線框：只畫外框與編號，換鋪法／視角最快
+  // 分配：哪張卡用哪個檔案／版本（依序、隨機、逐列、逐欄、左右對照、上下對照）
+  const n=pool.length, pickIdx=(sl,i)=>{ if(n===1) return 0; const cl=v=>Math.max(0,Math.min(n-1,v));
+    switch(C.mix){ case 'random': return Math.floor(rnd()*n); case 'rows': return (sl.row??i)%n; case 'cols': return (sl.col??i)%n;
+      case 'half': return cl(Math.floor(sl.x/C.W*n)); case 'halfv': return cl(Math.floor(sl.y/C.H*n)); default: return i%n; } };
+  slots.forEach((sl,i)=>{ owner[i]=pickIdx(sl,i); const vb=pool[owner[i]].vb; if(vb && vb[1]) sl.h=sl.w*vb[1]/vb[0]; }); // 不同檔案比例不同：高度依各自 viewBox
   slots.forEach((sl,i)=>{
     const d=document.createElement('div'); d.className='slot'+(wire?' wire':'');
     Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`rotate(${sl.r}deg)`,transformOrigin:sl.pivot||'50% 50%',zIndex:i+1});
-    const pi = pool.length===1 ? 0 : (C.mix==='random' ? Math.floor(rnd()*pool.length) : i%pool.length); owner[i]=pi;
+    const pi=owner[i];
     const pick=pool[pi];
     if(wire){ d.innerHTML=`<div class="wirecard">${i+1}${pool.length>1?`<small>${pick.name}</small>`:''}</div>`; tb.appendChild(d); return; }
     const c=pick.el.cloneNode(true); c.title=pick.name;
@@ -2290,7 +2408,7 @@ function syncSceneControls(){
   $('#sFocusPick').classList.toggle('primary',!!focusPick);
   setRange('#sCols',C.cols,v=>v); setRange('#sRows',C.rows,v=>v); setRange('#sN',C.n,v=>v+' 張'); setRange('#sJitter',C.jitter??50,v=>v+'%'); setRange('#sSize',C.size,v=>v+'%'); setRange('#sGap',C.gap,v=>v+'px'); setRange('#sRot',C.rot,v=>v+'°'); setRange('#sRot2',C.rot2||0,v=>v+'°'); setRange('#sBleed',C.bleed,v=>v+'%');
   setRange('#sPitch',C.pitch,v=>v+'°'); setRange('#sYaw',C.yaw,v=>v+'°'); setRange('#sFov',C.fov,v=>Math.round(v/C.W*36)+'mm'); setRange('#sZoom',C.zoom,v=>(+v).toFixed(2)+'×'); setRange('#sShift',C.shift,v=>v+'%'); setRange('#sRoll',C.roll||0,v=>v+'°');
-  $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList();
+  $('#sMix').value=C.mix||'current'; $('#sIncCur').checked=C.includeCurrent!==false; renderVariantList(); renderDocList();
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
   $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.gx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sLsize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sSpot',C.spot??.35,PCT); setRange('#sSoft',C.soft??.6,PCT); setRange('#sKelvin',C.kelvin??5500,v=>v+'K');
   $('#sUseLC').checked=!!C.useLightColor; $('#sLC').value=C.lightColor||'#ffe9c8'; $('#sLCHex').textContent=C.lightColor||'#ffe9c8';
@@ -2325,6 +2443,7 @@ function start(svgText, name, fresh){
   S = S || {}; S.paper = Object.assign(defaultPaper(), S.paper||{}); if(S.scene){ S.scene.gx ??= S.scene.lx; S.scene.gy ??= S.scene.ly; } (S.layers||[]).forEach(normalizeLayer); (S.variants||[]).forEach(v=>(v.layers||[]).forEach(normalizeLayer)); S.scene = Object.assign(defaultScene(), S.scene||{}); S.pickMode=S.pickMode||'group'; S.layers=S.layers||[]; S.assign=S.assign||{}; S.koGap = S.koGap ?? 2;
   setPointer(.5,.5,0);
   if(!loadSVG(svgText,name)) return;
+  ensureDocs(name); syncDocFromS();
   if(fresh){ S.paper=defaultPaper(); autoLayers(); }
   setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyStageBg();
   applyPaper(); clearMasks(); renderFx(); syncSceneControls(); setViewMode(viewMode); attachHelp(); save();
