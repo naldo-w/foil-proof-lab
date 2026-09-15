@@ -778,29 +778,29 @@ function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLa
 const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.25,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true});
 /* 紙質目錄：bf = feTurbulence baseFrequency、oct = 八度、relief = 預設凹凸、grain = 預設顆粒、lines = 疊加的條紋、speck = 斑點式凹凸 */
 const PAPERS = {
-  coated:   {label:'銅版紙（光滑）',        group:'塗佈', bf:'1.3', oct:1, relief:.35, grain:.12, gloss:.5, note:'表面幾乎無紋，反光強；適合一般彩色印刷與燙金。'},
-  matte:    {label:'雪銅／霧面卡',          group:'塗佈', bf:'.9',  oct:2, relief:.7,  grain:.3,  gloss:.25, note:'細微磨砂顆粒，反光收斂。'},
+  coated:   {label:'銅版紙',        group:'塗佈', bf:'1.3', oct:1, relief:.35, grain:.12, gloss:.5, note:'塗佈光滑面，幾乎無紋、反光強；一般彩色印刷與燙金常用。'},
+  matte:    {label:'雪銅紙',          group:'塗佈', bf:'.9',  oct:2, relief:.7,  grain:.3,  gloss:.25, note:'霧面塗佈，細微磨砂顆粒，反光收斂。'},
   pearl:    {label:'珠光紙',                group:'塗佈', bf:'1.1', oct:2, relief:.5,  grain:.2,  gloss:.75, note:'細緻紋理加上明顯的珠光反射。'},
-  ivory:    {label:'象牙卡／美術紙',        group:'非塗佈', bf:'.45', oct:3, relief:1.6, grain:.25, gloss:.2, note:'典型的名片／卡片用紙，微凹凸的毛面。'},
-  eggshell: {label:'蛋殼紋',                group:'非塗佈', bf:'.22', oct:2, relief:2.6, grain:.2,  gloss:.2, type:'turbulence', note:'圓潤的小凹坑，像蛋殼表面。'},
-  coldpress:{label:'水彩紙（冷壓粗紋）',    group:'非塗佈', bf:'.16', oct:4, relief:3.4, grain:.4,  gloss:.1, note:'粗糙起伏明顯，燙箔會沿紋理起伏。'},
-  vellum:   {label:'仿羊皮／雲彩紙',        group:'非塗佈', bf:'.08 .3', oct:3, relief:1.4, grain:.25, gloss:.25, note:'雲狀的不規則深淺與纖維流向。'},
-  laid:     {label:'萊妮紙（橫直紋）',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.16}], note:'等距的細橫紋，古典信紙質感。'},
-  ribbed:   {label:'條紋紙（粗直紋）',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.25, gloss:.2, lines:[{dir:90,period:10,str:.24}], note:'明顯的直向凹凸條紋。'},
-  linen:    {label:'麻布紋',                group:'壓紋', bf:'.8',  oct:2, relief:1.0, grain:.3,  gloss:.2, lines:[{dir:0,period:4,str:.13},{dir:90,period:4,str:.13}], note:'十字交織的布紋壓印。'},
-  leather:  {label:'皮紋（荔枝紋）',        group:'壓紋', bf:'.07', oct:3, relief:4.5, grain:.15, gloss:.35, type:'turbulence', note:'大顆不規則的皮革壓紋。'},
-  hammer:   {label:'鎚目紋',                group:'壓紋', bf:'.05', oct:1, relief:5,   grain:.2,  gloss:.3, type:'turbulence', note:'像敲打過的金屬面，大而圓的凹陷。'},
-  kraft:    {label:'牛皮紙（纖維）',        group:'再生／特殊', bf:'.5 .05', oct:3, relief:1.5, grain:.4, gloss:.1, note:'橫向拉長的纖維紋理。'},
-  recycled: {label:'再生紙（斑點）',        group:'再生／特殊', bf:'.5',  oct:3, relief:1.2, grain:.35, gloss:.1, speck:true, note:'散布的深色纖維斑點。'},
+  ivory:    {label:'美術紙',        group:'非塗佈', bf:'.45', oct:3, relief:1.6, grain:.25, gloss:.2, note:'非塗佈美術紙，微凹凸的毛面。'},
+  eggshell: {label:'蛋殼紋紙',                group:'非塗佈', bf:'.22', oct:2, relief:2.6, grain:.2,  gloss:.2, type:'turbulence', note:'圓潤的小凹坑，像蛋殼表面。'},
+  coldpress:{label:'水彩紙',    group:'非塗佈', bf:'.16', oct:4, relief:3.4, grain:.4,  gloss:.1, note:'冷壓水彩紙，粗糙起伏明顯，燙箔會沿紋理起伏。'},
+  vellum:   {label:'雲彩紙',        group:'非塗佈', bf:'.08 .3', oct:3, relief:1.4, grain:.25, gloss:.25, note:'仿羊皮的雲狀深淺與纖維流向。'},
+  laid:     {label:'萊妮紙',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.16}], note:'萊妮壓紋：等距的細橫直紋，古典信紙質感。'},
+  ribbed:   {label:'條紋紙',      group:'壓紋', bf:'.6',  oct:2, relief:1.2, grain:.25, gloss:.2, lines:[{dir:90,period:10,str:.24}], note:'粗直紋壓紋，明顯的直向凹凸。'},
+  linen:    {label:'麻布紋紙',                group:'壓紋', bf:'.8',  oct:2, relief:1.0, grain:.3,  gloss:.2, lines:[{dir:0,period:4,str:.13},{dir:90,period:4,str:.13}], note:'十字交織的布紋壓印。'},
+  leather:  {label:'皮紋紙',        group:'壓紋', bf:'.07', oct:3, relief:4.5, grain:.15, gloss:.35, type:'turbulence', note:'荔枝紋皮革壓紋，大顆不規則。'},
+  hammer:   {label:'鎚目紋紙',                group:'壓紋', bf:'.05', oct:1, relief:5,   grain:.2,  gloss:.3, type:'turbulence', note:'像敲打過的金屬面，大而圓的凹陷。'},
+  kraft:    {label:'牛皮紙',        group:'再生／特殊', bf:'.5 .05', oct:3, relief:1.5, grain:.4, gloss:.1, note:'牛皮紙，橫向拉長的纖維紋理。'},
+  recycled: {label:'再生紙',        group:'再生／特殊', bf:'.5',  oct:3, relief:1.2, grain:.35, gloss:.1, speck:true, note:'再生紙，散布的深色纖維斑點。'},
   felt:     {label:'毛氈紙',                group:'再生／特殊', bf:'.3',  oct:4, relief:2.2, grain:.5, gloss:.05, note:'鬆軟不規則的毛面，吸光。'},
   /* 台灣印刷廠常用名 */
   shinbaidai:{label:'新百代',               group:'台灣常用', bf:'.5 .5', oct:2, relief:1.9, grain:.3, gloss:.15, lines:[{dir:45,period:5,str:.09},{dir:-45,period:5,str:.09}], note:'細緻的十字斜壓紋，微毛面；名片、卡片常用。'},
   beer:     {label:'啤酒紙',                group:'台灣常用', bf:'.55', oct:3, relief:1.3, grain:.45, gloss:.08, speck:true, note:'未漂白、帶褐色纖維斑點的手感紙。'},
-  stardream:{label:'星幻紙（金屬珠光）',    group:'台灣常用', bf:'1.1', oct:2, relief:.5,  grain:.25, gloss:.85, note:'金屬珠光表面，反光帶會隨角度流動。'},
-  conqueror:{label:'剛古紙（橫紋）',        group:'台灣常用', bf:'.6',  oct:2, relief:1.1, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.14}], note:'英國 Conqueror 橫紋，信封信紙標配。'},
+  stardream:{label:'星幻紙',    group:'台灣常用', bf:'1.1', oct:2, relief:.5,  grain:.25, gloss:.85, note:'Stardream 金屬珠光表面，反光帶會隨角度流動。'},
+  conqueror:{label:'剛古紙',        group:'台灣常用', bf:'.6',  oct:2, relief:1.1, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.14}], note:'英國 Conqueror 橫紋壓紋，信封信紙標配。'},
   woodfree: {label:'環保道林',              group:'台灣常用', bf:'.8',  oct:2, relief:.8,  grain:.35, gloss:.05, note:'非塗佈道林紙，吸墨、無反光。'},
-  greyboard:{label:'荷蘭板（灰紙板）',      group:'台灣常用', bf:'.3',  oct:4, relief:2.4, grain:.55, gloss:.03, speck:true, note:'厚灰紙板，粗纖維與斑點，常做包裝或裱底。'},
-  ivoryTW:  {label:'象牙卡（250–350g）',    group:'台灣常用', bf:'.45', oct:3, relief:1.5, grain:.25, gloss:.2, note:'最常見的名片卡紙。'},
+  greyboard:{label:'荷蘭板',      group:'台灣常用', bf:'.3',  oct:4, relief:2.4, grain:.55, gloss:.03, speck:true, note:'灰紙板，粗纖維與斑點，常做包裝或裱底。'},
+  ivoryTW:  {label:'象牙卡',    group:'台灣常用', bf:'.45', oct:3, relief:1.5, grain:.25, gloss:.2, note:'250–350g 象牙卡，最常見的名片卡紙。'},
 };
 const TEX_MIGRATE={smooth:'matte',rough:'ivory'};
 /* 凹凸紋理：feTurbulence 當高度圖 → feDiffuseLighting 打光 → 重新置中到中灰，讓 overlay/soft-light 在平坦處不改變紙色 */
@@ -909,7 +909,7 @@ function detectBackground(){
 function autoLayers(){
   S.layers = []; S.assign = {};
   const bgKey = detectBackground();
-  if(bgKey){ S.paper.color = shapes[bgKey].fill; const L=newLayer('hide','背景底色（紙）'); S.assign[bgKey]=L.id; }
+  if(bgKey){ S.paper.color = shapes[bgKey].fill; const L=newLayer('hide','不印 · 底色'); S.assign[bgKey]=L.id; }
   const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey)]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
   for(const [c,keys] of cols){
     const p = guessPreset(c); const L=newLayer(p);
