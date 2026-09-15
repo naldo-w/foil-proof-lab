@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+  <g id="刀模">
+    <path d="M40 0 H960 A40 40 0 0 1 1000 40 V560 A40 40 0 0 1 960 600 H40 A40 40 0 0 1 0 560 V330 A30 30 0 0 0 0 270 V40 A40 40 0 0 1 40 0 Z" fill="none" stroke="#ff5511" stroke-width="1"/>
+  </g>
   <g id="不印 · 底色">
     <rect x="0" y="0" width="1000" height="600" fill="#141414"/>
   </g>
