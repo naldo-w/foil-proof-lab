@@ -1570,7 +1570,7 @@ const HELP = {
   sMix:'版本分配：多個效果版本存好後，版面上的卡片依序輪流或隨機套用。',
   sIncCur:'目前設定也算一個版本，跟存好的版本一起輪流。',
   sBg:'桌面／背景顏色。',
-  sGlow:'背景反光：燈在桌面上留下的光斑強度。0% = 消光桌面（絨布、霧面），光只照亮卡片。',
+  sGlow:'背景反光：燈在桌面上留下的光斑強度。0% = 消光桌面（絨布、霧面），光只照亮卡片。實際亮度會再乘上桌面顏色的反射率：黑桌只會微微發灰，白桌才會亮到發白。',
   sVig:'暗角：畫面四角變暗的程度，相機鏡頭的自然表現。',
   sInt:'光源強度：同時影響卡片亮度、高光與光斑。',
   sSpot:'聚焦：燈的光錐大小。高 = 聚光燈只照亮焦點附近；低 = 整個桌面均勻。',
@@ -1967,7 +1967,9 @@ function applySceneLight(px,py,hov){
   // 聚焦：光錐大小；柔光：光錐邊緣的漸變寬度；色溫／自訂色：光斑與整體色偏
   const spot=C.spot??.35, soft=C.soft??.6, lc=lightRGB(), lcs=lc.join(','); const cx=(T.x+C.W).toFixed(1), cy=(T.y+C.H).toFixed(1);
   const Rg=h*lsz*(2.2-1.5*spot), innerG=Math.round((0.1+0.55*(1-soft))*100);
-  const glow=tb.querySelector('.tglow'); if(glow){ const a=Math.min(1,(C.glow??.35)*inten); glow.style.background=`radial-gradient(circle ${Rg.toFixed(0)}px at ${cx}px ${cy}px, rgba(${lcs},${a.toFixed(2)}) 0%, rgba(${lcs},${(a*.75).toFixed(2)}) ${innerG}%, rgba(${lcs},0) 100%)`; }
+  // 光斑亮度要看桌面的反射率：黑絨布再強的燈也只會微微發灰，白桌才會亮到發白
+  const refl=0.12+0.88*Math.pow(hsl(C.bg||'#2a2a2e').l,1.3);
+  const glow=tb.querySelector('.tglow'); if(glow){ const a=Math.min(.75,(C.glow??.35)*inten*refl); glow.style.background=`radial-gradient(circle ${Rg.toFixed(0)}px at ${cx}px ${cy}px, rgba(${lcs},${a.toFixed(2)}) 0%, rgba(${lcs},${(a*.75).toFixed(2)}) ${innerG}%, rgba(${lcs},0) 100%)`; }
   const fall=tb.querySelector('.tfall'); if(fall){ const Rf=Rg*(1.3+1.6*(1-spot)), a=Math.min(.75,(.22+spot*.5)/Math.max(.5,dist)), innerF=Math.round((0.15+0.6*(1-soft))*100);
     fall.style.background=`radial-gradient(circle ${Rf.toFixed(0)}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${innerF}%, rgba(0,0,0,${a.toFixed(2)}) 100%)`; fall.style.opacity=(1/(0.75+inten*.25)).toFixed(2); }
   const cast=tb.querySelector('.tcast'); if(cast){ cast.style.background=`rgb(${lcs})`; }
