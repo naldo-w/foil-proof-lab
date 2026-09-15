@@ -94,7 +94,7 @@ button{cursor:pointer}
 .i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,.42));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影 */
 .m .dome{position:absolute;inset:0!important;background:linear-gradient(var(--sang,135deg),rgba(255,255,255,.28),rgba(255,255,255,0) 42%,rgba(0,0,0,0) 58%,rgba(0,0,0,.3));mix-blend-mode:soft-light;opacity:var(--ro,1);pointer-events:none} /* 圓頂：沿光線方向的明→暗 */
 .m.foil .i-in{opacity:calc(var(--dop,1)*.7)}
-.m.rim{background:#000}
+.m.rim{background:var(--pcol,#000)} /* 壓痕用的形狀本身填紙色：油墨半透明或濃度 0 時透出來的是紙，不是黑 */
 
 /* foil */
 .m.foil .f-base{background-image:var(--grad);background-size:280% 280%;background-position:var(--px) var(--py);filter:brightness(var(--fb,1)) contrast(var(--fc,1))}
@@ -1105,7 +1105,7 @@ function renderFx(){
 }
 function styleFx(d,L,paper=S.paper){
   if(!d){ document.querySelectorAll(`.card[data-v="current"] .fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L,paper)); return; }
-  const st = d.style;
+  const st = d.style; st.setProperty('--pcol', paper.color);
   if(L.proc==='foil' || L.proc==='holo'){
     const c = L.band ?? L.contrast ?? .45, sp = L.spec ?? L.contrast ?? .45;
     if(L.proc==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); }
