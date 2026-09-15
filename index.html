@@ -7,10 +7,11 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
 :root{
-  --bg:#131315; --stage:#18181b; --panel:#1e1e22; --panel-2:#26262b; --line:#2f2f36; --line-2:#3c3c45;
-  --text:#ebe8e1; --muted:#8f8c85; --faint:#5d5b56;
-  --accent:#c9a96e; --accent-ink:#1a1408; --accent-dim:#5c4d33;
-  --danger:#d76b5c;
+  /* Monochrome：純中性灰階 + 單一主題色 #ff5511，只用在「目前選取／主要動作／光源」 */
+  --bg:#0e0e0e; --stage:#151515; --panel:#181818; --panel-2:#212121; --line:#2a2a2a; --line-2:#373737;
+  --text:#f2f2f2; --muted:#8c8c8c; --faint:#5a5a5a;
+  --accent:#ff5511; --accent-ink:#ffffff; --accent-dim:#7a2f11; --accent-soft:rgba(255,85,17,.14);
+  --danger:#ff5511;
   --sans:'IBM Plex Sans','Noto Sans TC',-apple-system,BlinkMacSystemFont,'PingFang TC','Microsoft JhengHei',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --panel-w:340px;
@@ -33,9 +34,9 @@ button{cursor:pointer}
 .top-actions{display:flex;gap:8px;align-items:center}
 
 .btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--line-2);border-radius:5px;background:var(--panel-2);color:var(--text);white-space:nowrap}
-.btn:hover{border-color:var(--accent-dim);background:#2c2c32}
+.btn:hover{border-color:var(--line-2);background:#2a2a2a}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
-.btn.primary:hover{background:#d8b87c}
+.btn.primary:hover{background:#ff6a2e}
 .btn.small{height:24px;padding:0 8px;font-size:12px}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
 .btn.ghost:hover{color:var(--text);border-color:var(--line-2)}
@@ -43,8 +44,8 @@ button{cursor:pointer}
 
 /* ---------- stage ---------- */
 .stage{position:relative;background:var(--stage);overflow:hidden;
-  background-image:radial-gradient(ellipse at 50% 40%,#1f1f24 0%,#151517 70%)}
-.stage-tools{position:absolute;top:12px;left:12px;z-index:5;display:flex;gap:6px;align-items:center;background:rgba(20,20,23,.85);border:1px solid var(--line);border-radius:6px;padding:4px 6px;backdrop-filter:blur(6px)}
+  background-image:radial-gradient(ellipse at 50% 40%,#1c1c1c 0%,#121212 70%)}
+.stage-tools{position:absolute;top:12px;left:12px;z-index:5;display:flex;gap:6px;align-items:center;background:rgba(14,14,14,.85);border:1px solid var(--line);border-radius:6px;padding:4px 6px;backdrop-filter:blur(6px)}
 .stage-tools .lbl{font:11px var(--mono);color:var(--muted);letter-spacing:.08em;padding:0 4px}
 .seg{display:flex;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
 .seg button{height:24px;padding:0 10px;border:0;background:transparent;color:var(--muted);font-size:12px}
@@ -76,9 +77,22 @@ button{cursor:pointer}
 .m.foil,.m.ink{isolation:isolate}
 .fx.hidden{display:none}
 /* 燙印壓痕：在箔面「外圍」的紙面上壓出一圈明暗——未遮罩的父層做 drop-shadow，影子從遮罩子層外緣溢出；箔面本身不受影響 */
+/* 壓痕／浮雕：以光線方向（--sdx,--sdy 為「光→圖形」單位向量）決定明暗落在哪一邊。
+   外緣（f-rim）：未遮罩父層做 drop-shadow，影子從遮罩子層外緣溢出到紙上；
+   內緣（i-in）：反向遮罩 + drop-shadow，影子只落在圖形內側。 */
 .f-rim{position:absolute;inset:0;opacity:var(--dop,1)}
-.f-rim.dk{filter:drop-shadow(calc(-1*var(--dd,1px)) calc(-1*var(--dd,1px)) var(--db,1px) rgba(0,0,0,.6))}
-.f-rim.lt{filter:drop-shadow(var(--dd,1px) var(--dd,1px) var(--db,1px) rgba(255,255,255,.45))}
+.f-rim.dk{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)*.6) calc(-1*var(--sdy,.7)*var(--dd,1px)*.6) var(--db,1px) rgba(0,0,0,.35))}
+.f-rim.lt{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(255,255,255,.5))}
+.i-in{position:absolute;inset:0!important;pointer-events:none}
+.i-in .inv{position:absolute;inset:0;background:#000;
+  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
+  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)*1.1) calc(var(--sdy,.7)*var(--dd,1px)*1.1) calc(var(--db,1px)*1.3) rgba(0,0,0,.5));opacity:var(--dop,1)}   /* 壓入：近光側內緣陰影 */
+.i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)*.8) calc(-1*var(--sdy,.7)*var(--dd,1px)*.8) var(--db,1px) rgba(255,255,255,.3));opacity:var(--dop,1)} /* 壓入：遠光側內緣受光 */
+.i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,.6));opacity:var(--ro,1)} /* 隆起：近光側內緣高光 */
+.i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,.42));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影 */
+.m .dome{position:absolute;inset:0!important;background:linear-gradient(var(--sang,135deg),rgba(255,255,255,.28),rgba(255,255,255,0) 42%,rgba(0,0,0,0) 58%,rgba(0,0,0,.3));mix-blend-mode:soft-light;opacity:var(--ro,1);pointer-events:none} /* 圓頂：沿光線方向的明→暗 */
+.m.foil .i-in{opacity:calc(var(--dop,1)*.7)}
 .m.rim{background:#000}
 
 /* foil */
@@ -114,22 +128,16 @@ button{cursor:pointer}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
 .m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
 .f-rim.rev{opacity:var(--ro,1)}
-.f-rim.rev.dk{filter:drop-shadow(var(--rd,1px) var(--rd,1px) var(--rb,1px) rgba(0,0,0,.5))}
-.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--rd,1px)) calc(-1*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,.7))}
+.f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)*1.6) calc(var(--sdy,.7)*var(--rd,1px)*1.6) calc(var(--rb,1px)*1.4) rgba(0,0,0,.5))}   /* 隆起：遠光側投影 */
+.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,.45))} /* 隆起：近光側外緣受光 */
 .m.r-face{background:var(--face)}
 /* 發泡印花：外緣立體陰影 + 內側圓頂明暗（反向遮罩 drop-shadow）+ 霧面顆粒 */
-.i-dome{position:absolute;inset:0!important;opacity:var(--qo,1)}
-.i-dome.sh{filter:drop-shadow(calc(-1*var(--qd,1.6px)) calc(-1*var(--qd,1.6px)) var(--qb,2.7px) rgba(0,0,0,.42))}
-.i-dome.hi{filter:drop-shadow(var(--qd,1.6px) var(--qd,1.6px) var(--qb,2.7px) rgba(255,255,255,.5))}
 /* 凸版印刷：油墨被壓進紙裡，邊緣略深、表面霧 */
 .m.ink.press .i-grain{opacity:calc(var(--grain-ink,.5)*1.3)}
 .m.ink.press .i-glare{opacity:calc(var(--gloss,.05)*var(--hov)*.5)}
 /* 網版印刷：厚而不透明的墨層 */
 .m.ink.screen .i-fill{opacity:1}
 .m.ink.screen .i-grain{background-image:var(--ptexg);background-size:110px 110px;mix-blend-mode:soft-light;opacity:.4}
-.i-dome .inv{position:absolute;inset:0;background:#000;
-  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
-  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .m.ink.puff .i-grain{background-image:var(--ptexg);background-size:90px 90px;mix-blend-mode:soft-light}
 .m.ink.puff .i-glare{mix-blend-mode:soft-light}
 .m.ink.flock .i-grain{background-image:var(--ptexg);background-size:70px 70px;mix-blend-mode:soft-light}
@@ -166,22 +174,22 @@ button{cursor:pointer}
 .scenebox{position:relative}
 .stage:has(#scenewrap:not([hidden])){cursor:grab}
 .stage.dragging-light{cursor:grabbing}
-.light-handle{position:absolute;left:30%;top:25%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px 6px rgba(255,240,200,.45);background:radial-gradient(circle,#fff6d6 0%,#ffd77a 55%,rgba(255,215,122,0) 70%);pointer-events:none;z-index:9}
-.light-handle span{position:absolute;inset:0;border-radius:50%;animation:lh 2.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,235,180,.6)}
-@keyframes lh{0%{box-shadow:0 0 0 0 rgba(255,235,180,.6)}100%{box-shadow:0 0 0 14px rgba(255,235,180,0)}}
+.light-handle{position:absolute;left:30%;top:25%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px 6px rgba(255,85,17,.45);background:radial-gradient(circle,#fff 0%,var(--accent) 55%,rgba(255,85,17,0) 70%);pointer-events:none;z-index:9}
+.light-handle span{position:absolute;inset:0;border-radius:50%;animation:lh 2.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,85,17,.6)}
+@keyframes lh{0%{box-shadow:0 0 0 0 rgba(255,85,17,.6)}100%{box-shadow:0 0 0 14px rgba(255,85,17,0)}}
 @media (prefers-reduced-motion:reduce){.light-handle span{animation:none}}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
 .table .tglow{position:absolute;inset:-100%;pointer-events:none}   /* 桌面上的光斑（在桌面座標系，會跟著視角變換）；放大到 3×，桌面旋轉後不露邊 */
 .table .tfall{position:absolute;inset:-100%;mix-blend-mode:multiply;pointer-events:none} /* 離燈越遠越暗（漫反射衰減） */
 .table .tcast{position:absolute;inset:-100%;mix-blend-mode:multiply;opacity:.55;pointer-events:none} /* 相機會做白平衡，色偏只留一半 */ /* 光的顏色（色溫）對整個畫面的色偏 */
 .light-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;overflow:visible}
-.light-svg line{stroke:rgba(255,235,180,.75);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
-.light-svg #lightG{fill:none;stroke:rgba(255,235,180,.9);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.light-svg line{stroke:rgba(255,255,255,.7);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
+.light-svg #lightG{fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .light-svg #lightSpec{fill:rgba(255,255,255,.85);stroke:rgba(0,0,0,.4);stroke-width:1;vector-effect:non-scaling-stroke}
 .light-svg text{fill:#fff;font-family:var(--sans);paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:3px;vector-effect:non-scaling-stroke;pointer-events:none}
-.light-svg #lightBeam{stroke:rgba(255,235,180,.45);stroke-width:1;stroke-dasharray:2 6;vector-effect:non-scaling-stroke}
-.light-svg #lightT circle{fill:rgba(255,235,180,.12);stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
-.light-svg #lightT line{stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.light-svg #lightBeam{stroke:rgba(255,255,255,.45);stroke-width:1;stroke-dasharray:2 6;vector-effect:non-scaling-stroke}
+.light-svg #lightT circle{fill:rgba(255,85,17,.15);stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.light-svg #lightT line{stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .scene .floor{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.35) 100%);pointer-events:none}
 .table{position:absolute;inset:0;transform-style:flat;transform-origin:50% 50%} /* flat：卡片依疊放順序繪製，不做逐像素深度交錯，微傾時不會穿模 */
 .slot{position:absolute;transform-style:preserve-3d}
@@ -208,7 +216,7 @@ button{cursor:pointer}
 .stage.bg-white .stage-hint{color:#777}.stage.bg-white .stage-hint b{color:#333}
 .presets{display:flex;flex-wrap:wrap;gap:5px}
 .presets button{height:24px;padding:0 9px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel-2);font-size:11.5px;color:var(--muted)}
-.presets button.on{border-color:var(--accent);color:var(--text)}
+.presets button.on{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
 .drop{position:absolute;inset:12px;z-index:20;border:2px dashed var(--accent);border-radius:10px;background:rgba(19,19,21,.85);display:none;place-items:center;font-size:16px;color:var(--accent)}
 .stage.dragging .drop{display:grid}
 
@@ -248,7 +256,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .chip:hover{border-color:var(--accent-dim)}
 .chip .sw{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,.15)}
 .chip .n{color:var(--muted)}
-.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
 .note{font-size:11.5px;color:var(--muted);line-height:1.5;margin:6px 0 0}
 .note code{font:11px var(--mono);color:var(--text)}
 
@@ -259,7 +267,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .layer-h .sw{width:18px;height:18px;border-radius:4px;flex:none;border:1px solid rgba(255,255,255,.12);
   background:linear-gradient(135deg,color-mix(in srgb,var(--c) 40%,#000),var(--c) 45%,color-mix(in srgb,var(--c) 30%,#fff) 60%,var(--c))}
 .layer-h .sw.ink{background:var(--c)}
-.layer-h .sw.hide{background:repeating-linear-gradient(45deg,#333 0 3px,#555 3px 6px)}
+.layer-h .sw.hide{background:repeating-linear-gradient(45deg,#2a2a2a 0 3px,#4a4a4a 3px 6px)}
 .layer-h .sw.uv{background:linear-gradient(135deg,#334 0%,#fff 50%,#334 100%)}
 .layer-h .name{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;padding:0;height:22px;font-weight:500}
 .layer-h .name:focus{border-bottom-color:var(--accent);outline:0}
@@ -270,6 +278,39 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .layer-b{display:none;padding:2px 10px 10px;border-top:1px solid var(--line)}
 .layer.active .layer-b{display:block}
 .layer-b .row{grid-template-columns:64px 1fr 40px}
+/* 效果小方塊：用 CSS 直接畫出該工法／加工在紙上的縮影，方便一眼比較 */
+.tiles{display:flex;flex-wrap:wrap;gap:6px;padding-top:2px}
+.tile{position:relative;width:52px;height:52px;border-radius:6px;border:1px solid var(--line-2);background:var(--pc,#222);overflow:hidden;padding:0;cursor:pointer;
+  background-image:var(--ptile);background-size:60px 60px;background-blend-mode:soft-light}
+.tile:hover{border-color:var(--muted)}
+.tile.on{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.tile .sh{position:absolute;left:22%;top:22%;width:56%;height:56%;border-radius:3px;background:var(--c,#999)}
+.tile .lb{position:absolute;left:0;right:0;bottom:0;font:9px/1.2 var(--sans);letter-spacing:.02em;color:#fff;text-align:center;padding:2px 2px 3px;background:linear-gradient(transparent,rgba(0,0,0,.6));pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .sh.foil{background:var(--grad);background-size:200% 200%;background-position:35% 40%}
+.tile .sh.foil::after{content:"";position:absolute;inset:0;background:radial-gradient(circle 60% at 30% 25%,rgba(255,255,255,.55),rgba(255,255,255,0) 60%);mix-blend-mode:overlay}
+.tile .sh.holo::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,#ff0a54 0,#ff8c00 4px,#ffef00 8px,#2bff6f 12px,#00d4ff 16px,#8a5cff 20px,#ff0a54 24px);mix-blend-mode:color-dodge;opacity:.75;filter:brightness(.7)}
+.tile .sh.holo.rainbow::before{background:linear-gradient(115deg,#ff0a54,#ff8c00,#ffef00,#2bff6f,#00d4ff,#8a5cff)}
+.tile .sh.holo.glitter::before{background:radial-gradient(circle 1px at 20% 30%,#fff 60%,transparent),radial-gradient(circle 1px at 60% 70%,#ff8a80 60%,transparent),radial-gradient(circle 1px at 80% 20%,#40c4ff 60%,transparent),radial-gradient(circle 1px at 40% 55%,#ffd54f 60%,transparent),radial-gradient(circle 1px at 70% 45%,#69f0ae 60%,transparent);background-size:14px 14px;filter:none;opacity:1}
+.tile .sh.holo.cosmos::before{background:radial-gradient(circle at 30% 40%,#8a5cff,transparent 50%),radial-gradient(circle at 70% 60%,#00d4ff,transparent 50%),radial-gradient(circle at 50% 20%,#ff0a54,transparent 45%);filter:none;opacity:.8}
+.tile .sh.holo.cracked::before{background:conic-gradient(from 20deg,#ff0a54,#ffef00 25%,#00d4ff 50%,#8a5cff 75%,#ff0a54);filter:contrast(1.4);opacity:.7}
+.tile .sh.holo.pearl{background:#f1eff0}.tile .sh.holo.pearl::before{background:linear-gradient(115deg,#ffb8d9,#fff0a8,#b8ffd9,#b8e4ff,#dcc6ff);mix-blend-mode:overlay;filter:none;opacity:.9}
+.tile .sh.holo.clear{background:transparent}.tile .sh.holo.clear::before{mix-blend-mode:screen}
+.tile .sh.ink{box-shadow:inset 0 0 0 0 transparent}
+.tile .sh.press{box-shadow:inset 1px 1px 2px rgba(0,0,0,.6),inset -1px -1px 1px rgba(255,255,255,.18)}
+.tile .sh.screen{box-shadow:0 .5px 0 rgba(255,255,255,.25),0 1px 1px rgba(0,0,0,.4)}
+.tile .sh.none{background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.tile .sh.hide{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(255,255,255,.25) 3px 5px);border:1px dashed rgba(255,255,255,.4)}
+.tile .sh.emboss{box-shadow:-1px -1px 1px rgba(255,255,255,.55) inset,1px 1px 1px rgba(0,0,0,.5) inset,2px 2px 3px rgba(0,0,0,.5);background:linear-gradient(135deg,rgba(255,255,255,.25),rgba(0,0,0,.2)),var(--c,#999)}
+.tile .sh.deboss{box-shadow:1px 1px 2px rgba(0,0,0,.65) inset,-1px -1px 1px rgba(255,255,255,.35) inset,1px 1px 0 rgba(255,255,255,.25);background:linear-gradient(135deg,rgba(0,0,0,.2),rgba(255,255,255,.12)),var(--c,#999)}
+.tile .sh.uvg::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.75) 45%,rgba(255,255,255,0) 60%)}
+.tile .sh.uvm{filter:brightness(.85)}.tile .sh.uvm::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.12)}
+.tile .sh.uvf::after{content:"";position:absolute;inset:0;background:var(--ptile);background-size:30px 30px;opacity:.9;mix-blend-mode:screen}
+.tile .sh.uvr{box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.5)}.tile .sh.uvr::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.85) 42%,rgba(255,255,255,0) 58%)}
+.tile .sh.uvgl::after{content:"";position:absolute;inset:0;background:radial-gradient(circle 1px at 25% 30%,#fff 60%,transparent),radial-gradient(circle 1px at 65% 60%,#fff 60%,transparent),radial-gradient(circle 1px at 80% 25%,#fff 60%,transparent),radial-gradient(circle 1px at 45% 75%,#fff 60%,transparent);background-size:12px 12px}
+.tile .sh.puff{border-radius:8px;box-shadow:inset -2px -2px 3px rgba(0,0,0,.35),inset 2px 2px 3px rgba(255,255,255,.35),1px 2px 3px rgba(0,0,0,.45)}
+.tile .sh.flock{filter:brightness(.85) saturate(.9);box-shadow:inset 0 0 6px rgba(0,0,0,.4)}
+.tile .sh.flock::after{content:"";position:absolute;inset:0;background:var(--ptile);background-size:22px 22px;opacity:.7;mix-blend-mode:soft-light}
+.tile .sh.off{background:transparent}
 .cchips{display:flex;flex-wrap:wrap;gap:4px;padding-top:3px}
 .cchip{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.15);padding:0;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 55%,#000),var(--c) 45%,color-mix(in srgb,var(--c) 35%,#fff) 62%,var(--c))}
 .cchip.on{outline:2px solid var(--accent);outline-offset:1px}
@@ -279,7 +320,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .tree{font:12px var(--mono);line-height:1.4}
 .tn{display:flex;align-items:center;gap:4px;height:24px;padding-right:6px;border-radius:4px;cursor:pointer;white-space:nowrap}
 .tn:hover{background:var(--panel-2)}
-.tn.sel{background:rgba(201,169,110,.12)}
+.tn.sel{background:var(--accent-soft)}
 .tn .tw{width:16px;height:16px;display:grid;place-items:center;color:var(--faint);flex:none;border:0;background:transparent;padding:0;font-size:9px}
 .tn .tw.leaf{visibility:hidden}
 .tn .tl{overflow:hidden;text-overflow:ellipsis;color:var(--text)}
@@ -287,11 +328,11 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .tn .ts{color:var(--faint);font-size:11px}
 .tn .badge{margin-left:auto;width:10px;height:10px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.2);background:var(--c)}
 .tn .badge.inh{opacity:.45}
-.tn .badge.hide{background:repeating-linear-gradient(45deg,#333 0 2px,#666 2px 4px)}
+.tn .badge.hide{background:repeating-linear-gradient(45deg,#2a2a2a 0 2px,#5a5a5a 2px 4px)}
 .tk{display:none}
 .tk.open{display:block}
 
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#2a2a30;border:1px solid var(--line-2);color:var(--text);padding:8px 14px;border-radius:6px;font-size:12px;opacity:0;transition:.25s;z-index:50;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#222;border:1px solid var(--line-2);color:var(--text);padding:8px 14px;border-radius:6px;font-size:12px;opacity:0;transition:.25s;z-index:50;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.7);display:none;place-items:center;padding:24px}
@@ -309,13 +350,29 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
 .modal .about dd{margin:0}
 .modal .about a{color:var(--text);text-decoration:underline;text-decoration-color:var(--accent-dim)}
 
+@media (max-width:1100px){ :root{--panel-w:300px} }
 @media (max-width:900px){
   body{overflow:auto}
-  .app{grid-template-columns:1fr;grid-template-rows:48px 62vh auto;height:auto}
+  .app{grid-template-columns:1fr;grid-template-rows:auto 60vh auto;height:auto}
+  .topbar{height:auto;min-height:48px;flex-wrap:wrap;gap:8px 12px;padding:8px 12px}
+  .top-actions{flex-wrap:wrap}
   .panel{border-left:0;border-top:1px solid var(--line)}
+  .tabs{position:sticky;top:0;z-index:3;background:var(--panel)}
   .tabpane{overflow:visible}
   .fileinfo{display:none}
   .card-wrap{padding:52px 16px 24px}
+  .stage-tools{top:8px;left:8px;flex-wrap:wrap;max-width:calc(100% - 16px)}
+  .stage-tools.right{top:auto;bottom:40px;left:8px;right:auto}
+  .stage-hint{display:none}
+}
+@media (max-width:520px){
+  .row{grid-template-columns:64px 1fr 40px}
+  .row.two{grid-template-columns:64px 1fr}
+  .row.three{grid-template-columns:64px 1fr 1fr}
+  .btn{padding:0 9px}
+  .brand span{display:none}
+  .modal .box{padding:10px}
+  .tile{width:44px;height:44px}
 }
 </style>
 
@@ -496,21 +553,20 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h">光源</div>
         <div class="row two"><label>光場算法</label><select id="sLightMode"><option value="merged">合併：整個版面一個連續光場（建議）</option><option value="separate">各卡獨立：每張卡各自相位、微傾、抬高</option></select></div>
         <p class="note" id="sLightModeNote"></p>
-        <div class="row two"><label>反光位置</label><select id="sSpec"><option value="focus">跟隨焦點（燈照到哪、反光在哪，依視角偏移）</option><option value="lamp">鏡面幾何（由燈的實際位置與相機決定）</option></select></div>
         <div class="row"><label>強度</label><input type="range" id="sInt" min="0.2" max="2" step="0.01"><span class="val"></span></div>
         <div class="row"><label>聚焦</label><input type="range" id="sSpot" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>柔光</label><input type="range" id="sSoft" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>色溫</label><input type="range" id="sKelvin" min="2200" max="9500" step="50"><span class="val"></span></div>
         <div class="row two"><label>自訂顏色</label><div class="colorwrap"><label class="toggle" style="margin-right:6px"><input type="checkbox" id="sUseLC"> 用色盤取代色溫</label><input type="color" id="sLC"><span class="hex" id="sLCHex"></span></div></div>
         <div class="row two"><label></label><div class="presets" id="kelvinPresets"></div></div>
-        <div class="row"><label>燈 X</label><input type="range" id="sLx" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
-        <div class="row"><label>燈 Y</label><input type="range" id="sLy" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
+        <div class="row"><label>燈 X</label><input type="range" id="sLx" min="-1.5" max="2.5" step="0.01"><span class="val"></span></div>
+        <div class="row"><label>燈 Y</label><input type="range" id="sLy" min="-1.5" max="2.5" step="0.01"><span class="val"></span></div>
         <div class="row"><label>焦點 X</label><input type="range" id="sTx" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
         <div class="row"><label>焦點 Y</label><input type="range" id="sTy" min="-0.6" max="1.6" step="0.01"><span class="val"></span></div>
         <div class="row two"><label></label><button class="btn small ghost" id="sTcenter">焦點回到中心</button></div>
         <div class="row"><label>Z（高度）</label><input type="range" id="sDist" min="0.15" max="3" step="0.05"><span class="val"></span></div>
         <div class="row"><label>大小</label><input type="range" id="sSize" min="0.2" max="3" step="0.05"><span class="val"></span></div>
-        <p class="note">燈 → 焦點 → 反光區 → 視角：燈照向焦點（十字），焦點那塊被照亮；相機看到的反光區是「被照亮的那塊」經桌面鏡射後的位置，所以會落在焦點附近、隨俯角往相機方向偏（白圈）。真 3D 模型：燈是桌面上方的一點（X／Y 是它在桌面上的落點，可在畫布<b>按住拖曳</b>；Z 是離桌高度 = Z × 0.6 × 畫布寬）。相機在透視原點。鏡面高光落在「相機 → 燈的鏡像」與桌面的交點（畫布上的小圓點），所以俯角、方位、整體旋轉都會真的改變哪張卡吃到高光；光斑與影子以燈的落點（大圓點）為準。大小 = 燈的面積：小燈高光銳利、影子硬；大燈反光帶寬、影子軟。</p>
+        <p class="note">燈 → 焦點 → 反光區 → 視角 四者以鏡面幾何綁定：焦點（十字）是你要反光的位置；燈會自動移到「能把光經桌面反射進相機」的地方（拖燈則反推焦點）。改俯角或方位時反光區留在焦點上，燈自己換位。壓痕、打凸打凹的明暗方向也跟著燈的方向走。真 3D 模型：燈是桌面上方的一點（X／Y 是它在桌面上的落點，可在畫布<b>按住拖曳</b>；Z 是離桌高度 = Z × 0.6 × 畫布寬）。相機在透視原點。鏡面高光落在「相機 → 燈的鏡像」與桌面的交點（畫布上的小圓點），所以俯角、方位、整體旋轉都會真的改變哪張卡吃到高光；光斑與影子以燈的落點（大圓點）為準。大小 = 燈的面積：小燈高光銳利、影子硬；大燈反光帶寬、影子軟。</p>
       </div>
       <div class="sec">
         <div class="sec-h">卡片與桌面</div>
@@ -664,7 +720,7 @@ const PRESETS = {
   'emboss':{label:'打凸',group:'表面處理',type:'relief',depth:1.5,dir:1},
   'hide':  {label:'不印',group:'其他',type:'hide'},
 };
-const PAPER_SWATCHES = [['#121214','黑卡'],['#1c2230','深藍'],['#1e2b24','墨綠'],['#5b1f1f','酒紅'],['#c9a26b','牛皮'],['#eee6d3','米白'],['#f4f3ef','象牙白'],['#fbfbfb','白卡']];
+const PAPER_SWATCHES = [['#121214','黑卡'],['#1c2230','深藍'],['#1e2b24','墨綠'],['#5b1f1f','酒紅'],['#c9a26b','牛皮'],['#d8cdb4','啤酒紙色'],['#9a9a96','荷蘭板灰'],['#eee6d3','米白'],['#f4f3ef','象牙白'],['#fbfbfb','白卡']];
 
 /* ---------- state ---------- */
 let S = null;      // {paper, layers, assign, pickMode, svgText, name}
@@ -696,6 +752,14 @@ const PAPERS = {
   kraft:    {label:'牛皮紙（纖維）',        group:'再生／特殊', bf:'.5 .05', oct:3, relief:1.5, grain:.4, gloss:.1, note:'橫向拉長的纖維紋理。'},
   recycled: {label:'再生紙（斑點）',        group:'再生／特殊', bf:'.5',  oct:3, relief:1.2, grain:.35, gloss:.1, speck:true, note:'散布的深色纖維斑點。'},
   felt:     {label:'毛氈紙',                group:'再生／特殊', bf:'.3',  oct:4, relief:2.2, grain:.5, gloss:.05, note:'鬆軟不規則的毛面，吸光。'},
+  /* 台灣印刷廠常用名 */
+  shinbaidai:{label:'新百代',               group:'台灣常用', bf:'.5 .5', oct:2, relief:1.9, grain:.3, gloss:.15, lines:[{dir:45,period:5,str:.09},{dir:-45,period:5,str:.09}], note:'細緻的十字斜壓紋，微毛面；名片、卡片常用。'},
+  beer:     {label:'啤酒紙',                group:'台灣常用', bf:'.55', oct:3, relief:1.3, grain:.45, gloss:.08, speck:true, note:'未漂白、帶褐色纖維斑點的手感紙。'},
+  stardream:{label:'星幻紙（金屬珠光）',    group:'台灣常用', bf:'1.1', oct:2, relief:.5,  grain:.25, gloss:.85, note:'金屬珠光表面，反光帶會隨角度流動。'},
+  conqueror:{label:'剛古紙（橫紋）',        group:'台灣常用', bf:'.6',  oct:2, relief:1.1, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.14}], note:'英國 Conqueror 橫紋，信封信紙標配。'},
+  woodfree: {label:'環保道林',              group:'台灣常用', bf:'.8',  oct:2, relief:.8,  grain:.35, gloss:.05, note:'非塗佈道林紙，吸墨、無反光。'},
+  greyboard:{label:'荷蘭板（灰紙板）',      group:'台灣常用', bf:'.3',  oct:4, relief:2.4, grain:.55, gloss:.03, speck:true, note:'厚灰紙板，粗纖維與斑點，常做包裝或裱底。'},
+  ivoryTW:  {label:'象牙卡（250–350g）',    group:'台灣常用', bf:'.45', oct:3, relief:1.5, grain:.25, gloss:.2, note:'最常見的名片卡紙。'},
 };
 const TEX_MIGRATE={smooth:'matte',rough:'ivory'};
 /* 凹凸紋理：feTurbulence 當高度圖 → feDiffuseLighting 打光 → 重新置中到中灰，讓 overlay/soft-light 在平坦處不改變紙色 */
@@ -871,7 +935,9 @@ function setProc(L, proc){
   if(proc==='none'||proc==='hide'){ delete L.cname; }
   else { const wasColored=['foil','holo','ink','letterpress','screen'].includes(L._prevProc); const base=PROCS[proc].base;
     const keepTint = wasColored; // 換工法保留顏色（紅箔 → 紅墨），只重設該工法的參數
-    const tint=L.tint, cname=L.cname; applyColorPreset(L, base); if(keepTint){ L.tint=tint; L.cname=cname; } }
+    const tint=L.tint, cname=L.cname; applyColorPreset(L, base); if(keepTint){ L.tint=tint; L.cname=cname; }
+    if(proc==='letterpress'||proc==='screen'||proc==='ink') L.blend='normal'; // 換工法後一律不透明覆蓋，深色紙上才看得到；要透明油墨再自己選色彩增值
+  }
   if(proc==='none' && L.relief==='none' && L.uv==='none') L.relief='emboss';
   normalizeLayer(L); if(!L.named) L.name=autoName(L);
 }
@@ -986,19 +1052,20 @@ function renderFxInto(host, layers, eff, vk, paper){
 /* 依工法 + 疊加加工組出效果 DOM（由下而上：壓痕外緣 → 上色層 → 表面 UV） */
 function fxDOM(L, fast=false){
   const rim=(rev)=> fast ? '' : `<div class="f-rim dk${rev?' rev':''}"><div class="m rim"></div></div><div class="f-rim lt${rev?' rev':''}"><div class="m rim"></div></div>`;
+  const inner=(cls)=> fast ? '' : cls.map(c=>`<div class="i-in ${c}"><div class="inv"></div></div>`).join('');
   let h='';
   const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress' || L.relief==='deboss';
   const raised = L.relief==='emboss' || L.puff || L.uv==='raised' || L.proc==='screen';
   if(pressed) h+=rim(false);
   if(raised) h+=rim(true);
-  if(L.proc==='none' && L.relief!=='none') h+='<div class="m r-face"></div>';
+  const innerParts = (pressed?['pd','pl']:[]).concat(raised?['rl','rd']:[]);
+  const dome = (L.relief==='emboss' || L.puff) && !fast ? '<div class="dome"></div>' : '';
+  if(L.proc==='none' && L.relief!=='none') h+=`<div class="m r-face">${dome}${inner(innerParts)}</div>`;
   if(L.fluo && PROCS[L.proc].colored && L.proc!=='foil' && L.proc!=='holo') h+='<div class="f-rim glow"><div class="m rim"></div></div>';
-  if(L.proc==='foil') h+='<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div></div>';
-  else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div></div>`;
+  if(L.proc==='foil') h+=`<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
+  else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
-    h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div><div class="i-grain"></div>`
-      +(L.puff&&!fast?'<div class="i-dome sh"><div class="inv"></div></div><div class="i-dome hi"><div class="inv"></div></div>':'')
-      +'<div class="i-glare"></div></div>';
+    h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div><div class="i-grain"></div>${dome}${inner(innerParts)}<div class="i-glare"></div></div>`;
   }
   if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv}"><div class="u-edge"></div><div class="u-glare"></div></div>`;
   return h;
@@ -1026,7 +1093,6 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', opaque?'normal':L.blend); st.setProperty('--gloss', L.gloss);
     st.setProperty('--grain-ink', L.flock ? .95 : (L.puff ? .35 : (paper.strength*.85).toFixed(3)));
     st.setProperty('--ptexg', grainURI(.8));
-    if(L.puff){ const q=L.puffDepth ?? 2; st.setProperty('--qd', (q*0.8).toFixed(2)+'px'); st.setProperty('--qb', (q*1.2+0.3).toFixed(2)+'px'); st.setProperty('--qo', Math.min(1,q/1.5).toFixed(2)); }
   }
   if(L.proc==='none' && L.relief!=='none') st.setProperty('--face', L.relief==='deboss' ? mix(paper.color,'#000000',.12) : mix(paper.color,'#ffffff',.06));
   // 壓入式外緣（燙箔壓痕／凸版壓印／打凹）：取最大深度
@@ -1064,6 +1130,7 @@ function paperApply(cards, P){
 }
 function applyPaper(){
   const P=S.paper;
+  const ll=$('#layerList'); if(ll){ ll.style.setProperty('--pc',P.color); ll.style.setProperty('--ptile',reliefURI(P)); }
   paperApply([...document.querySelectorAll('.card[data-v="current"]')], P);
   S.layers.forEach(L=>{ if(L.type==='ink'||L.type==='relief') styleFx(null,L); });
   // paper tab controls
@@ -1137,8 +1204,8 @@ function renderLayerList(){
       <button class="ib del" title="刪除圖層">✕</button>
     </div>
     <div class="layer-b">
-      <div class="row two" style="margin-top:8px"><label>工法</label><select class="proc">${procOpts}</select></div>
-      ${L.proc==='holo'?`<div class="row two"><label>雷射種類</label><select data-p="sub">${Object.entries(HOLO_SUBS).map(([k,v])=>`<option value="${k}"${k===L.sub?' selected':''}>${v}</option>`).join('')}</select></div>`:''}
+      <div class="row two" style="margin-top:8px;align-items:start"><label style="padding-top:6px">工法</label><div class="tiles">${Object.entries(PROCS).map(([k,p])=>tileHTML({attr:'data-proc',key:k,label:p.label.replace(/（.*）/,''),cls:procTileClass(k,L),on:k===L.proc,c:L.tint})).join('')}</div></div>
+      ${L.proc==='holo'?`<div class="row two" style="align-items:start"><label style="padding-top:6px">雷射種類</label><div class="tiles">${Object.entries(HOLO_SUBS).map(([k,v])=>tileHTML({attr:'data-sub',key:k,label:v,cls:'holo '+k,on:k===L.sub,c:k==='pearl'?'#f1eff0':(L.tint||'#cfd0d6')})).join('')}</div></div>`:''}
       ${colorChipsHTML(L)}
       ${paramRows(L)}
       ${finishRows(L)}
@@ -1154,7 +1221,11 @@ function renderLayerList(){
     d.querySelector('.dn').addEventListener('click', ()=>{ if(i<S.layers.length-1){ S.layers.splice(i,1); S.layers.splice(i+1,0,L); renderFx(); save(); } });
     d.querySelector('.del').addEventListener('click', ()=>{ S.layers.splice(i,1); for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; if(S.active===L.id) S.active=S.layers[0]?.id; clearMasks(); renderFx(); save(); toast(`已刪除「${L.name}」`); });
     d.querySelector('.clr').addEventListener('click', ()=>{ for(const k in S.assign) if(S.assign[k]===L.id) delete S.assign[k]; clearMasks(); renderFx(); save(); });
-    d.querySelector('.proc').addEventListener('change', e=>{ L._prevProc=L.proc; setProc(L,e.target.value); clearMasks(); renderFx(); save(); });
+    d.querySelectorAll('.tile[data-proc]').forEach(b=>b.addEventListener('click', ()=>{ if(b.dataset.proc===L.proc) return; L._prevProc=L.proc; setProc(L,b.dataset.proc); clearMasks(); renderFx(); save(); }));
+    d.querySelectorAll('.tile[data-sub]').forEach(b=>b.addEventListener('click', ()=>{ L.sub=b.dataset.sub; syncType(L); if(!L.named) L.name=autoName(L); clearMasks(); renderFx(); save(); }));
+    d.querySelectorAll('.tile[data-relief]').forEach(b=>b.addEventListener('click', ()=>{ L.relief=b.dataset.relief; syncType(L); if(!L.named) L.name=autoName(L); clearMasks(); renderFx(); save(); }));
+    d.querySelectorAll('.tile[data-uv]').forEach(b=>b.addEventListener('click', ()=>{ L.uv=b.dataset.uv; syncType(L); if(!L.named) L.name=autoName(L); clearMasks(); renderFx(); save(); }));
+    d.querySelectorAll('.tile[data-tog]').forEach(b=>b.addEventListener('click', ()=>{ const k=b.dataset.tog; L[k]=!L[k]; if(k==='puff'&&L.puff) L.flock=false; if(k==='flock'&&L.flock) L.puff=false; syncType(L); if(!L.named) L.name=autoName(L); clearMasks(); renderFx(); save(); }));
     d.querySelectorAll('.cchip').forEach(b=>b.addEventListener('click', ()=>{ applyColorPreset(L,b.dataset.k); clearMasks(); renderFx(); save(); }));
     d.querySelectorAll('[data-p]').forEach(inp=>{
       inp.addEventListener('input', e=>{
@@ -1185,6 +1256,8 @@ function colorChipsHTML(L){
   if(inkLike) h+=`<div class="row two"><label></label><label class="toggle"><input type="checkbox" data-p="fluo"${L.fluo?' checked':''}> 螢光墨（不透明、微微發光）</label></div>`;
   return h;
 }
+function tileHTML({attr,key,label,cls,on,c}){ return `<button class="tile${on?' on':''}" ${attr}="${key}" title="${esc(label)}" style="--c:${c||'#999'};--grad:${(cls||'').includes('foil')?foilGradient(c||'#c9cacf',.45):'none'}"><span class="sh ${cls||''}"></span><span class="lb">${esc(label)}</span></button>`; }
+function procTileClass(k,L){ return ({foil:'foil',holo:'holo lines',ink:'ink',letterpress:'ink press',screen:'ink screen',none:'none',hide:'hide'})[k]||''; }
 function fmtParam(p,v){ if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 function paramRows(L){
@@ -1202,10 +1275,13 @@ function finishRows(L){
   const r=(label,p,min,max,step)=>rowR(L,label,p,min,max,step);
   const sel=(label,p,map)=>`<div class="row two"><label>${label}</label><select data-p="${p}">${Object.entries(map).map(([k,v])=>`<option value="${k}"${L[p]===k?' selected':''}>${v}</option>`).join('')}</select></div>`;
   let h=`<div class="sec-h" style="margin:10px 0 6px">疊加加工</div>`;
-  h+=sel('壓凸／壓凹','relief',RELIEFS)+(L.relief!=='none'?r('深度','reliefDepth',.3,4,.1):'');
-  h+=sel('表面處理','uv',UV_SUBS)+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
+  const c = PROCS[L.proc].colored ? L.tint : '#9a9a9a';
+  const tilesRow=(label,items)=>`<div class="row two" style="align-items:start"><label style="padding-top:6px">${label}</label><div class="tiles">${items.join('')}</div></div>`;
+  h+=tilesRow('壓凸／壓凹',[tileHTML({attr:'data-relief',key:'none',label:'無',cls:'off',on:L.relief==='none',c}),tileHTML({attr:'data-relief',key:'emboss',label:'打凸',cls:'emboss',on:L.relief==='emboss',c}),tileHTML({attr:'data-relief',key:'deboss',label:'打凹',cls:'deboss',on:L.relief==='deboss',c})])+(L.relief!=='none'?r('深度','reliefDepth',.3,4,.1):'');
+  const uvCls={none:'off',gloss:'uvg',matte:'uvm',frost:'uvf',raised:'uvr',glitter:'uvgl'};
+  h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
   if(['ink','letterpress','screen'].includes(L.proc)){
-    h+=`<div class="row two"><label>特殊</label><span style="display:flex;gap:12px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" data-p="puff"${L.puff?' checked':''}> 發泡印花</label><label class="toggle"><input type="checkbox" data-p="flock"${L.flock?' checked':''}> 植絨</label></span></div>`;
+    h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
     if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
   }
   if(PROCS[L.proc].colored && !(L.proc==='holo'&&L.sub==='clear')) h+=`<div class="row two"><label>挖空</label><label class="toggle"><input type="checkbox" data-p="knockout"${L.knockout===false?'':' checked'}> 被上層圖形挖空</label></div>`;
@@ -1273,8 +1349,13 @@ function describe(el){ const id=groupName(el); return id?`「${id}」`:(el.tagNa
 /* ---------- pointer / tilt ---------- */
 const card=$('#card'), stage=$('#stage'), wrap=$('#cardwrap');
 const target={px:.5,py:.5,hov:0}, cur={px:.5,py:.5,hov:0};
+function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給壓痕／浮雕用）
+  const d=Math.hypot(dx,dy)||1; const ux=dx/d, uy=dy/d;
+  el.style.setProperty('--sdx',ux.toFixed(3)); el.style.setProperty('--sdy',uy.toFixed(3)); el.style.setProperty('--sang',(Math.atan2(uy,ux)*180/Math.PI+90).toFixed(1)+'deg');
+}
 function setPointer(px,py,hov){
   const P=S.paper; card.style.setProperty('--px',(px*100).toFixed(2)+'%'); card.style.setProperty('--py',(py*100).toFixed(2)+'%');
+  setLightDir(card, 0.5-px, 0.5-py);
   card.style.setProperty('--rx',((0.5-py)*P.tilt*2).toFixed(2)+'deg'); card.style.setProperty('--ry',((px-0.5)*P.tilt*2).toFixed(2)+'deg');
   card.style.setProperty('--hov',hov.toFixed(3));
 }
@@ -1305,22 +1386,27 @@ function kelvinRGB(k){ const t=Math.max(1000,Math.min(12000,k))/100; let r,g,b;
   b = t>=66 ? 255 : (t<=19 ? 0 : 138.5177312231*Math.log(t-10)-305.0447927307);
   const c=[r,g,b].map(v=>Math.max(0,Math.min(255,v))); const m=Math.max(...c)||1; return c.map(v=>Math.round(v/m*255)); }
 function lightRGB(){ const C=S.scene; return C.useLightColor ? rgb(C.lightColor||'#ffffff') : kelvinRGB(C.kelvin||5500); }
-function lightModel(gx,gy){
-  const C=S.scene; const G={x:gx*C.W, y:gy*C.H}; const h=Math.max(40,(C.lightDist??1)*0.6*C.W);
+/* 燈 → 焦點 → 反光區 → 視角，四者用鏡面幾何綁在一起：
+   焦點 T 是主要參數（燈照向、也是相機看到反光區的地方）；燈的位置 G 由「相機 → T 的連線延伸到 z=-h 的鏡像點」反推，
+   所以不管俯角、方位怎麼轉，反光區永遠落在焦點上，燈會自己移到能把光反射進相機的位置。拖燈則反過來把焦點算出來。 */
+function lightModel(tx,ty){
+  const C=S.scene; const h=Math.max(40,(C.lightDist??1)*0.6*C.W);
   let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:C.W/2,y:C.H/2,z:C.fov||2200}; }
-  const t = cam.z>1 ? cam.z/(cam.z+h) : 1;
-  const T={x:(C.tx??.5)*C.W, y:(C.ty??.5)*C.H}; // 焦點：燈照向的桌面點（光斑與衰減以它為中心）
-  /* 反光區：燈 → 焦點 → 桌面反射 → 相機。
-     「跟隨焦點」：把燈照亮的那塊當成發光面（等於燈在焦點正上方），反射點 = 相機到該發光面鏡像的連線與桌面的交點，
-     所以反光區落在焦點附近、依視角往相機方向偏；「鏡面幾何」：改用燈的實際位置做鏡像（燈偏一邊時反光區就跟著偏）。 */
-  const src = (C.specMode||'focus')==='focus' ? T : G;
-  const P={x:cam.x+t*(src.x-cam.x), y:cam.y+t*(src.y-cam.y)};
+  const T={x:tx*C.W, y:ty*C.H};
+  const sc = cam.z>1 ? (cam.z+h)/cam.z : 1;
+  const G={x:cam.x+sc*(T.x-cam.x), y:cam.y+sc*(T.y-cam.y)};
+  const P={x:T.x, y:T.y};
   return {G,h,cam,P,T};
+}
+function lampToFocus(gx,gy){ // 燈的落點 → 焦點（鏡像交點）
+  const C=S.scene; const h=Math.max(40,(C.lightDist??1)*0.6*C.W); let cam; try{ cam=cameraLocal(); }catch(e){ cam={x:C.W/2,y:C.H/2,z:C.fov||2200}; }
+  const t = cam.z>1 ? cam.z/(cam.z+h) : 1; const G={x:gx*C.W,y:gy*C.H};
+  return {tx:(cam.x+t*(G.x-cam.x))/C.W, ty:(cam.y+t*(G.y-cam.y))/C.H};
 }
 let dragWhat='light';
 function scenePt(e){ const r=$('#scene').getBoundingClientRect(); return {sx:(e.clientX-r.left)/view.zoom, sy:(e.clientY-r.top)/view.zoom}; }
 function pickLightHandle(e){ // 離哪個把手近就拖哪個：燈（在高度 h 的投影）或焦點（桌面上）
-  const C=S.scene, {sx,sy}=scenePt(e); const {G,h,T}=lightModel(C.gx??.3,C.gy??.25);
+  const C=S.scene, {sx,sy}=scenePt(e); const {G,h,T}=lightModel(C.tx??.5,C.ty??.5);
   const sL=tableToScreen(G.x,G.y,h), sT=tableToScreen(T.x,T.y,0);
   return Math.hypot(sx-sL.x,sy-sL.y) <= Math.hypot(sx-sT.x,sy-sT.y) ? 'light' : 'target';
 }
@@ -1328,7 +1414,8 @@ function sceneLightFrom(e){
   const C=S.scene, {sx,sy}=scenePt(e);
   if(dragWhat==='target'){ const t=screenToTable(sx,sy,0); C.tx=Math.min(1.6,Math.max(-.6,t.x/C.W)); C.ty=Math.min(1.6,Math.max(-.6,t.y/C.H)); return; }
   const h=Math.max(40,(C.lightDist??1)*0.6*C.W); const g=screenToTable(sx,sy,h); // 燈在高度 h：沿視線與 z=h 的平面相交
-  C.gx=Math.min(1.6,Math.max(-.6,g.x/C.W)); C.gy=Math.min(1.6,Math.max(-.6,g.y/C.H));
+  C.gx=Math.min(2.5,Math.max(-1.5,g.x/C.W)); C.gy=Math.min(2.5,Math.max(-1.5,g.y/C.H));
+  const f=lampToFocus(C.gx,C.gy); C.tx=Math.min(1.6,Math.max(-.6,f.tx)); C.ty=Math.min(1.6,Math.max(-.6,f.ty));
 }
 stage.addEventListener('pointermove', e=>{
   if(viewMode==='scene'){ if(lightDrag) sceneLightFrom(e); return; }
@@ -1346,7 +1433,7 @@ stage.addEventListener('pointerleave', ()=>{ hovering=false; lastMove=performanc
 function loop(){
   requestAnimationFrame(loop); if(!S) return;
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(viewMode==='scene'){ const C=S.scene; target.px=C.gx ?? .3; target.py=C.gy ?? .25; target.hov=1; }
+  if(viewMode==='scene'){ const C=S.scene; target.px=C.tx ?? .5; target.py=C.ty ?? .5; target.hov=1; }
   else if(!hovering){
     if(S.paper.auto && !reduce && performance.now()-lastMove>1800){ autoT+=0.006; target.px=.5+.38*Math.cos(autoT); target.py=.5+.3*Math.sin(autoT*.8); target.hov=.8; }
     else { target.px=.5; target.py=.5; target.hov=0; }
@@ -1723,10 +1810,11 @@ function applySceneView(){
 }
 function applySceneLight(px,py,hov){
   const C=S.scene, tb=$('#table'), slots=tb._slots||[];
-  const {G,h,cam,P}=lightModel(px,py);
+  const {G,h,cam,P,T}=lightModel(px,py);
   const dist=C.lightDist??1, tilt=(C.tilt??2)/8, inten=C.intensity??1, lsz=C.lsize??1, elev=C.elev??8, tri=v=>{ const t=((v%4)+4)%4; return t<2 ? t-1 : 3-t; };
   // 畫布上的標示：燈（投影）、燈的落點、鏡面高光點
-  const T=lightModel(px,py).T; const sG=tableToScreen(G.x,G.y,0), sL=tableToScreen(G.x,G.y,h), sP=tableToScreen(P.x,P.y,0), sT=tableToScreen(T.x,T.y,0);
+  C.gx=G.x/C.W; C.gy=G.y/C.H; // 燈的落點由焦點反推，回寫給滑桿顯示
+  const sG=tableToScreen(G.x,G.y,0), sL=tableToScreen(G.x,G.y,h), sP=tableToScreen(P.x,P.y,0), sT=tableToScreen(T.x,T.y,0);
   const hd=$('#lightHandle'); if(hd){ hd.style.left=(sL.x/C.W*100).toFixed(2)+'%'; hd.style.top=(sL.y/C.H*100).toFixed(2)+'%'; }
   const svg=$('#lightSvg'); if(svg){ svg.setAttribute('viewBox',`0 0 ${C.W} ${C.H}`);
     const sp=$('#lightSpec'); sp.setAttribute('cx',sP.x); sp.setAttribute('cy',sP.y); sp.setAttribute('r',Math.max(6,C.W*.008));
@@ -1747,7 +1835,7 @@ function applySceneLight(px,py,hov){
   const R=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); const gsz=R/(1.2*C.W); // 高光半徑（桌面 px）與合併層的 --gsz（相對桌面）
   if(merged){ const host=tb.querySelector('.fxs.merged'); if(host){
     const E=tb._ext||{minX:0,minY:0,w:C.W,h:C.H};
-    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); });
+    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); setLightDir(d, T.x-G.x, T.y-G.y); });
   } }
   [...tb.querySelectorAll(':scope > .slot')].forEach((d,i)=>{
     const sl=slots[i]; if(!sl) return; const c=d.firstElementChild;
@@ -1758,6 +1846,7 @@ function applySceneLight(px,py,hov){
     if(!merged){ lpx=.5+tri(lx/(sl.w*dist)+sl.ph*.6)*.75+sl.ty*tilt*.8; lpy=.5+tri(ly/(sl.h*dist)+sl.ph*.4)*.75-sl.tx*tilt*.8; }
     c.style.setProperty('--px',(lpx*100).toFixed(1)+'%'); c.style.setProperty('--py',(lpy*100).toFixed(1)+'%');
     c.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); c.style.setProperty('--gsz',(R/(1.2*sl.w)).toFixed(2));
+    { const gx2=sl.x-G.x, gy2=sl.y-G.y; setLightDir(c, gx2*cs+gy2*sn, -gx2*sn+gy2*cs); }
     c.style.filter=`brightness(${(0.75+inten*.25).toFixed(3)})`;
     // 投影：從燈的落點 G 背向而去，長度 = 離地高度 × 水平距離 / 燈高（相似三角形），再轉回卡片座標
     const vx=sl.x-G.x, vy=sl.y-G.y, dd=Math.hypot(vx,vy)||1; const len=Math.min(60, elev*dd/h*1.4 + elev*.2);
@@ -1794,7 +1883,7 @@ function syncSceneControls(){
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.classList.toggle('on',C.pitch===p&&C.yaw===y); b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
   $('#sBg').value=C.bg; $('#sBgHex').textContent=C.bg; setRange('#sGlow',C.glow,PCT); setRange('#sLx',C.gx ?? .3,v=>Math.round(v*100)+'%'); setRange('#sDist',C.lightDist??1,v=>(+v).toFixed(2)+'×'); setRange('#sSize',C.lsize??1,v=>(+v).toFixed(2)+'×'); setRange('#sInt',C.intensity??1,v=>Math.round(v*100)+'%'); setRange('#sSpot',C.spot??.35,PCT); setRange('#sSoft',C.soft??.6,PCT); setRange('#sKelvin',C.kelvin??5500,v=>v+'K');
   $('#sUseLC').checked=!!C.useLightColor; $('#sLC').value=C.lightColor||'#ffe9c8'; $('#sLCHex').textContent=C.lightColor||'#ffe9c8';
-  $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.classList.toggle('on',(C.kelvin||5500)===k&&!C.useLightColor); b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); }); $('#sLightMode').value=C.lightMode||'merged'; $('#sSpec').value=C.specMode||'focus'; $('#sLightModeNote').textContent=(C.lightMode||'merged')==='merged' ? '合併：同一效果圖層在所有卡片上只算一張遮罩（symbol + use），反光帶與光斑連續掃過整個版面，交疊處以遮擋遮罩處理；此模式不做卡片微傾與 Z 軸抬高。' : '各卡獨立：每張卡各自複製效果層，可微傾與抬高，但同一盞燈下每張的反光相位是各自近似的。'; setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
+  $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.classList.toggle('on',(C.kelvin||5500)===k&&!C.useLightColor); b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); }); $('#sLightMode').value=C.lightMode||'merged'; $('#sLightModeNote').textContent=(C.lightMode||'merged')==='merged' ? '合併：同一效果圖層在所有卡片上只算一張遮罩（symbol + use），反光帶與光斑連續掃過整個版面，交疊處以遮擋遮罩處理；此模式不做卡片微傾與 Z 軸抬高。' : '各卡獨立：每張卡各自複製效果層，可微傾與抬高，但同一盞燈下每張的反光相位是各自近似的。'; setRange('#sElev',C.elev??8,v=>v+'px'); setRange('#sThick',C.thick??2,v=>(+v).toFixed(1)+'px'); setRange('#sTilt',C.tilt??2,v=>v+'°'); setRange('#sLy',C.gy ?? .25,v=>Math.round(v*100)+'%'); setRange('#sTx',C.tx ?? .5,v=>Math.round(v*100)+'%'); setRange('#sTy',C.ty ?? .5,v=>Math.round(v*100)+'%'); setRange('#sVig',C.vig,PCT); setRange('#sShadow',C.shadow,PCT);
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.classList.toggle('on',C.bg===c); b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
   document.querySelectorAll('#tab-scene [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
   const notes={single:'旋轉 = 整張卡的角度。',grid:'欄 × 列固定；間距可為負值讓卡片交疊。旋轉 = 每張同角度。',brick:'奇偶列各往左右錯開 1/4 張；適合滿版鋪底。',random:'散落位置與角度由「種子」決定，按 🎲 換一組；出血 = 允許超出畫布多少。',fan:'以底部為軸心扇形展開；旋轉 = 相鄰兩張的夾角。',cascade:'一張疊一張的階梯狀；間距 = 每張錯位距離。'};
@@ -1807,11 +1896,10 @@ $('#sQuality').addEventListener('change',e=>{ S.scene.quality=e.target.value; sc
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
-[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','gx'],['#sLy','gy'],['#sTx','tx'],['#sTy','ty'],['#sDist','lightDist'],['#sSize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; sceneChanged(false); }));
+[['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sRoll','roll'],['#sLx','gx'],['#sLy','gy'],['#sTx','tx'],['#sTy','ty'],['#sDist','lightDist'],['#sSize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; if(p==='gx'||p==='gy'){ const f=lampToFocus(S.scene.gx,S.scene.gy); S.scene.tx=f.tx; S.scene.ty=f.ty; } sceneChanged(false); }));
 $('#sTilt').addEventListener('input',e=>{ S.scene.tilt=+e.target.value; sceneChanged(true); });
 $('#sUseLC').addEventListener('change',e=>{ S.scene.useLightColor=e.target.checked; sceneChanged(false); });
 $('#sLC').addEventListener('input',e=>{ S.scene.lightColor=e.target.value; S.scene.useLightColor=true; sceneChanged(false); });
-$('#sSpec').addEventListener('change',e=>{ S.scene.specMode=e.target.value; sceneChanged(false); });
 $('#sTcenter').addEventListener('click',()=>{ S.scene.tx=.5; S.scene.ty=.5; sceneChanged(false); });
 $('#sLightMode').addEventListener('change',e=>{ S.scene.lightMode=e.target.value; sceneChanged(true); });
 $('#sElev').addEventListener('input',e=>{ S.scene.elev=+e.target.value; sceneChanged(true); });
