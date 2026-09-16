@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """產生效果樣本卡（每一類一張，比較省效能）：swatch/swatch-foil.svg、swatch-holo.svg、swatch-ink.svg、swatch-finish.svg。
-每張 105×55mm 橫式（viewBox 單位 0.1mm），每格是一個依「工法 · 顏色 + 加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。
+五張（燙箔金屬色／燙箔純色／燙雷射／油墨／表面處理），每張 105×55mm 橫式（viewBox 單位 0.1mm），每格是一個依「工法 · 顏色 + 加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。
 logo.svg 存在時嵌入右上角。"""
 import pathlib, re, math, json
 ROOT=pathlib.Path(__file__).resolve().parent.parent
@@ -9,18 +9,22 @@ W,H=1050,550
 CELL,GAP=92,14; SQ_H=62; PITCH=124
 PAPER='#141414'
 
-foils=[('銀','#c9cacf'),('金','#d3a84a'),('香檳金','#d9c39a'),('玫瑰金','#d9a091'),('古銅','#b87333'),('紅','#d1202c'),('橘','#e0581c'),('粉','#e56a9a'),
-       ('紫','#5b2d8e'),('藍','#2f56b5'),('湖水綠','#1f8f8a'),('綠','#1f7a4d'),('白','#f2f2f4'),('黑','#2b2b30'),('霧銀','#b9bbc2'),('霧金','#c9a75a')]
+metals=[('亮銀','#c9cacf'),('亮金','#d3a84a'),('亮香檳金','#d9c39a'),('亮玫瑰金','#d9a091'),('亮古銅','#b87333'),
+        ('霧銀','#b9bbc2'),('霧金','#c9a75a'),('霧香檳金','#d0bc95'),('霧玫瑰金','#cf9f92'),('霧古銅','#a8703a')]
+pigments=[('亮紅','#d1202c'),('亮橘','#e0581c'),('亮粉','#e56a9a'),('亮紫','#5b2d8e'),('亮藍','#2f56b5'),('亮湖水綠','#1f8f8a'),('亮綠','#1f7a4d'),('亮白','#f2f2f4'),('亮黑','#2b2b30'),
+          ('霧紅','#c8303a'),('霧橘','#d9602a'),('霧粉','#e07aa3'),('霧紫','#63397f'),('霧藍','#3b5ea8'),('霧湖水綠','#2d8c88'),('霧綠','#2d7a53'),('霧白','#ececee'),('霧黑','#26262a')]
 holos=[('線條','#cfd0d6'),('直條反轉','#d4d4da'),('放射交叉','#d6d6dc'),('彩虹','#dcdce2'),('幻彩流動','#cfd2dc'),('碎片亮粉','#c9c9cf'),('金蔥亮粉','#d4a84a'),
        ('星空宇宙','#aeb2c2'),('星塵線條','#c9ccd6'),('閃鑽 V','#d8d8de'),('碎冰','#d0d2da'),('珍珠箔','#f1eff0'),('透明','#ffffff')]
-inks=[('白墨','#f3f1ec'),('185C','#e4002b'),('專色黃','#fedd00'),('877C','#9a9c9e'),('871C','#9b8557'),('806C','#ff3eb5'),('811C','#ff6a39'),('803C','#ffe900')]
+inks=[('白墨','#f3f1ec'),('黑墨','#161616'),('銀墨','#a9abae'),('金墨','#b8975a'),('古銅墨','#8f6b4d'),('玫瑰金墨','#b48a7f'),('香檳金墨','#c8b48e'),
+      ('185C','#e4002b'),('專色黃','#fedd00'),('877C','#9a9c9e'),('871C','#9b8557'),('806C','#ff3eb5'),('811C','#ff6a39'),('803C','#ffe900')]
 fins=[('亮面UV','亮面 UV'),('霧面UV','霧面 UV'),('磨砂UV','磨砂 UV'),('立體UV','立體 UV'),('亮粉UV','亮粉 UV'),('打凸','打凸'),('打凹','打凹')]
 
-CARDS=[ # (檔名, 標題, 副標, 項目, 類型)
-  ('swatch-foil.svg',   '燙箔  HOT FOIL',            foils, 'foil'),
-  ('swatch-holo.svg',   '燙雷射  HOLOGRAPHIC FOIL',  holos, 'holo'),
-  ('swatch-ink.svg',    '油墨  INK · SPOT · METALLIC · FLUO', inks, 'ink'),
-  ('swatch-finish.svg', '表面處理  FINISHES',        fins,  'fin'),
+CARDS=[ # (檔名, 標題, 項目, 類型)
+  ('swatch-foil-metal.svg',   '燙箔 · 金屬色  METALLIC FOIL',  metals,   'foil'),
+  ('swatch-foil-pigment.svg', '燙箔 · 純色  PIGMENT FOIL',     pigments, 'foil'),
+  ('swatch-holo.svg',         '燙雷射  HOLOGRAPHIC FOIL',      holos,    'holo'),
+  ('swatch-ink.svg',          '油墨  INK · METALLIC · SPOT · FLUO', inks, 'ink'),
+  ('swatch-finish.svg',       '表面處理  FINISHES',            fins,     'fin'),
 ]
 
 def esc(s): return s.replace('&','&amp;').replace('<','&lt;')
@@ -44,7 +48,7 @@ if lp.exists():
     logo_inner=(re.sub(r'^.*?<svg[^>]*>','',src,flags=re.S).replace('</svg>','').strip(), vx,vy,vw,vh)
 
 def make(fname, title, items, kind):
-    cols = 8 if len(items)>8 else 4      # 兩列：多的 8 欄、少的 4 欄
+    cols = min(9, (len(items)+1)//2)     # 固定兩列
     rows=(len(items)+cols-1)//cols
     gx=(W-(cols*CELL+(cols-1)*GAP))//2
     y0=220                                # 標題線下方置中
@@ -54,7 +58,7 @@ def make(fname, title, items, kind):
     labels=[]
     for i,(name,val) in enumerate(items):
         col=i%cols; row=i//cols; x=gx+col*(CELL+GAP); yy=y0+row*PITCH
-        if kind=='foil': gid=f'燙箔 · {name}'; fill=val; lab=f'燙{name}'
+        if kind=='foil': gid=f'燙箔 · {name}'; fill=val; lab=name
         elif kind=='holo': gid=f'燙雷射 · {name}'; fill=val; lab=name
         elif kind=='ink': gid=f'印刷 · {name}'; fill=val; lab=name
         else: gid=f'加工 · {name}'; fill=PAPER; lab=val
