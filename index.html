@@ -107,7 +107,10 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 /* 壓痕／浮雕：以光線方向（--sdx,--sdy 為「光→圖形」單位向量）決定明暗落在哪一邊。
    外緣（f-rim）：未遮罩父層做 drop-shadow，影子從遮罩子層外緣溢出到紙上；
    內緣（i-in）：反向遮罩 + drop-shadow，影子只落在圖形內側。 */
-.f-rim{position:absolute;inset:0;opacity:var(--dop,1)}
+.f-rim{position:absolute;inset:0;opacity:var(--dop,1);
+  /* 外緣影的來源是一個填紙色的圖形，只為了讓 drop-shadow 溢到外面；圖形本身用反向遮罩挖掉，紙紋不會被蓋住、也不會出現一圈「邊框」 */
+  -webkit-mask-image:var(--own),linear-gradient(#fff,#fff);mask-image:var(--own),linear-gradient(#fff,#fff);
+  -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .f-rim.dk{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)*.6) calc(-1*var(--sdy,.7)*var(--dd,1px)*.6) var(--db,1px) rgba(0,0,0,var(--sha,.35)))}
 .f-rim.lt{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(255,255,255,var(--hla,.5)))}
 .i-in{position:absolute;inset:0!important;pointer-events:none}
@@ -167,6 +170,12 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.35)*.6)}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
 .m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
+.fx.relief-only .f-rim.dk:not(.rev),.fx.relief-only .f-rim.lt{display:none} /* 純加工：無外緣亮邊、壓凹無外緣影 */
+.fx.relief-only .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rd,1px)*1.2 + 2px) rgba(0,0,0,var(--rsha,.1)))}
+.fx.relief-only .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(0,0,0,var(--shi,.05)))}
+.fx.relief-only .i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)) calc(-1*var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(255,255,255,var(--hli,.05)))}
+.fx.relief-only .i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(0,0,0,var(--rshi,.05)))}
+.fx.relief-only .i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.05)))}
 .f-rim.rev{opacity:var(--ro,1)}
 .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)*1.6) calc(var(--sdy,.7)*var(--rd,1px)*1.6) calc(var(--rb,1px)*1.4) rgba(0,0,0,var(--rsha,.5)))}   /* 隆起：遠光側投影 */
 .f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,var(--rhla,.45)))} /* 隆起：近光側外緣受光 */
@@ -581,6 +590,14 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="sec-h" data-help="sec-show">展示</div>
         <div class="row"><label>傾斜幅度</label><input type="range" id="pTilt" min="0" max="30" step="1"><span class="val"></span></div>
         <div class="row"><label>圓角</label><input type="range" id="pRadius" min="0" max="40" step="1"><span class="val"></span></div>
+      </div>
+      <div class="sec">
+        <div class="sec-h" data-help="sec-thick">紙厚與透印</div>
+        <div class="row"><label>紙厚</label><input type="range" id="pThickMM" min="0.1" max="1.2" step="0.05"><span class="val"></span></div>
+        <div class="row"><label>光影強度</label><input type="range" id="pReliefK" min="0" max="3" step="0.05"><span class="val"></span></div>
+        <div class="row"><label>另一面模糊</label><input type="range" id="pBackBlur" min="0" max="12" step="0.5"><span class="val"></span></div>
+        <div class="row"><label>另一面強度</label><input type="range" id="pBackK" min="0" max="2" step="0.05"><span class="val"></span></div>
+        <p class="note" id="thickNote"></p>
         <div class="row two"><label>閒置</label><label class="toggle"><input type="checkbox" id="pAuto"> 無滑鼠時自動掃光</label></div>
       </div>
       <div class="sec">
@@ -1073,7 +1090,7 @@ const defaultScene = () => ({W:1080,H:1350,roll:0,lx:.3,ly:.25,lz:.6,ax:.5,ay:.5
 function groupName(el){ return el.getAttribute('id') || el.getAttribute('serif:id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || ''; }
 function isLayerGroup(el){ return el.tagName==='g' && !!groupName(el) && !/^page[-_ ]?\d*$/i.test(groupName(el)); }
 function layerGroups(){ return [...svgRoot.querySelectorAll('g')].filter(g=>isLayerGroup(g) && !g.closest(NONRENDER)); }
-const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.25,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true});
+const defaultPaper = () => ({color:'#121214',texture:'ivory',strength:.25,relief:1,grain:.25,scale:1,az:135,blend:'auto',gloss:.3,tilt:12,radius:6,auto:true,thickMM:.35,reliefK:1,backBlur:2.1,backK:1,backBlurManual:false});
 /* 紙質目錄：bf = feTurbulence baseFrequency、oct = 八度、relief = 預設凹凸、grain = 預設顆粒、lines = 疊加的條紋、speck = 斑點式凹凸 */
 const PAPERS = {
   coated:   {label:'銅版紙',        group:'塗佈', bf:'1.3', oct:1, relief:.35, grain:.12, gloss:.5, note:'塗佈光滑面，幾乎無紋、反光強；一般彩色印刷與燙金常用。'},
@@ -1509,9 +1526,10 @@ async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {
   let changed=true; while(changed){ changed=false; rootClone.querySelectorAll('.base svg g').forEach(g=>{ if(!g.children.length){ g.remove(); changed=true; } }); }
 }
 function inkSpread(L){ return ['ink','letterpress','screen'].includes(L.proc) ? (L.spread||0) : 0; }
+function maskBlurVB(L){ return 0; } // 另一面輪廓模糊改加在光影模糊半徑上（遮罩維持銳利，否則邊緣會留一圈半透明黑邊）
 function buildMask(L, eff=effLayer, vk='', mirror=false){
-  const sp=inkSpread(L), id=L.srcLayer||L.id;
-  return maskCache[vk+id+':'+sp+(mirror?':m':'')] ||= toURI(layerSVG(k=>eff[k]===id, '#fff', sp*.6, sp*.5, mirror));
+  const sp=inkSpread(L), id=L.srcLayer||L.id, bl=sp*.5+maskBlurVB(L);
+  return maskCache[vk+id+':'+sp+':'+bl.toFixed(2)+(mirror?':m':'')] ||= toURI(layerSVG(k=>eff[k]===id, '#fff', sp*.6, bl, mirror));
 }
 /* 背面相反效果：正面壓進去的（燙箔壓痕、凸版、打凹）在背面是浮起來的；正面浮起的（打凸、發泡）在背面是凹的；位置左右鏡射 */
 function backReliefLayers(layers, eff){
@@ -1520,15 +1538,16 @@ function backReliefLayers(layers, eff){
     if(L.type==='hide' || L.visible===false || !used.has(L.id)) return;
     const pd=Math.max((L.proc==='foil'||L.proc==='holo')?(L.depth??0):0, L.proc==='letterpress'?(L.press??0):0, L.relief==='deboss'?(L.reliefDepth??0):0);
     const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0);
-    // 另一面只看得到「壓過 1px 的部分」：1px 以下不透，超過的部分以六成表現
-    const mk=(rel,d)=>{ const B={id:'B'+L.id, srcLayer:L.id, proc:'none', relief:rel, reliefDepth:Math.max(.2,(d-1)*.6), uv:'none', visible:true, knockout:false, mirror:true, named:true, name:'另一面'+(rel==='emboss'?'浮凸':'壓凹')+' · '+L.name}; normalizeLayer(B); syncType(B); return B; };
-    if(pd>1) out.push(mk('emboss',pd)); else if(rd>1) out.push(mk('deboss',rd));
+    // 另一面只看得到「壓過紙厚門檻的部分」：門檻 = 紙厚 × 2.5（0.35mm ≈ 1）；超過的部分乘「另一面強度」；輪廓依紙厚模糊
+    const P=S.paper, thr=thickThreshold(P), bk=P.backK??1, blur=P.backBlur??(P.thickMM??.35)*6;
+    const mk=(rel,d)=>{ const B={id:'B'+L.id, srcLayer:L.id, proc:'none', relief:rel, reliefDepth:Math.max(.15,(d-thr)*.8*bk), uv:'none', visible:true, knockout:false, mirror:true, maskBlur:blur, backK:bk, named:true, name:'另一面'+(rel==='emboss'?'浮凸':'壓凹')+' · '+L.name}; normalizeLayer(B); syncType(B); return B; };
+    if(bk>0 && pd>thr) out.push(mk('emboss',pd)); else if(bk>0 && rd>thr) out.push(mk('deboss',rd));
   });
   return out;
 }
 function appendBackRelief(host, layers, eff, backPaper, mkMask, fast=false){
   backReliefLayers(layers, eff).forEach(B=>{
-    const d=document.createElement('div'); d.className='fx fx-'+B.type+' back-relief'; d.dataset.layer=B.id;
+    const d=document.createElement('div'); d.className='fx fx-'+B.type+' back-relief relief-only'; d.dataset.layer=B.id;
     const own=mkMask(B); d.style.setProperty('--own',own); d.style.setProperty('--mask',own);
     d.innerHTML=fxDOM(B,fast); if(fast) d.classList.add('fast'); host.appendChild(d); styleFx(d,B,backPaper);
   });
@@ -1551,7 +1570,7 @@ function renderFxInto(host, layers, eff, vk, paper){
   [...layers].reverse().forEach(L=>{
     if(L.type==='hide' || !L.visible || !L._count) return;
     const d = document.createElement('div');
-    d.className = 'fx fx-'+L.type; d.dataset.layer=L.id;
+    d.className = 'fx fx-'+L.type+((L.proc==='none'||L.relief!=='none')?' relief-only':''); d.dataset.layer=L.id;
     const own=buildMask(L, eff, vk), ko=buildKnockout(L, layers, eff, vk);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
     d.innerHTML=fxDOM(L);
@@ -1637,14 +1656,20 @@ function styleFx(d,L,paper=S.paper){
   const pd=Math.max((L.proc==='foil'||L.proc==='holo')?(L.depth??0):0, L.proc==='letterpress'?(L.press??0):0, L.relief==='deboss'?(L.reliefDepth??0):0);
   // 深色紙：黑影本來就快看不見 → 影子加深、加寬；白色受光邊反而搶眼 → 收斂
   const pl=hsl(paper.color).l, dk=1-pl, pk=1+0.6*dk;
-  // 純加工（打凸／打凹／另一面效果）：只有邊緣的細影與極淡的受光線，強度比燙箔壓痕低很多（參考實物：影子約 8%、受光約 1.5%）
-  const rk = L.proc==='none' ? {s:.45,h:.22} : {s:1,h:1};
-  st.setProperty('--sha',((0.35+0.55*dk)*rk.s).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)*rk.h).toFixed(2)); st.setProperty('--shi',((0.5+0.45*dk)*rk.s).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)*rk.h).toFixed(2));
-  st.setProperty('--rsha',((0.5+0.4*dk)*rk.s).toFixed(2)); st.setProperty('--rhla',(0.45*(0.2+0.8*pl)*rk.h).toFixed(2)); st.setProperty('--rshi',((0.42+0.4*dk)*rk.s).toFixed(2)); st.setProperty('--rhli',(0.6*(0.2+0.8*pl)*rk.h).toFixed(2));
-  st.setProperty('--dd', (pd*0.9*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
-  // 隆起式外緣（打凸／發泡／立體 UV／網版墨層）
   const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0, L.uv==='raised'?(L.uvDepth??0):0, L.proc==='screen'?(L.thick??0):0);
-  st.setProperty('--rd', (rd*0.9).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd).toFixed(2));
+  if(L.proc==='none' || L.relief!=='none'){
+    // 純加工（打凸／打凹／另一面效果）依 Figma 參考：深度 1／2／4 = 偏移 2／4／8px；內緣影 α.05、內緣受光 α.05、打凸再加一道 α.10 的投影；無外緣亮邊
+    const k=(paper.reliefK??1)*(L.backK??1), d=Math.max(pd,rd)*2, bl=d*1.5+1+(L.maskBlur||0);
+    st.setProperty('--shi',(0.05*k*pk).toFixed(3)); st.setProperty('--hli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--sha','0'); st.setProperty('--hla','0');
+    st.setProperty('--rshi',(0.05*k*pk).toFixed(3)); st.setProperty('--rhli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--rsha',(0.10*k*pk).toFixed(3)); st.setProperty('--rhla','0');
+    st.setProperty('--dd', d.toFixed(2)+'px'); st.setProperty('--db', bl.toFixed(2)+'px'); st.setProperty('--dop', pd>0?'1':'0');
+    st.setProperty('--rd', d.toFixed(2)+'px'); st.setProperty('--rb', bl.toFixed(2)+'px'); st.setProperty('--ro', rd>0?'1':'0');
+  } else {
+    st.setProperty('--sha',(0.35+0.55*dk).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--shi',(0.5+0.45*dk).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)).toFixed(2));
+    st.setProperty('--rsha',(0.5+0.4*dk).toFixed(2)); st.setProperty('--rhla',(0.45*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--rshi',(0.42+0.4*dk).toFixed(2)); st.setProperty('--rhli',(0.6*(0.2+0.8*pl)).toFixed(2));
+    st.setProperty('--dd', (pd*0.9*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
+    st.setProperty('--rd', (rd*0.9).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd).toFixed(2));
+  }
   if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6)); }
 }
 function paperApply(cards, P){
@@ -1682,6 +1707,8 @@ function applyPaper(){
   if(!$('#pTex').options.length){ let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ $('#pTex').insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } $('#pTex').lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); }); }
   $('#pTex').value=P.texture; $('#pTexNote').textContent=PAPERS[P.texture].note; $('#pBlend').value=P.blend;
   setRange('#pStrength',P.strength,PCT); setRange('#pRelief',P.relief,v=>(+v).toFixed(2)+'×'); setRange('#pAz',P.az,v=>v+'°');
+  setRange('#pThickMM',P.thickMM??.35,v=>(+v).toFixed(2)+'mm'); setRange('#pReliefK',P.reliefK??1,v=>(+v).toFixed(2)+'×'); setRange('#pBackBlur',P.backBlur??2.1,v=>(+v).toFixed(1)+'px'); setRange('#pBackK',P.backK??1,v=>(+v).toFixed(2)+'×');
+  { const thr=thickThreshold(P); $('#thickNote').textContent=`約 ${Math.round((P.thickMM??.35)*860)} gsm · 凹凸深度超過 ${thr.toFixed(2)} 才會透到另一面`; }
   setRange('#pGrain',P.grain,PCT); setRange('#pScale',P.scale,v=>(+v).toFixed(2)+'×'); setRange('#pGloss',P.gloss,PCT); setRange('#pTilt',P.tilt,v=>v+'°'); setRange('#pRadius',P.radius,v=>v+'px');
   $('#pAuto').checked=P.auto;
   $('#pSwatches').querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.c===P.color));
@@ -2028,6 +2055,12 @@ $('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; apply
   $(sel).addEventListener('input', e=>{ S.paper[p]=+e.target.value; applyPaper(); save(); });
 });
 $('#pAuto').addEventListener('change', e=>{ S.paper.auto=e.target.checked; save(); });
+/* 紙厚：越厚，透到另一面的門檻越高、另一面輪廓越模糊（模糊未手動改過時自動跟紙厚走） */
+function thickThreshold(P){ return (P.thickMM??.35)*2.5; } // 凹凸深度單位：0.35mm ≈ 1
+$('#pThickMM').addEventListener('input', e=>{ const P=S.paper; P.thickMM=+e.target.value; if(!P.backBlurManual) P.backBlur=+(P.thickMM*6).toFixed(1); clearMasks(); applyPaper(); renderFx(); save(); });
+$('#pReliefK').addEventListener('input', e=>{ S.paper.reliefK=+e.target.value; applyPaper(); renderFx(); save(); });
+$('#pBackBlur').addEventListener('input', e=>{ S.paper.backBlur=+e.target.value; S.paper.backBlurManual=true; clearMasks(); applyPaper(); renderFx(); save(); });
+$('#pBackK').addEventListener('input', e=>{ S.paper.backK=+e.target.value; clearMasks(); applyPaper(); renderFx(); save(); });
 PAPER_SWATCHES.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.dataset.c=c; b.addEventListener('click',()=>{ S.paper.color=c; applyPaper(); save(); }); $('#pSwatches').appendChild(b); });
 
 /* ---------- (i) 說明：每個可調項目旁的小圓 i，點一下顯示詳細說明 ---------- */
@@ -2045,6 +2078,11 @@ const HELP = {
   pTilt:'單張模式滑鼠移動時卡片跟著傾斜的最大角度，只是展示用，不影響匯出。',
   pRadius:'卡片圓角半徑（px）。名片常見 3–6mm，換算後大約 6–12px。',
   pAuto:'單張模式沒有滑鼠時自動掃光，方便錄影或展示。',
+  'sec-thick':'紙厚決定兩件事：壓多深才會透到另一面（門檻 = 紙厚 × 2.5，0.35mm 的 300gsm 卡約等於深度 1），以及另一面輪廓有多模糊（紙越厚越糊，預設跟紙厚走，可手動改）。光影強度是打凸／打凹／另一面效果整體的明暗倍率（1× = Figma 參考值：內緣影 5%、受光 5%、投影 10%）。',
+  pThickMM:'紙厚（mm）。名片常見：250gsm ≈ 0.3、300gsm ≈ 0.35、350gsm ≈ 0.42、荷蘭板 1.0。旁邊會換算 gsm 與透印門檻。',
+  pReliefK:'打凸／打凹與另一面效果的光影倍率。1× = 依 Figma 參考（弱／中／強對應深度 1／2／4）。',
+  pBackBlur:'另一面輪廓模糊（px）。紙越厚纖維越多層，另一面看到的邊緣越糊；改紙厚時會自動更新，手動調過就固定。',
+  pBackK:'另一面效果強度：超過門檻的深度乘上這個倍率；0 = 另一面完全不顯示。',
   /* 圖層 */
   koGap:'挖空安全空間：多層燙箔或油墨重疊時，下層沿上層圖形外擴這個距離後挖空，避免箔面互疊起皺或套印不準。單位是 SVG viewBox 單位，右邊會換算成 mm；印刷廠常見要求 0.3–0.5mm。',
   tint:'這一層的顏色：燙箔是箔的本色（高光會自動變亮、暗部變深），油墨是實色。',
@@ -2657,7 +2695,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
     const counts={}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; }); layers.forEach(L=>{ L._count=counts[L.id]||0; });
     [...layers].reverse().forEach(L=>{
       if(L.type==='hide' || !L.visible || !L._count) return;
-      const d=document.createElement('div'); d.className='fx fx-'+L.type; d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
+      const d=document.createElement('div'); d.className='fx fx-'+L.type+((L.proc==='none'||L.relief!=='none')?' relief-only':''); d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
       const sp=inkSpread(L); const own=buildMergedMask(k=>eff[k]===L.id, sp*.6, pe.vk+L.id, slots, idxs, sp*.5);
       const fast = renderQuality==='fast' && (S.scene.quality||'fast')==='fast';
       let ko=null; const above=layersAbove(L, layers);
@@ -2675,7 +2713,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
    if(front){ const fast = renderQuality==='fast' && (S.scene.quality||'fast')==='fast'; withDoc(front.doc, ()=>{
      const feff = front.vk ? computeEffectiveFor(front.layers) : effLayer;
      const before=host.children.length;
-     appendBackRelief(host, front.layers, feff, pe.paper, B=>buildMergedMask(k=>feff[k]===B.srcLayer, 0, front.vk+'br:'+B.srcLayer, slots, idxs, 0, true), fast);
+     appendBackRelief(host, front.layers, feff, pe.paper, B=>buildMergedMask(k=>feff[k]===B.srcLayer, 0, front.vk+'br:'+B.srcLayer, slots, idxs, maskBlurVB(B), true), fast);
      [...host.children].slice(before).forEach(d=>decorate(d,pe,idxs));
    }); }
   });
