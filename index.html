@@ -647,7 +647,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
         <div class="row two"><label>預覽</label><select id="sQuality"><option value="wire">線框</option><option value="fast">快速</option><option value="full">完整</option></select></div>
       </div>
       <div class="sec" data-sec="layout">
-        <div class="sec-h" data-help="sec-layout">排列 <span><button class="btn small ghost" id="sLayoutReset" title="排列相關設定回復預設">回復預設</button><button class="btn small ghost" id="sShuffle" title="換一組隨機">🎲</button></span></div>
+        <div class="sec-h" data-help="sec-layout">排列 <span><button class="btn small ghost" id="sLayoutReset" title="把目前鋪法的所有數值重設為預設（鋪法與種子不變）">重設數值</button><button class="btn small ghost" id="sShuffle" title="換一組隨機">🎲</button></span></div>
         <div class="row two"><label>鋪法</label><select id="sLayout">
           <option value="single">單張置中</option>
           <option value="grid">整齊格狀</option>
@@ -1745,7 +1745,7 @@ const view={mode:'fit', zoom:1, pan:{x:0,y:0}};
 function fitZoom(){
   const st=$('#stage').getBoundingClientRect();
   if(viewMode==='scene'){ const C=S.scene; return Math.min((st.width-80)/C.W,(st.height-100)/C.H); }
-  const [W,H]=S.vb||[2,1]; return Math.min((st.width-80)/W,(st.height-96)/H);
+  const [W,H]=S.vb||[2,1]; return Math.min(st.width*0.8/W,(st.height-96)*0.8/H); // 單張：預設佔畫面 80%
 }
 function applyZoom(){
   if(!S||!S.vb) return;
@@ -2178,7 +2178,7 @@ const HELP = {
   'sec-ko':'多層燙箔／油墨重疊時，下層沿上層圖形外擴「安全空間」後挖空，避免箔面互疊起皺。每個圖層可個別關閉。',
   'sec-layers':'圖層由上往下 = 印刷順序由下往上（列表最下方最先印）。同一元素若被多個圖層指派，以最接近的群組指派為準。',
   'sec-tree':'點一個群組 → 整組指派到目前圖層。右側圓點是該節點目前的效果（淡色 = 從上層群組繼承）。',
-  sLayoutReset:'把排列相關設定（鋪法、欄列、張數、卡片寬、間距、旋轉、扇形、灑落、微傾、種子）回復成預設值；視角、光源、背景不動。',
+  sLayoutReset:'把排列的所有數值（欄列、張數、卡片寬、間距、旋轉、扇形、灑落、微傾…）重設為預設；鋪法與隨機種子不變，視角、光源、背景也不動。',
   sBrickOff:'鋪磚：奇偶列互相錯開的比例。50% = 標準磚牆（錯半張），0% = 整齊格狀，100% = 錯一整張（等於格狀）。',
   sFanCx:'扇形圓心的水平位移（畫布寬的 %）。',
   sFanCy:'扇形圓心的垂直位移（畫布高的 %）。',
@@ -3082,7 +3082,7 @@ $('#sExport').addEventListener('change',e=>{ S.scene.exportScale=+e.target.value
 $('#sQuality').addEventListener('change',e=>{ S.scene.quality=e.target.value; sceneChanged(true); });
 $('#sLayout').addEventListener('change',e=>{ S.scene.layout=e.target.value; sceneChanged(true); });
 $('#sShuffle').addEventListener('click',()=>{ S.scene.seed=Math.floor(Math.random()*1e6); sceneChanged(true); });
-$('#sLayoutReset').addEventListener('click',()=>{ const d=defaultScene(); LAYOUT_KEYS.forEach(k=>{ S.scene[k]=d[k]; }); sceneChanged(true); toast('排列已回復預設'); });
+$('#sLayoutReset').addEventListener('click',()=>{ const d=defaultScene(); LAYOUT_KEYS.forEach(k=>{ if(k!=='layout' && k!=='seed') S.scene[k]=d[k]; }); sceneChanged(true); toast('排列數值已重設（鋪法不變）'); }); // 只重設數值，不換鋪法
 [['#sCols','cols'],['#sRows','rows'],['#sN','n'],['#sRN','rn'],['#sFanD','fanD'],['#sFanA0','fanA0'],['#sFanA1','fanA1'],['#sFanCx','fanCx'],['#sFanCy','fanCy'],['#sFanRx','fanRx'],['#sFanRy','fanRy'],['#sBrickOff','brickOff'],['#sTossSpread','tossSpread'],['#sTossX','tossX'],['#sTossTilt','tossTilt'],['#sTossAir','tossAir'],['#sTossH','tossH'],['#sRandRx','randRx'],['#sRandRy','randRy'],['#sTilt3','tilt3'],['#sJitter','jitter'],['#sSize','size'],['#sGap','gap'],['#sRot','rot'],['#sRot2','rot2'],['#sBleed','bleed']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; sceneChanged(true); }));
 [['#sPitch','pitch'],['#sYaw','yaw'],['#sFov','fov'],['#sZoom','zoom'],['#sShift','shift'],['#sShiftX','shiftX'],['#sAperture','aperture'],['#sEV','ev'],['#sBgScale','bgScale'],['#sBgTex','bgTex'],['#sBgGloss','bgGloss'],['#sBgImgScale','bgImgScale'],['#sBgImgX','bgImgX'],['#sBgImgY','bgImgY'],['#sBgImgRot','bgImgRot'],['#sRoll','roll'],['#sLx','lx'],['#sLy','ly'],['#sTx','ax'],['#sTy','ay'],['#sDist','lz'],['#sLsize','lsize'],['#sInt','intensity'],['#sSpot','spot'],['#sSoft','soft'],['#sKelvin','kelvin'],['#sGlow','glow'],['#sVig','vig'],['#sShadow','shadow']].forEach(([sel,p])=>$(sel).addEventListener('input',e=>{ S.scene[p]=+e.target.value; if(p==='kelvin') S.scene.useLightColor=false; sceneChanged(false); }));
 $('#sUseLC').addEventListener('change',e=>{ S.scene.useLightColor=e.target.checked; sceneChanged(false); });
