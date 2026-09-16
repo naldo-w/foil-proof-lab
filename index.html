@@ -171,7 +171,10 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.35)*.6)}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
 .m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
-.fx.relief-only .f-rim.dk:not(.rev),.fx.relief-only .f-rim.lt{display:none} /* 純加工：無外緣亮邊、壓凹無外緣影 */
+.fx.relief-only{mix-blend-mode:hard-light} /* 打凸／打凹：光影圖以 hard-light 疊在紙與油墨上（中灰 = 不變；深色紙也看得到受光邊） */
+.fx.relief-only .bump{position:absolute;inset:0}
+.fx.relief-only .m.bumpsrc{background:#fff}
+.fx.relief-only .f-rim.dk:not(.rev),.fx.relief-only .f-rim.lt{display:none}
 .fx.back-relief .f-rim{display:none} /* 另一面：只有內緣明暗，沒有投影（Figma 背面同） */
 .fx.relief-only .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rd,1px)*1.2 + 2px) rgba(0,0,0,var(--rsha,.1)))}
 .fx.relief-only .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(0,0,0,var(--shi,.05)))}
@@ -1522,6 +1525,18 @@ async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {
     if(mask.length){ fx.style.setProperty('--mask', `url("${await get(mask)}")`); fx.classList.remove('ko'); }
     if(own.length){ fx.style.setProperty('--own', `url("${await get(own)}")`); }
     if(vis.length){ fx.style.setProperty('--vis', `url("${await get(vis)}")`); }
+    // 打凸／打凹：foreignObject 裡的 CSS filter:url(#id) 參照不到濾鏡，改先把「打光後的圖」烘成 PNG 貼上
+    const bump=fx.querySelector('.bump'); const flt=fx.dataset.rf && document.getElementById(fx.dataset.rf);
+    if(bump && flt && own.length){ try{
+      const ownPNG=await get(own); const w=Math.round(cw), h=Math.round(ch);
+      // 濾鏡的 px 參數要依匯出解析度放大（模糊、位移 × sf；surfaceScale 也 × sf 才能維持同樣的斜率）
+      const sf = (slot||fx.closest('.fxs.merged')) ? k*sc : (cw/($('#card').offsetWidth||cw));
+      const fsrc=flt.innerHTML.replace(/ class="cast"| data-d="[^"]*"/g,'').replace(/stdDeviation="([\d.]+)"/g,(m,v)=>`stdDeviation="${(+v*sf).toFixed(2)}"`).replace(/surfaceScale="(-?[\d.]+)"/g,(m,v)=>`surfaceScale="${(+v*sf).toFixed(2)}"`).replace(/ dx="(-?[\d.]+)" dy="(-?[\d.]+)"/g,(m,a,b)=>` dx="${(+a*sf).toFixed(2)}" dy="${(+b*sf).toFixed(2)}"`);
+      const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}"><defs><filter id="f" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">${fsrc}</filter></defs><image href="${ownPNG}" width="${w}" height="${h}" filter="url(#f)"/></svg>`;
+      const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); });
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      bump.style.filter='none'; bump.innerHTML=''; bump.style.backgroundImage=`url("${cv.toDataURL('image/png')}")`; bump.style.backgroundSize='100% 100%';
+    }catch(e){ console.warn('bump bake failed',e); } }
   }
   // 底圖 SVG：已指派（隱藏）的圖形不用帶進匯出檔，省掉每張卡一份完整 SVG
   rootClone.querySelectorAll('.base svg .is-assigned').forEach(n=>n.remove());
@@ -1572,25 +1587,29 @@ function renderFxInto(host, layers, eff, vk, paper){
   [...layers].reverse().forEach(L=>{
     if(L.type==='hide' || !L.visible || !L._count) return;
     const d = document.createElement('div');
-    d.className = 'fx fx-'+L.type+((L.proc==='none'||L.relief!=='none')?' relief-only':''); d.dataset.layer=L.id;
+    d.className = 'fx fx-'+L.type+(L.proc==='none'?' relief-only':''); d.dataset.layer=L.id;
     const own=buildMask(L, eff, vk), ko=buildKnockout(L, layers, eff, vk);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
     d.innerHTML=fxDOM(L);
     host.appendChild(d); styleFx(d,L,paper);
+    if(L.relief!=='none' && L.proc!=='none'){ const R=reliefCompanion(L); const d2=document.createElement('div'); d2.className='fx fx-relief relief-only'; d2.dataset.layer=R.id; d2.style.setProperty('--own',own); d2.style.setProperty('--mask',own); d2.innerHTML=fxDOM(R); host.appendChild(d2); styleFx(d2,R,paper); }
   });
 }
+/* 上色層附帶的打凸／打凹：獨立一層 bump（跟上色層共用遮罩），才能用 hard-light 直接混合到紙與油墨上 */
+function reliefCompanion(L){ return {id:L.id+'~r', srcLayer:L.id, proc:'none', relief:L.relief, reliefDepth:L.reliefDepth, uv:'none', visible:true, knockout:false, bump:true, type:'relief', name:L.name}; }
 /* 依工法 + 疊加加工組出效果 DOM（由下而上：壓痕外緣 → 上色層 → 表面 UV） */
 function fxDOM(L, fast=false){
   const rim=(rev)=> fast ? '' : `<div class="f-rim dk${rev?' rev':''}"><div class="m rim"></div></div><div class="f-rim lt${rev?' rev':''}"><div class="m rim"></div></div>`;
   const inner=(cls)=> fast ? '' : cls.map(c=>`<div class="i-in ${c}"><div class="inv"></div></div>`).join('');
   let h='';
-  const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress' || L.relief==='deboss';
-  const raised = L.relief==='emboss' || L.puff || L.uv==='raised' || L.proc==='screen';
+  // 打凸／打凹（含另一面效果）：以 SVG feDiffuseLighting 對「模糊過的圖形 alpha」打光 = 真正的斜面光影，整層以 hard-light 疊在紙上
+  if(L.proc==='none' || L.bump){ return `<div class="bump"><div class="m bumpsrc"></div></div>`; }
+  const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress';
+  const raised = L.puff || L.uv==='raised' || L.proc==='screen';
   if(pressed) h+=rim(false);
   if(raised) h+=rim(true);
   const innerParts = (pressed?['pd','pl']:[]).concat(raised?['rl','rd']:[]);
   const dome = L.puff && !fast ? '<div class="dome"></div>' : ''; // 圓頂漸層只給發泡；打凸／打凹只留邊緣的立體光影，不出現平滑面
-  if(L.proc==='none' && L.relief!=='none') h+=`<div class="m r-face">${dome}${inner(innerParts)}</div>`;
   if(L.fluo && PROCS[L.proc].colored && L.proc!=='foil' && L.proc!=='holo') h+='<div class="f-rim glow"><div class="m rim"></div></div>';
   if(L.proc==='foil') h+=`<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
   else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain"></div><div class="h-rain b"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
@@ -1606,7 +1625,7 @@ function renderFx(){
   { const a=activeDoc(); const otherId = a && (a.backOf||a.frontOf); if(otherId){ // 另一面（連結的正面或背面）的壓痕以相反、鏡射的效果印在這一面
       const o=S.docs.find(x=>x.id===otherId); const myPaper=S.paper; if(o) withDoc(o.id, ()=>{ const oeff=computeEffectiveFor(S.layers); appendBackRelief($('#fxs'), S.layers, oeff, myPaper, B=>buildMask(B, oeff, o.id+':cur:', true)); }); } }
   renderBackFace();
-  renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene(); attachHelp();
+  renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene(); attachHelp(); pruneReliefFilters();
 }
 /* 單張的背面：有連結的背面文件就畫它（加正面的相反效果）；作用中是背面則畫連結的正面；沒有連結就是同一張紙的空白背面＋相反效果 */
 let sideT=0;
@@ -1666,13 +1685,9 @@ function styleFx(d,L,paper=S.paper){
   // 深色紙：黑影本來就快看不見 → 影子加深、加寬；白色受光邊反而搶眼 → 收斂
   const pl=hsl(paper.color).l, dk=1-pl, pk=1+0.6*dk;
   const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0, L.uv==='raised'?(L.uvDepth??0):0, L.proc==='screen'?(L.thick??0):0);
-  if(L.proc==='none' || L.relief!=='none'){
-    // 純加工（打凸／打凹／另一面效果）依 Figma 參考：深度 1／2／4 = 偏移 2／4／8px；內緣影 α.05、內緣受光 α.05、打凸再加一道 α.10 的投影；無外緣亮邊
-    const dep=Math.max(pd,rd), k=(paper.reliefK??1)*(L.backK??1), d=dep*2*1.414, bl=(dep<=1?4:dep<=2?5+(dep-1)*3:8+(dep-2)*4)+(L.maskBlur||0); // Figma：深度 1/2/4 → 偏移分量 2/4/8、模糊 4/5～8/16
-    st.setProperty('--shi',(0.05*k*pk).toFixed(3)); st.setProperty('--hli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--sha','0'); st.setProperty('--hla','0');
-    st.setProperty('--rshi',(0.05*k*pk).toFixed(3)); st.setProperty('--rhli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--rsha',(0.10*k*pk).toFixed(3)); st.setProperty('--rhla','0');
-    st.setProperty('--dd', d.toFixed(2)+'px'); st.setProperty('--db', bl.toFixed(2)+'px'); st.setProperty('--dop', pd>0?'1':'0');
-    st.setProperty('--rd', d.toFixed(2)+'px'); st.setProperty('--rb', bl.toFixed(2)+'px'); st.setProperty('--ro', rd>0?'1':'0');
+  if(L.proc==='none'){
+    // 打凸／打凹／另一面效果：高度圖打光。深度 1／2／4（弱／中／強）→ 斜面寬 1.2／2.4／4.8px；強度 = 光影強度 × 另一面強度
+    const dep=Math.max(pd,rd), k=(paper.reliefK??1)*(L.backK??1); updateReliefFilter(d, L, dep, k, L.relief==='deboss'?-1:1, pl);
   } else {
     st.setProperty('--sha',(0.35+0.55*dk).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--shi',(0.5+0.45*dk).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)).toFixed(2));
     st.setProperty('--rsha',(0.5+0.4*dk).toFixed(2)); st.setProperty('--rhla',(0.45*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--rshi',(0.42+0.4*dk).toFixed(2)); st.setProperty('--rhli',(0.6*(0.2+0.8*pl)).toFixed(2));
@@ -1938,7 +1953,28 @@ const target={px:.5,py:.5,hov:0}, cur={px:.5,py:.5,hov:0};
 function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給壓痕／浮雕用）
   const d=Math.hypot(dx,dy)||1; const ux=dx/d, uy=dy/d;
   el.style.setProperty('--sdx',ux.toFixed(3)); el.style.setProperty('--sdy',uy.toFixed(3)); el.style.setProperty('--sang',(Math.atan2(uy,ux)*180/Math.PI+90).toFixed(1)+'deg');
+  // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
+  const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
+  const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; const flt=document.getElementById(id); if(!flt) return; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
+    flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
+/* 打凸／打凹濾鏡：模糊 alpha 當高度圖 → feDiffuseLighting（遠光 45°）→ 對齊到中灰 → 限制在圖形內；打凸另加一道投影。整層用 hard-light 疊上去。 */
+let rfSeq=0;
+function fxDefs(){ let d=$('#fxdefs'); if(!d){ d=document.createElementNS('http://www.w3.org/2000/svg','svg'); d.id='fxdefs'; d.setAttribute('width','0'); d.setAttribute('height','0'); d.style.position='absolute'; document.body.appendChild(d); } return d; }
+function updateReliefFilter(fxEl, L, dep, k, sign, pl){
+  const id = fxEl.dataset.rf || (fxEl.dataset.rf='rf'+(++rfSeq)); const defs=fxDefs(); let f=document.getElementById(id);
+  if(!f){ f=document.createElementNS('http://www.w3.org/2000/svg','filter'); f.id=id; f.setAttribute('x','-25%'); f.setAttribute('y','-25%'); f.setAttribute('width','150%'); f.setAttribute('height','150%'); f.setAttribute('color-interpolation-filters','sRGB'); defs.appendChild(f); }
+  const el=48, flat=Math.sin(el*Math.PI/180); const bev=Math.max(.8, dep*2+0.5+(L.maskBlur||0)*.5), scale=dep*4.5*sign, gain=0.75*k, cast=sign>0 ? 0.10*k : 0, cd=dep*1.4, cb=dep*1.5+1; // 弱／中／強：斜面約 2.5／4.5／8.5px
+  f.innerHTML=`<feGaussianBlur in="SourceAlpha" stdDeviation="${bev.toFixed(2)}" result="hm"/>`+
+    `<feDiffuseLighting in="hm" surfaceScale="${scale.toFixed(2)}" diffuseConstant="1" lighting-color="#fff" result="lit"><feDistantLight azimuth="${f.dataset.az||135}" elevation="${el}"/></feDiffuseLighting>`+
+    `<feComponentTransfer in="lit" result="lit2"><feFuncR type="linear" slope="${gain.toFixed(3)}" intercept="${(0.5-flat*gain).toFixed(3)}"/><feFuncG type="linear" slope="${gain.toFixed(3)}" intercept="${(0.5-flat*gain).toFixed(3)}"/><feFuncB type="linear" slope="${gain.toFixed(3)}" intercept="${(0.5-flat*gain).toFixed(3)}"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer>`+
+    `<feComposite in="lit2" in2="SourceAlpha" operator="in" result="inside"/>`+
+    (cast>0 ? `<feGaussianBlur in="SourceAlpha" stdDeviation="${cb.toFixed(2)}" result="sh0"/><feOffset class="cast" data-d="${cd.toFixed(2)}" in="sh0" dx="0" dy="${cd.toFixed(2)}" result="sh1"/><feComposite in="sh1" in2="SourceAlpha" operator="out" result="sh2"/><feFlood flood-color="#000" flood-opacity="${cast.toFixed(3)}" result="blk"/><feComposite in="blk" in2="sh2" operator="in" result="cast"/><feMerge><feMergeNode in="cast"/><feMergeNode in="inside"/></feMerge>` : `<feMerge><feMergeNode in="inside"/></feMerge>`);
+  const bump=fxEl.querySelector('.bump'); if(bump) bump.style.filter=`url(#${id})`;
+  fxEl.dataset.dep=dep;
+}
+function pruneReliefFilters(){ const defs=$('#fxdefs'); if(!defs) return; const used=new Set([...document.querySelectorAll('.fx[data-rf]')].map(e=>e.dataset.rf)); [...defs.children].forEach(f=>{ if(!used.has(f.id)) f.remove(); }); }
 function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer($('#cardBack'),px,py,hov,true); }
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
@@ -2355,7 +2391,7 @@ async function exportScene3D(k){
   const maxTex=Math.min(8192,(()=>{ try{ const g=document.createElement('canvas').getContext('webgl'); return g?g.getParameter(g.MAX_TEXTURE_SIZE):4096; }catch(e){ return 4096; } })());
   const sA=Math.max(.5, Math.min(k*1.5, maxTex/Math.max(E.w,E.h))); // 近處卡片會被透視放大，多給 1.5× 解析度
   // (A) 平視渲染：桌面平移到範圍原點，光斑／衰減／色偏層改成以畫布為基準的固定尺寸
-  const clone=$('#scene').cloneNode(true); clone.id=''; if($('#dcdefs')) clone.appendChild($('#dcdefs').cloneNode(true)); clone.style.transform=`scale(${sA})`; clone.style.width=E.w+'px'; clone.style.height=E.h+'px'; clone.style.boxShadow='none';
+  const clone=$('#scene').cloneNode(true); clone.id=''; if($('#dcdefs')) clone.appendChild($('#dcdefs').cloneNode(true)); if($('#fxdefs')) clone.appendChild($('#fxdefs').cloneNode(true)); clone.style.transform=`scale(${sA})`; clone.style.width=E.w+'px'; clone.style.height=E.h+'px'; clone.style.boxShadow='none';
   clone.querySelector('.floor')?.remove(); clone.querySelectorAll('.light-svg,.light-handle,.tguide,.tdof').forEach(n=>n.remove());
   const tbl=clone.querySelector('.table'); tbl.style.transform=`translate(${-E.minX}px,${-E.minY}px)`; tbl.style.transformOrigin='0 0'; tbl.style.width=C.W+'px'; tbl.style.height=C.H+'px'; tbl.style.inset='auto'; tbl.style.left='0'; tbl.style.top='0';
   clone.querySelectorAll('.tbg,.tbgimg,.tbgtex,.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
@@ -2406,7 +2442,7 @@ $('#btnExport').addEventListener('click', async ()=>{
       const clone=(S.side==='back' ? $('#cardBack') : card).cloneNode(true);
       clone.style.transform='none'; clone.style.width=w+'px'; clone.style.height=h+'px'; clone.style.aspectRatio='auto'; clone.style.boxShadow='none'; clone.style.maxWidth='none';
       await rasterizeMasks(clone, 1, w, h);
-      inner=($('#dcdefs')?$('#dcdefs').outerHTML:'')+new XMLSerializer().serializeToString(clone); fname=(S.name||'proof').replace(/\.svg$/i,'')+'-proof.png';
+      inner=($('#dcdefs')?$('#dcdefs').outerHTML:'')+($('#fxdefs')?$('#fxdefs').outerHTML:'')+new XMLSerializer().serializeToString(clone); fname=(S.name||'proof').replace(/\.svg$/i,'')+'-proof.png';
     }
     if(!cv){ toast('合成 2/2：渲染…', true); await new Promise(r=>setTimeout(r,20)); const img=await renderHTMLImage(inner,w,h); cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); }
     const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
@@ -2704,7 +2740,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
     const counts={}; Object.values(eff).forEach(id=>{ if(id) counts[id]=(counts[id]||0)+1; }); layers.forEach(L=>{ L._count=counts[L.id]||0; });
     [...layers].reverse().forEach(L=>{
       if(L.type==='hide' || !L.visible || !L._count) return;
-      const d=document.createElement('div'); d.className='fx fx-'+L.type+((L.proc==='none'||L.relief!=='none')?' relief-only':''); d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
+      const d=document.createElement('div'); d.className='fx fx-'+L.type+(L.proc==='none'?' relief-only':''); d.dataset.layer=L.id; d.dataset.v=pe.vk||'current';
       const sp=inkSpread(L); const own=buildMergedMask(k=>eff[k]===L.id, sp*.6, pe.vk+L.id, slots, idxs, sp*.5);
       const fast = renderQuality==='fast' && (S.scene.quality||'fast')==='fast';
       let ko=null; const above=layersAbove(L, layers);
@@ -2716,6 +2752,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
       d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); host.appendChild(d); styleFx(d,L,pe.paper);
       // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
       const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');
+      if(L.relief!=='none' && L.proc!=='none'){ const R=reliefCompanion(L); const d2=document.createElement('div'); d2.className='fx fx-relief relief-only'; d2.dataset.layer=R.id; d2.style.setProperty('--own',own); d2.style.setProperty('--mask',own); d2.style.setProperty('--vis', visibleRectsMask(slots, idxs)); d2.innerHTML=fxDOM(R,fast); host.appendChild(d2); styleFx(d2,R,pe.paper); }
     });
    });
    // 另一面（front = 這一面的另一面）：把它的壓痕／打凸打凹以相反、鏡射的方式印在這一面
@@ -2886,7 +2923,7 @@ function renderScene(){
   if(!wire && (C.contact??.5)>0){ const u=buildContactSVG(slots); if(u){ const E=tb._ext; const d=document.createElement('div'); d.className='tcontact'; Object.assign(d.style,{left:E.minX+'px',top:E.minY+'px',width:E.w+'px',height:E.h+'px',backgroundImage:u,zIndex:slots.length+3}); tb.appendChild(d); } }
   const fall=document.createElement('div'); fall.className='tfall'; fall.style.zIndex=slots.length+4; tb.appendChild(fall);
   const cast=document.createElement('div'); cast.className='tcast'; cast.style.zIndex=slots.length+5; tb.appendChild(cast);
-  applySceneView(); applySceneLight(); fitScene();
+  applySceneView(); applySceneLight(); fitScene(); pruneReliefFilters();
 }
 function applySceneView(){
   const C=S.scene, sc=$('#scene'), tb=$('#table');
