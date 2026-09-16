@@ -43,6 +43,9 @@ button{cursor:pointer}
 .menu{position:absolute;right:0;top:34px;z-index:50;background:#1c1c1c;border:1px solid var(--line-2);border-radius:6px;padding:4px;min-width:170px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
 .menu button{display:block;width:100%;text-align:left;height:30px;padding:0 10px;border:0;background:transparent;color:var(--text);border-radius:4px;font-size:12.5px}
 .menu button:hover{background:var(--panel-2)}
+body.viewer .panel,body.viewer .top-actions,body.viewer #modeSeg,body.viewer .docchips .add,body.viewer .stage-hint{display:none!important}
+body.viewer .app{grid-template-columns:1fr}
+body.viewer #viewerExit{margin-left:auto}
 body[data-mode="single"] [data-mode="scene"]{display:none!important}
 body[data-mode="scene"] [data-mode="single"]{display:none!important}
 
@@ -780,6 +783,11 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
     <label class="toggle"><input type="checkbox" data-k="variants" checked> 版本</label>
     <label class="toggle"><input type="checkbox" data-k="docs"> 檔案（含 SVG 原文，較大）</label>
   </div>
+  <div id="shareOpts" hidden>
+    <div class="row two"><label>檔案</label><select id="shareDocs"><option value="none">不含（開啟的人要自己上傳同一份 SVG）</option><option value="inline">壓進網址（gzip，小檔可行）</option><option value="url">外部連結（GitHub raw、Dropbox 直連等可 CORS 的網址）</option></select></div>
+    <div id="shareUrls"></div>
+    <div class="row two"><label>模式</label><label class="toggle"><input type="checkbox" id="shareViewer"> 只分享「卡片」互動預覽（隱藏編輯面板，可翻面、滑鼠打光；右上有「編輯」可展開）</label></div>
+  </div>
   <div id="shareOut" hidden><textarea id="shareUrl" readonly spellcheck="false" style="width:100%;height:64px;font:11px var(--mono);background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;color:var(--text);padding:6px;resize:vertical"></textarea></div>
   <div class="mb"><span id="paramMsg"></span><button class="btn ghost" id="paramShare" title="把勾選的參數壓進網址，開啟即載入">產生分享網址</button><label class="btn ghost">匯入 .json<input type="file" id="paramFile" accept=".json,application/json" hidden></label><button class="btn primary" id="paramExport">匯出 .json</button><button class="btn ghost" id="paramClose">關閉</button></div>
 </div></div>
@@ -1512,7 +1520,7 @@ function fxDOM(L, fast=false){
   if(pressed) h+=rim(false);
   if(raised) h+=rim(true);
   const innerParts = (pressed?['pd','pl']:[]).concat(raised?['rl','rd']:[]);
-  const dome = (L.relief==='emboss' || L.puff) && !fast ? '<div class="dome"></div>' : '';
+  const dome = L.puff && !fast ? '<div class="dome"></div>' : ''; // 圓頂漸層只給發泡；打凸／打凹只留邊緣的立體光影，不出現平滑面
   if(L.proc==='none' && L.relief!=='none') h+=`<div class="m r-face">${dome}${inner(innerParts)}</div>`;
   if(L.fluo && PROCS[L.proc].colored && L.proc!=='foil' && L.proc!=='holo') h+='<div class="f-rim glow"><div class="m rim"></div></div>';
   if(L.proc==='foil') h+=`<div class="m foil"><div class="f-base"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo"></div><div class="f-glare"></div>${dome}${inner(innerParts)}</div>`;
@@ -1576,7 +1584,7 @@ function styleFx(d,L,paper=S.paper){
     // 漸層（雙色分色印刷）：水平／垂直，從 tint 到 tint2
     if(L.grad && L.grad!=='none'){ st.setProperty('--fill', `linear-gradient(${L.grad==='v'?'180deg':'90deg'}, ${L.tint}, ${L.tint2||mix(L.tint,'#ffffff',.5)})`); } else st.removeProperty('--fill');
   }
-  if(L.proc==='none' && L.relief!=='none'){ st.setProperty('--face', L.relief==='deboss' ? 'rgba(0,0,0,.10)' : 'rgba(255,255,255,.07)'); d.querySelectorAll('.m.r-face').forEach(m=>m.classList.toggle('lt', L.relief!=='deboss')); }
+  if(L.proc==='none' && L.relief!=='none') st.setProperty('--face','transparent'); // 面本身不上色：紙紋原樣，只有邊緣的凹凸光影
   // 壓入式外緣（燙箔壓痕／凸版壓印／打凹）：取最大深度
   const pd=Math.max((L.proc==='foil'||L.proc==='holo')?(L.depth??0):0, L.proc==='letterpress'?(L.press??0):0, L.relief==='deboss'?(L.reliefDepth??0):0);
   // 深色紙：黑影本來就快看不見 → 影子加深、加寬；白色受光邊反而搶眼 → 收斂
@@ -1844,10 +1852,12 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   const d=Math.hypot(dx,dy)||1; const ux=dx/d, uy=dy/d;
   el.style.setProperty('--sdx',ux.toFixed(3)); el.style.setProperty('--sdy',uy.toFixed(3)); el.style.setProperty('--sang',(Math.atan2(uy,ux)*180/Math.PI+90).toFixed(1)+'deg');
 }
-function setPointer(px,py,hov){ applyPointer(card,px,py,hov); applyPointer($('#cardBack'),1-px,py,hov); } // 背面轉了 180°，X 要反過來
-function applyPointer(card,px,py,hov){
-  const P=S.paper; card.style.setProperty('--px',(px*100).toFixed(2)+'%'); card.style.setProperty('--py',(py*100).toFixed(2)+'%');
-  setLightDir(card, 0.5-px, 0.5-py);
+function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer($('#cardBack'),px,py,hov,true); }
+function applyPointer(card,px,py,hov,mirror=false){
+  // 背面轉了 180°：高光位置與光向在它自己的座標裡要左右鏡射，但傾斜（rotateX/Y）已經被外層的 180° 抵消，直接用畫面上的 px
+  const P=S.paper, lx=mirror?1-px:px;
+  card.style.setProperty('--px',(lx*100).toFixed(2)+'%'); card.style.setProperty('--py',(py*100).toFixed(2)+'%');
+  setLightDir(card, 0.5-lx, 0.5-py);
   card.style.setProperty('--hfall', (1-0.55*Math.min(1,Math.hypot(px-.5,py-.5)/.7)).toFixed(3));
   card.style.setProperty('--rx',((0.5-py)*P.tilt*2).toFixed(2)+'deg'); card.style.setProperty('--ry',((px-0.5)*P.tilt*2).toFixed(2)+'deg');
   card.style.setProperty('--hov',hov.toFixed(3));
@@ -2390,23 +2400,31 @@ const b64u=bytes=>{ let s=''; for(let i=0;i<bytes.length;i+=0x8000) s+=String.fr
 const unb64u=str=>{ const b=atob(str.replace(/-/g,'+').replace(/_/g,'/')); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; };
 async function gzipB64(str){ if(!('CompressionStream' in window)) return null; const cs=new CompressionStream('gzip'); const w=cs.writable.getWriter(); w.write(new TextEncoder().encode(str)); w.close(); return b64u(new Uint8Array(await new Response(cs.readable).arrayBuffer())); }
 async function gunzipB64(b){ const ds=new DecompressionStream('gzip'); const w=ds.writable.getWriter(); w.write(unb64u(b)); w.close(); return await new Response(ds.readable).text(); }
-async function makeShareURL(){
-  const obj=exportParams(); const json=JSON.stringify(obj); const gz=await gzipB64(json);
+async function makeShareURL(sel, docMode='none'){
+  const obj=exportParams(sel); if(docMode==='url' && obj.docs) obj.docs.forEach(d=>{ d.url=d.srcUrl; delete d.svgText; }); if($('#shareViewer').checked) obj.viewer='card'; const json=JSON.stringify(obj); const gz=await gzipB64(json);
   const base=location.origin+location.pathname; return gz ? `${base}#p=${gz}` : `${base}#pj=${b64u(new TextEncoder().encode(json))}`;
 }
 async function loadFromHash(){
   const m=location.hash.match(/^#(p|pj)=(.+)$/); if(!m) return false;
   try{ const json = m[1]==='p' ? await gunzipB64(m[2]) : new TextDecoder().decode(unb64u(m[2])); const obj=JSON.parse(json);
-    importParams(obj,{paper:true,layers:true,layout:true,light:true,variants:true,docs:!!obj.docs,shots:true}); history.replaceState(null,'',location.pathname+location.search); toast('已從分享網址載入'); return true; }
+    await importParams(obj,{paper:true,layers:true,layout:true,light:true,variants:true,docs:!!obj.docs,shots:true}); history.replaceState(null,'',location.pathname+location.search); if(obj.viewer==='card') enterViewer(); toast('已從分享網址載入'); return true; }
   catch(e){ toast('分享網址無法解析：'+(e.message||e)); return false; }
 }
-$('#btnShare').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOut').hidden=false; $('#paramModal').classList.add('on'); });
-$('#paramShare').addEventListener('click', async ()=>{ const url=await makeShareURL(); const ta=$('#shareUrl'); ta.value=url; $('#shareOut').hidden=false; const kb=(url.length/1024).toFixed(1); $('#paramMsg').textContent=`網址 ${kb} KB` + (url.length>60000?'（太長，部分瀏覽器／通訊軟體會截斷，建議改匯出 JSON 或不含檔案）':''); try{ await navigator.clipboard.writeText(url); toast('已複製分享網址'); }catch(e){} });
+/* 檢視模式：只有卡片互動預覽，沒有面板 */
+function enterViewer(){ document.body.classList.add('viewer'); setViewMode('single'); setSide('front'); view.mode='fit'; applyZoom(); if(!$('#viewerExit')){ const b=document.createElement('button'); b.id='viewerExit'; b.className='btn ghost'; b.textContent='編輯'; b.title='展開完整編輯介面'; b.addEventListener('click',()=>{ document.body.classList.remove('viewer'); fitCard(); }); $('.topbar').appendChild(b); } }
+function renderShareUrls(){ const host=$('#shareUrls'); host.innerHTML=''; if($('#shareDocs').value!=='url') return; (S.docs||[]).forEach(d=>{ const row=document.createElement('div'); row.className='row two'; row.innerHTML=`<label title="${esc(d.name)}" style="overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</label><input type="text" placeholder="https://raw.githubusercontent.com/…/card.svg" value="${esc(d.srcUrl||'')}" spellcheck="false">`; row.querySelector('input').addEventListener('change',e=>{ d.srcUrl=e.target.value.trim(); save(); }); host.appendChild(row); }); }
+$('#shareDocs').addEventListener('change',renderShareUrls);
+$('#btnShare').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOpts').hidden=false; $('#shareOut').hidden=false; renderShareUrls(); $('#paramModal').classList.add('on'); });
+$('#paramShare').addEventListener('click', async ()=>{
+  const mode=$('#shareDocs').value; const sel=paramSel(); sel.docs = mode!=='none';
+  if(mode==='url' && (S.docs||[]).some(d=>!d.srcUrl)) { $('#paramMsg').textContent='外部連結模式：每份 SVG 都要填網址'; return; }
+  const url=await makeShareURL(sel, mode); const ta=$('#shareUrl'); ta.value=url; $('#shareOut').hidden=false; const kb=(url.length/1024).toFixed(1);
+  $('#paramMsg').textContent=`網址 ${kb} KB` + (url.length>60000?'（太長，通訊軟體可能截斷；瀏覽器直接貼網址列通常沒問題，或改匯出 JSON）':''); try{ await navigator.clipboard.writeText(url); toast('已複製分享網址'); }catch(e){} });
 /* ---------- 參數 JSON 匯出／匯入 ---------- */
 const VIEW_KEYS=['W','H','exportScale','quality','pitch','yaw','roll','fov','zoom','shift','shiftX','dfx','dfy','aperture','ev','mix','includeCurrent','flipRatio'];
 function paramSel(){ const o={}; $('#paramSel').querySelectorAll('input').forEach(i=>o[i.dataset.k]=i.checked); return o; }
-function exportParams(){
-  const sel=paramSel(), C=S.scene, pick=(keys)=>Object.fromEntries(keys.filter(k=>C[k]!==undefined).map(k=>[k,C[k]]));
+function exportParams(selOverride){
+  const sel=selOverride||paramSel(), C=S.scene, pick=(keys)=>Object.fromEntries(keys.filter(k=>C[k]!==undefined).map(k=>[k,C[k]]));
   const out={app:'foil-proof',ver:1,name:S.name,exported:new Date().toISOString()};
   if(sel.paper) out.paper=deep(S.paper);
   if(sel.layers){ out.layers=deep(S.layers.map(({_count,...l})=>l)); out.assign=deep(S.assign); out.koGap=S.koGap; }
@@ -2422,9 +2440,12 @@ async function downloadJSON(obj, fname){
   if(dlCap){ try{ await dlCap.save({filename:fname,data:blob}); toast('已儲存 '+fname); return; }catch(e){ if(e&&e.code==='declined') return; } }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
 }
-function importParams(obj, selOverride){
+async function importParams(obj, selOverride){
   if(!obj || obj.app!=='foil-proof') return toast('這不是本工具的參數檔');
   const sel=selOverride||paramSel(); let applied=[];
+  if(sel.docs && obj.docs){ // 外部連結：先抓回 SVG 原文
+    for(const d of obj.docs){ if(!d.svgText && d.url){ try{ toast(`下載 ${d.name}…`, true); const r=await fetch(d.url,{mode:'cors'}); if(!r.ok) throw new Error(r.status); d.svgText=await r.text(); d.srcUrl=d.url; }catch(e){ toast(`無法下載 ${d.name}：${e.message||e}（網址需允許 CORS）`); } } }
+    obj.docs=obj.docs.filter(d=>d.svgText); if(!obj.docs.length) sel.docs=false; }
   if(sel.docs && obj.docs && obj.docs.length){ // 換整組檔案：其餘項目跟著檔案走
     Object.values(docStore).forEach(st=>st.root.remove()); for(const k in docStore) delete docStore[k];
     S.docs=deep(obj.docs); S.docId=null; const id=obj.docId && S.docs.find(d=>d.id===obj.docId) ? obj.docId : S.docs[0].id; switchDoc(id,false); applied.push('檔案');
@@ -2440,10 +2461,10 @@ function importParams(obj, selOverride){
   setRange('#koGap',S.koGap,v=>(+v).toFixed(2)); koNote(); applyPaper(); clearMasks(); renderFx(); sceneChanged(true,true); save();
   toast(applied.length?`已匯入：${applied.join('、')}`:'檔案裡沒有勾選的項目');
 }
-$('#btnParams').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOut').hidden=true; $('#paramModal').classList.add('on'); });
+$('#btnParams').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOut').hidden=true; $('#shareOpts').hidden=true; $('#paramModal').classList.add('on'); });
 $('#paramClose').addEventListener('click',()=>$('#paramModal').classList.remove('on'));
 $('#paramExport').addEventListener('click',()=>{ downloadJSON(exportParams(), (S.name||'proof').replace(/\.svg$/i,'')+'-params.json'); });
-$('#paramFile').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ importParams(JSON.parse(r.result)); $('#paramModal').classList.remove('on'); }catch(x){ toast('JSON 解析失敗：'+x.message); } }; r.readAsText(f); });
+$('#paramFile').addEventListener('change',e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; const r=new FileReader(); r.onload=async()=>{ try{ await importParams(JSON.parse(r.result)); $('#paramModal').classList.remove('on'); }catch(x){ toast('JSON 解析失敗：'+x.message); } }; r.readAsText(f); });
 $('#aboutClose').addEventListener('click', ()=>$('#about').classList.remove('on'));
 $('#about').addEventListener('click', e=>{ if(e.target===$('#about')) $('#about').classList.remove('on'); });
 $('#modal').addEventListener('click', e=>{ if(e.target===$('#modal')) $('#modal').classList.remove('on'); });
