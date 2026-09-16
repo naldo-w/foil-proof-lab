@@ -169,6 +169,7 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
 .m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
 .fx.relief-only .f-rim.dk:not(.rev),.fx.relief-only .f-rim.lt{display:none} /* 純加工：無外緣亮邊、壓凹無外緣影 */
+.fx.back-relief .f-rim{display:none} /* 另一面：只有內緣明暗，沒有投影（Figma 背面同） */
 .fx.relief-only .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rd,1px)*1.2 + 2px) rgba(0,0,0,var(--rsha,.1)))}
 .fx.relief-only .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(0,0,0,var(--shi,.05)))}
 .fx.relief-only .i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)) calc(-1*var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(255,255,255,var(--hli,.05)))}
