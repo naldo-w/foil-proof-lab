@@ -1853,8 +1853,8 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
 }
 function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer($('#cardBack'),px,py,hov,true); }
 function applyPointer(card,px,py,hov,mirror=false){
-  // 背面轉了 180°：高光位置與光向在它自己的座標裡要左右鏡射，但傾斜（rotateX/Y）已經被外層的 180° 抵消，直接用畫面上的 px
-  const P=S.paper, lx=mirror?1-px:px;
+  // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
+  const P=S.paper, lx=px;
   card.style.setProperty('--px',(lx*100).toFixed(2)+'%'); card.style.setProperty('--py',(py*100).toFixed(2)+'%');
   setLightDir(card, 0.5-lx, 0.5-py);
   card.style.setProperty('--hfall', (1-0.55*Math.min(1,Math.hypot(px-.5,py-.5)/.7)).toFixed(3));
