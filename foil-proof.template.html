@@ -238,7 +238,14 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
 .m.ink .i-fill{background:var(--fill,var(--tint))}
 .m.ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
-.m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:var(--ptex-foil,.2)}
+.m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:calc(var(--ptex-foil,.2)*var(--ptexk,1))}
+/* 亮箔：鏡面——色帶對比高、高光強、幾乎沒有紙紋與刷紋；霧箔：消光——色帶平、高光弱、細顆粒、略降飽和與對比 */
+.fx.gloss .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*1.12)) saturate(1.05)}
+.fx.gloss .m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.45 + .55*var(--hov)))}
+.fx.matte .m.foil{filter:saturate(calc(var(--sat,1)*.88)) contrast(.9) brightness(.95)}
+.fx.matte .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*.8))}
+.fx.matte .m.foil .f-glare{opacity:calc(var(--gloss,.2) * (.2 + .3*var(--hov)))}
+.fx.matte .m.foil .f-brush{opacity:calc(var(--brush,.7)*1.15);mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
@@ -879,10 +886,10 @@ const NONRENDER = 'defs,clipPath,mask,pattern,symbol,marker,linearGradient,radia
 const LS_KEY = 'foil-proof-v1';
 const SAMPLE_NAME = '__SAMPLE_NAME__';
 
-const F = (label,tint,o={}) => Object.assign({label,group:'燙箔 · 金屬',type:'foil',tint,bright:.5,contrast:.45,sat:1.15,holo:.06,brush:.28,gloss:.7,depth:1},o);
-const FM = (label,tint,o={}) => F(label,tint,Object.assign({contrast:.2,holo:.02,brush:.7,gloss:.3,bright:.45},o));                      // 霧面金屬箔
+const F = (label,tint,o={}) => Object.assign({label,group:'燙箔 · 金屬',type:'foil',tint,matte:false,bright:.5,contrast:.5,sat:1.15,holo:.06,brush:.22,gloss:.75,depth:1},o);
+const FM = (label,tint,o={}) => F(label,tint,Object.assign({matte:true,contrast:.14,holo:.02,brush:.75,gloss:.18,bright:.45},o));                      // 霧面金屬箔
 const FP = (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',sat:1.2,holo:.04,gloss:.8},o));                       // 亮面純色箔（顏料箔）
-const FPM= (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',sat:1.15,contrast:.2,holo:.01,brush:.55,gloss:.28,bright:.45},o)); // 霧面純色箔
+const FPM= (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',matte:true,sat:1.1,contrast:.12,holo:.01,brush:.65,gloss:.15,bright:.45},o)); // 霧面純色箔
 const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
 const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.93,blend:'normal',gloss:.08},o);
 const PRESETS = {
@@ -1235,12 +1242,12 @@ function hslhex(h,s,l){ s=Math.max(0,Math.min(1,s)); l=Math.max(0,Math.min(1,l))
 function foilShades(tint, c=.45){
   const {h,s,l}=hsl(tint); const up=(t)=>l+(1-l)*t, dn=(t)=>l*(1-t);
   return { dark:hslhex(h,s*1.05,dn(.45+c*.3)), deep:hslhex(h,s*1.05,dn(.22+c*.2)), mid:tint,
-           light:hslhex(h,s,up(.22+c*.22)), spec:hslhex(h,s*.85,up(.42+c*.25)), hi:hslhex(h,s*.8,up(.58)) };
+           light:hslhex(h,s,up(.18+c*.18)), spec:hslhex(h,s*.85,up(.34+c*.22)), hi:hslhex(h,s*.8,up(.58)) }; // 高光帶別亮到發白，金屬色才留得住
 }
 function foilGradient(tint, c=.45){
   const {dark,deep,mid,light,spec}=foilShades(tint,c);
   // 頭尾同色（dark），合併版面時以卡片尺寸平鋪不會有接縫
-  return `linear-gradient(112deg,${dark} 0%,${deep} 12%,${mid} 26%,${light} 38%,${spec} 45%,${light} 52%,${mid} 64%,${deep} 78%,${dark} 90%,${dark} 100%)`;
+  return `linear-gradient(112deg,${dark} 0%,${deep} 16%,${mid} 31%,${light} 41%,${spec} 45%,${light} 49%,${mid} 59%,${deep} 74%,${dark} 90%,${dark} 100%)`; // 高光帶收窄，其餘以中間色為主，看起來才像金屬而不是粉彩
 }
 function noiseURI(opts){
   const {bf='0.9', oct=2, op=.5, size=220, sat=0} = opts;
@@ -1774,6 +1781,7 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--g1', `rgba(${hi.join(',')},${ga.toFixed(3)})`); st.setProperty('--g2', `rgba(${hi.join(',')},${(ga*.4).toFixed(3)})`); st.setProperty('--gd', (0.08+sp*0.55).toFixed(3));
     st.setProperty('--sat', (L.sat ?? 1.15).toFixed(2));
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
+    d.classList.toggle('matte', !!L.matte); d.classList.toggle('gloss', !L.matte && L.proc==='foil'); st.setProperty('--ptexk', L.matte ? '1.15' : '.4'); // 亮箔是鏡面，紙紋幾乎透不出來；霧箔是消光面，紙紋較明顯
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     const opaque = L.fluo || L.proc==='screen';
