@@ -2201,8 +2201,8 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if(pointerMoving && f.classList.contains('press')){ pressStale=true; return; } // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）在滑鼠移動中不重算，停下再更新
-    const flt=document.getElementById(id); if(!flt) return; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if(pointerMoving && f.classList.contains('press') && performance.now()-pressT<110){ pressStale=true; return; } // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）移動中最多每 110ms 重算一次，停下再補最後一次
+    const flt=document.getElementById(id); if(!flt) return; if(f.classList.contains('press')){ pressT=performance.now(); pressStale=false; } flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
 /* 打凸／打凹濾鏡：模糊 alpha 當高度圖 → feDiffuseLighting（遠光 45°）→ 對齊到中灰 → 限制在圖形內；打凸另加一道投影。整層用 hard-light 疊上去。 */
@@ -2226,7 +2226,7 @@ function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer
     let ppx=px, ppy=py; if(hovering && lastPt){ const r=c3.getBoundingClientRect(); if(r.width>0){ ppx=Math.min(1,Math.max(0,(lastPt.x-r.left)/r.width)); ppy=Math.min(1,Math.max(0,(lastPt.y-r.top)/r.height)); } }
     const c=c3._c||(c3._c={px:ppx,py:ppy}); c.px+=(ppx-c.px)*.4; c.py+=(ppy-c.py)*.4;
     c3.querySelectorAll('.card.face').forEach(f=>applyPointer(f,c.px,c.py,hov)); }); }
-let lastPt=null, movT=0, pointerMoving=false, pressStale=false;
+let lastPt=null, movT=0, pointerMoving=false, pressStale=false, pressT=0;
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
   const P=S.paper, lx=px; if(card.style.visibility==='hidden') return; // 翻到背面看不到的那一面不用更新
