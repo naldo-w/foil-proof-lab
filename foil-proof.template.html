@@ -75,6 +75,15 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .stage-hint b{color:var(--muted);font-weight:500}
 
 .card-wrap{position:absolute;inset:0;display:grid;place-items:center;perspective:1400px;padding:56px 40px 40px;overflow:visible}
+.card-wrap.multi{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:var(--gap,24px)} /* 卡片並列：所有文件一起預覽 */
+.card-wrap.multi.v{flex-direction:column}
+.card-3d.peer{cursor:pointer}
+.peer-tag{position:absolute;left:0;right:0;bottom:calc(100% + 8px);text-align:center;font:11px var(--mono);color:var(--faint);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.peer-tag b{color:var(--muted);font-weight:500}
+.card-3d.peer:hover .peer-tag{color:var(--muted)}
+.card-wrap.multi .card-3d{order:var(--ord,0)}
+.stage-tools input.gap{width:70px;height:24px;margin:0 2px}
+.doc select.bind{height:20px;max-width:96px;flex:none;border:1px solid var(--line-2);background:var(--panel-2);color:var(--muted);border-radius:4px;font-size:11px;padding:0 2px}
 .stage.panning{cursor:grabbing}
 .stage.panning *{cursor:grabbing!important}
 .card{position:relative;width:var(--w,800px);aspect-ratio:var(--ar,2/1);flex:none;
@@ -540,6 +549,8 @@ body.viewer .stage-tools{bottom:44px}
       </div>
       <div class="seg" id="stagebg" title="預覽背景"><button data-b="dark" class="on" title="深灰">灰</button><button data-b="white" title="白底">白</button><button data-b="black" title="黑底">黑</button></div>
       <button class="tb" id="btnFlip" data-mode="single" title="翻到背面（也可直接點卡片）">翻面</button>
+      <div class="seg" id="multiSeg" data-mode="single" title="把所有文件並列在畫面上一起預覽" hidden><button id="btnMulti" data-help="btnMulti">並列</button><button data-dir="h" title="水平排列">↔</button><button data-dir="v" title="垂直排列">↕</button><button data-real="1" title="依各檔 viewBox 的實際比例顯示（關閉＝等高／等寬方便比較）">1:1</button></div>
+      <input class="gap" id="multiGap" data-mode="single" type="range" min="0" max="240" step="4" title="並列間隔" hidden>
       <div class="seg" id="qualitySeg" data-mode="scene" title="預覽品質"><button data-q="wire">線框</button><button data-q="fast" class="on">快速</button><button data-q="full">完整</button></div>
       <button class="tb" id="btnShuffle2" data-mode="scene" title="換一組隨機">🎲</button>
       <span class="lbl" id="activeLbl" data-mode="single" style="max-width:160px;overflow:hidden;text-overflow:ellipsis"></span>
@@ -1024,12 +1035,16 @@ function addDoc(text, name){
   if(same) askLink(d, same);
 }
 function askLink(d, other){
-  const m=$('#linkModal'); $('#linkMsg').innerHTML=`「${esc(d.name)}」與「${esc(other.name)}」尺寸相同（${fmt(S.vb[0])}×${fmt(S.vb[1])}）。要把它們連結為<b>正反面</b>嗎？連結後「${esc(d.name)}」當背面：不再單獨進場景，改由「翻面比例」決定哪些卡翻到背面；「並排比較」會正反各放一張。`;
+  const m=$('#linkModal'); $('#linkMsg').innerHTML=`「${esc(d.name)}」與「${esc(other.name)}」尺寸相同（${fmt(S.vb[0])}×${fmt(S.vb[1])}）。要把它們連結為<b>正反面</b>嗎？連結後「${esc(d.name)}」當背面、與正面共用同一種紙：不再單獨進場景，改由「翻面比例」決定哪些卡翻到背面；「並排比較」會正反各放一張。（不同尺寸的文件也可以在「檔案」清單用「綁定反面…」手動綁定）`;
   m.classList.add('on');
-  $('#linkYes').onclick=()=>{ d.backOf=other.id; other.frontOf=d.id; m.classList.remove('on'); clearMasks(); sceneChanged(true,true); toast('已連結為正反面'); };
+  $('#linkYes').onclick=()=>{ m.classList.remove('on'); linkDocs(other, d); };
   $('#linkNo').onclick=()=>m.classList.remove('on');
 }
-function unlinkDoc(d){ const o=S.docs.find(x=>x.id===(d.backOf||d.frontOf)); if(o){ delete o.backOf; delete o.frontOf; } delete d.backOf; delete d.frontOf; clearMasks(); sceneChanged(true,true); }
+function linkDocs(front, back){ // 手動／自動綁定正反面：back 當 front 的反面，兩面共用 front 的紙
+  syncDocFromS(); [front,back].forEach(x=>{ const o=S.docs.find(y=>y.id===(x.backOf||x.frontOf)); if(o){ delete o.backOf; delete o.frontOf; } delete x.backOf; delete x.frontOf; });
+  back.backOf=front.id; front.frontOf=back.id; back.paper=deep(front.paper||S.paper); if(back.id===S.docId) S.paper=Object.assign(defaultPaper(), back.paper);
+  clearMasks(); applyPaper(); renderFx(); sceneChanged(true,true); toast(`已綁定：「${front.name}」正面／「${back.name}」反面，紙材同步`); save(); }
+function unlinkDoc(d){ const o=S.docs.find(x=>x.id===(d.backOf||d.frontOf)); if(o){ delete o.backOf; delete o.frontOf; } delete d.backOf; delete d.frontOf; clearMasks(); renderFx(); sceneChanged(true,true); save(); }
 function removeDoc(id){
   if(S.docs.length<=1) return toast('至少要保留一份 SVG');
   const i=S.docs.findIndex(d=>d.id===id); if(i<0) return; const wasActive=id===S.docId; const rm=S.docs[i];
@@ -1047,8 +1062,9 @@ function renderDocList(){
       const row=document.createElement('div'); row.className='doc'+(d.id===S.docId?' on':'');
       const vb=d.vb||(docStore[d.id]?.vb)||[]; const dim=vb.length?`${fmt(vb[0])}×${fmt(vb[1])}`:'';
       const side=d.backOf?'背面':(d.frontOf?'正面':'');
-      row.innerHTML=`<label class="toggle" title="在場景中使用"><input type="checkbox" ${d.use!==false?'checked':''} ${d.backOf?'disabled':''}></label><span class="dn" title="${dim}｜點一下切換編輯這份">${esc(d.name||'SVG')}</span>${side?`<span class="tag" title="正反面已連結">${side}</span>`:''}${d.id===S.docId?'<span class="tag">編輯中</span>':''}${side?'<button class="ib unl" title="解除正反面連結">解除</button>':''}<button class="ib up" title="順序往前">↑</button><button class="ib down" title="順序往後">↓</button><button class="ib del" title="移除">✕</button>`;
+      row.innerHTML=`<label class="toggle" title="在場景中使用"><input type="checkbox" ${d.use!==false?'checked':''} ${d.backOf?'disabled':''}></label><span class="dn" title="${dim}｜點一下切換編輯這份">${esc(d.name||'SVG')}</span>${side?`<span class="tag" title="正反面已連結">${side}</span>`:''}${d.id===S.docId?'<span class="tag">編輯中</span>':''}${side?'<button class="ib unl" title="解除正反面連結">解除</button>':(S.docs.length>1?`<select class="bind" title="手動綁定另一份文件當這份的反面（尺寸不必相同）；綁定後兩面共用同一種紙"><option value="">綁定反面…</option>${S.docs.filter(o=>o.id!==d.id&&!o.backOf&&!o.frontOf).map(o=>`<option value="${o.id}">← ${esc(o.name||'SVG')}</option>`).join('')}</select>`:'')}<button class="ib up" title="順序往前">↑</button><button class="ib down" title="順序往後">↓</button><button class="ib del" title="移除">✕</button>`;
       row.querySelector('.unl')?.addEventListener('click',()=>unlinkDoc(d));
+      row.querySelector('.bind')?.addEventListener('change',e=>{ const o=S.docs.find(x=>x.id===e.target.value); if(o) linkDocs(d,o); });
       row.querySelector('input').addEventListener('change',e=>{ d.use=e.target.checked; sceneChanged(true,true); });
       row.querySelector('.dn').addEventListener('click',()=>switchDoc(d.id));
       row.querySelector('.up').addEventListener('click',()=>{ if(i>0){ S.docs.splice(i,1); S.docs.splice(i-1,0,d); sceneChanged(true,true); } });
@@ -1602,17 +1618,17 @@ function renderFx(){
   renderFxInto($('#fxs'), S.layers, effLayer, '', S.paper);
   { const a=activeDoc(); const otherId = a && (a.backOf||a.frontOf); if(otherId){ // 另一面（連結的正面或背面）的壓痕以相反、鏡射的效果印在這一面
       const o=S.docs.find(x=>x.id===otherId); const myPaper=S.paper; if(o) withDoc(o.id, ()=>{ const oeff=computeEffectiveFor(S.layers); appendBackRelief($('#fxs'), S.layers, oeff, myPaper, B=>buildMask(B, oeff, o.id+':cur:', true)); }); } }
-  renderBackFace();
+  renderBackFace(); renderPeers();
   renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene(); attachHelp(); pruneReliefFilters();
 }
 /* 單張的背面：有連結的背面文件就畫它（加正面的相反效果）；作用中是背面則畫連結的正面；沒有連結就是同一張紙的空白背面＋相反效果 */
 let sideT=0;
 function setSide(side){
-  S.side=side; const c3=$('#card3d'); c3.style.setProperty('--flip', side==='back'?'180deg':'0deg'); $('#btnFlip').classList.toggle('primary', side==='back'); $('#btnFlip').textContent = side==='back' ? '翻回正面' : '翻面';
+  S.side=side; wrap.querySelectorAll('.card-3d').forEach(c3=>c3.style.setProperty('--flip', side==='back'?'180deg':'0deg')); $('#btnFlip').classList.toggle('primary', side==='back'); $('#btnFlip').textContent = side==='back' ? '翻回正面' : '翻面';
   // Chrome 的 backface-visibility 對有 filter／mask 的子元素不一定生效（正面的壓痕影子會從背面透出來變成一圈灰邊），
   // 所以翻轉動畫結束後把看不到的那一面整個 visibility:hidden
-  $('#card').style.visibility=''; $('#cardBack').style.visibility=''; clearTimeout(sideT);
-  sideT=setTimeout(()=>{ (side==='back'?$('#card'):$('#cardBack')).style.visibility='hidden'; }, 650);
+  wrap.querySelectorAll('.card-3d .card.face').forEach(f=>f.style.visibility=''); clearTimeout(sideT);
+  sideT=setTimeout(()=>{ wrap.querySelectorAll(side==='back' ? '.card-3d .card.face:not(.back)' : '.card-3d .card.face.back').forEach(f=>f.style.visibility='hidden'); }, 650);
 }
 function renderBackFace(){
   const cb=$('#cardBack'); if(!cb) return; const a=activeDoc(); if(!a) return;
@@ -1629,6 +1645,35 @@ function renderBackFace(){
   // 正面（作用中文件）的相反效果，鏡射
   appendBackRelief(fxs, S.layers, effLayer, b ? (b.paper||S.paper) : S.paper, B=>buildMask(B, effLayer, '', true));
   cb.querySelector('.base').querySelectorAll('.is-assigned').forEach(e=>e.classList.add('is-assigned'));
+}
+/* 卡片並列：其他文件各自一張 .card-3d.peer（正面＝該文件、反面＝綁定的反面文件或空白背面），與主卡一起翻面、一起受滑鼠光照 */
+function previewCfg(){ S.preview = Object.assign({multi:false, dir:'h', gap:32}, S.preview||{}); return S.preview; }
+function peerDim(d){ // 並列時每張卡的尺寸（主卡單位）：預設等高（水平）／等寬（垂直）方便比較；「實際比例」則照各自 viewBox
+  const vb=d.vb||docStore[d.id]?.vb||S.vb; const pv=previewCfg(); if(pv.real) return [vb[0],vb[1]]; const k = pv.dir==='v' ? S.vb[0]/vb[0] : S.vb[1]/vb[1]; return [vb[0]*k, vb[1]*k]; }
+function peerDocs(){ const a=activeDoc(); if(!a) return []; const partner=a.backOf||a.frontOf; return (S.docs||[]).filter(d=>d.id!==a.id && d.id!==partner && !d.backOf); }
+function renderPeers(){
+  const pv=previewCfg(); wrap.querySelectorAll('.card-3d.peer').forEach(e=>e.remove());
+  const peers = pv.multi ? peerDocs() : []; const multi = peers.length>0;
+  wrap.classList.toggle('multi', multi); wrap.classList.toggle('v', multi && pv.dir==='v'); wrap.style.setProperty('--gap', pv.gap+'px');
+  $('#card3d').style.setProperty('--ord', (S.docs||[]).findIndex(d=>d.id===S.docId));
+  { const seg=$('#multiSeg'); seg.hidden=(S.docs||[]).length<2; $('#btnMulti').classList.toggle('on',!!pv.multi); seg.querySelectorAll('[data-dir]').forEach(b=>{ b.classList.toggle('on', pv.multi && b.dataset.dir===pv.dir); b.hidden=!pv.multi; }); { const b=seg.querySelector('[data-real]'); b.hidden=!pv.multi; b.classList.toggle('on', pv.multi && !!pv.real); } const g=$('#multiGap'); g.hidden=seg.hidden||!pv.multi; g.value=pv.gap; }
+  peers.forEach(d=>{
+    const c3=document.createElement('div'); c3.className='card-3d peer'; c3.dataset.doc=d.id; c3.style.setProperty('--ord', S.docs.indexOf(d)); c3.style.setProperty('--flip', S.side==='back'?'180deg':'0deg');
+    const vb=d.vb||docStore[d.id]?.vb||S.vb; c3.style.setProperty('--ar', `${vb[0]}/${vb[1]}`);
+    const back=d.frontOf && S.docs.find(x=>x.id===d.frontOf);
+    const mkFace=(doc, isBack, reliefFrom)=>{ // doc=null → 空白背面
+      let f; if(doc){ f=withDoc(doc.id, ()=>buildVariantCard({id:'cur',layers:doc.layers||S.layers,paper:doc.paper||S.paper}, doc.id+':')); f.className='card face'+(isBack?' back':''); f.dataset.v='peer'; }
+      else { f=document.createElement('div'); f.className='card face back'; f.dataset.v='peer'; f.innerHTML='<div class="paper"></div><div class="base"></div><div class="fxs"></div><div class="paper-glare"></div><div class="paper-vignette"></div>'; paperApply([f], d.paper||S.paper); }
+      if(reliefFrom){ const fxs=f.querySelector('.fxs'); const myPaper=(doc||d).paper||S.paper; withDoc(reliefFrom.id, ()=>{ const oeff=computeEffectiveFor(S.layers); appendBackRelief(fxs, S.layers, oeff, myPaper, B=>buildMask(B, oeff, reliefFrom.id+':cur:', true)); }); }
+      const dc=diecutClip(d.id); if(dc){ f.style.setProperty('--diecut',dc); c3.classList.add('dc'); }
+      if(S.side==='back' ? !isBack : isBack) f.style.visibility='hidden';
+      return f; };
+    c3.appendChild(mkFace(d,false, back||null)); c3.appendChild(mkFace(back||null,true, d));
+    const tag=document.createElement('div'); tag.className='peer-tag'; tag.innerHTML=`<b>${esc(d.name||'SVG')}</b>${back?` ／ ${esc(back.name)}`:''} · 點兩下編輯`; c3.appendChild(tag);
+    c3.addEventListener('dblclick',()=>switchDoc(d.id));
+    wrap.appendChild(c3);
+  });
+  applyZoom();
 }
 function styleFx(d,L,paper=S.paper){
   if(!d){ document.querySelectorAll(`.card[data-v="current"] .fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L,paper)); return; }
@@ -1702,7 +1747,8 @@ function paperApply(cards, P){
 function applyPaper(){
   const P=S.paper;
   const ll=$('#layerList'); if(ll){ ll.style.setProperty('--pc',P.color); ll.style.setProperty('--ptile',reliefURI(P)); }
-  paperApply([...document.querySelectorAll('.card[data-v="current"]')], P); if(!activeDoc()?.frontOf && !activeDoc()?.backOf) paperApply([$('#cardBack')], P);
+  paperApply([...document.querySelectorAll('.card[data-v="current"]')], P); paperApply([$('#cardBack')], P);
+  { const a=activeDoc(); const o=a && S.docs.find(x=>x.id===(a.backOf||a.frontOf)); if(o){ o.paper=deep(P); (o.layers||[]).forEach(L=>{ if(L.type==='ink'||L.type==='relief') $('#cardBack').querySelectorAll(`.fx[data-layer="${L.id}"]`).forEach(x=>styleFx(x,L,P)); }); } } // 已綁定正反面：另一面的紙跟著同步
   S.layers.forEach(L=>{ if(L.type==='ink'||L.type==='relief') styleFx(null,L); });
   // paper tab controls
   $('#pColor').value=P.color; $('#pColorHex').textContent=P.color;
@@ -1722,7 +1768,12 @@ const view={mode:'fit', zoom:1, pan:{x:0,y:0}};
 function fitZoom(){
   const st=$('#stage').getBoundingClientRect();
   if(viewMode==='scene'){ const C=S.scene; return Math.min((st.width-80)/C.W,(st.height-100)/C.H); }
-  const [W,H]=S.vb||[2,1]; return Math.min(st.width*0.8/W,(st.height-96)*0.8/H); // 單張：預設佔畫面 80%
+  const [W,H]=S.vb||[2,1]; const pv=previewCfg(); const peers = pv.multi ? peerDocs() : [];
+  if(peers.length){ // 並列：所有卡片加間隔一起佔畫面 80%
+    const dims=[[W,H],...peers.map(peerDim)]; const gaps=pv.gap*(dims.length-1), aw=st.width*0.8, ah=(st.height-96)*0.8;
+    if(pv.dir==='v'){ const sumH=dims.reduce((a,x)=>a+x[1],0), maxW=Math.max(...dims.map(x=>x[0])); return Math.min(aw/maxW, Math.max(1e-3,ah-gaps)/sumH); }
+    const sumW=dims.reduce((a,x)=>a+x[0],0), maxH=Math.max(...dims.map(x=>x[1])); return Math.min(Math.max(1e-3,aw-gaps)/sumW, ah/maxH); }
+  return Math.min(st.width*0.8/W,(st.height-96)*0.8/H); // 單張：預設佔畫面 80%
 }
 function applyZoom(){
   if(!S||!S.vb) return;
@@ -1730,6 +1781,7 @@ function applyZoom(){
   const z=view.zoom, t=`translate(${view.pan.x.toFixed(1)}px,${view.pan.y.toFixed(1)}px)`;
   // 單張：卡片固定在「填滿」尺寸，用 transform 縮放 → 紙紋、壓痕、投影等 px 單位的效果會一起放大縮小；遮罩是向量，放大不會糊
   const fz=fitZoom(); $('#card3d').style.setProperty('--w', (S.vb[0]*fz)+'px'); $('#cardwrap').style.transform=`${t} scale(${(z/fz).toFixed(4)})`;
+  wrap.querySelectorAll('.card-3d.peer').forEach(c3=>{ const d=S.docs.find(x=>x.id===c3.dataset.doc); if(d) c3.style.setProperty('--w',(peerDim(d)[0]*fz)+'px'); });
   if(viewMode==='scene'){ const C=S.scene; $('#scene').style.transform=`scale(${z})`; Object.assign($('#scenebox').style,{width:(C.W*z)+'px',height:(C.H*z)+'px'}); $('#scenewrap').style.transform=t; }
   $('#zoomReadout').textContent=Math.round(z*100)+'%';
 }
@@ -1764,6 +1816,10 @@ const endPan=(e)=>{ if(!panDrag) return; const pd=panDrag; panDrag=null; $('#sta
     if(k && effLayer[k] && /swatch/i.test(S.name||'')){ const L=S.layers.find(l=>l.id===effLayer[k]); if(L && L.type!=='hide'){ S.pickFx=deep(Object.fromEntries(Object.entries(L).filter(([kk])=>!['id','_count','name','named','visible'].includes(kk)))); S.pickFx.label=L.name; toast(`已複製效果「${L.name}」→ 切到你的檔案，在效果圖層按「貼上效果」`); renderLayerList(); return; } }
     setSide(S.side==='back'?'front':'back'); saveSoon(); } };
 $('#btnFlip').addEventListener('click',()=>{ setSide(S.side==='back'?'front':'back'); saveSoon(); });
+$('#btnMulti').addEventListener('click',()=>{ const pv=previewCfg(); pv.multi=!pv.multi; view.mode='fit'; renderPeers(); save(); });
+$('#multiSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-dir],[data-real]'); if(!b) return; const pv=previewCfg(); if(b.dataset.dir) pv.dir=b.dataset.dir; else pv.real=!pv.real; view.mode='fit'; renderPeers(); save(); });
+$('#multiGap').addEventListener('input',e=>{ previewCfg().gap=+e.target.value; view.mode='fit'; wrap.style.setProperty('--gap',previewCfg().gap+'px'); applyZoom(); });
+$('#multiGap').addEventListener('change',()=>save());
 $('#stage').addEventListener('pointerup', endPan); $('#stage').addEventListener('pointercancel', endPan);
 
 /* ---------- panel: layers ---------- */
@@ -1957,7 +2013,12 @@ function updateReliefFilter(fxEl, L, dep, k, sign, pl){
   fxEl.dataset.dep=dep;
 }
 function pruneReliefFilters(){ const defs=$('#fxdefs'); if(!defs) return; const used=new Set([...document.querySelectorAll('.fx[data-rf]')].map(e=>e.dataset.rf)); [...defs.children].forEach(f=>{ if(!used.has(f.id)) f.remove(); }); }
-function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer($('#cardBack'),px,py,hov,true); }
+function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer($('#cardBack'),px,py,hov,true);
+  wrap.querySelectorAll('.card-3d.peer').forEach(c3=>{ // 並列的其他卡：依自己的位置算滑鼠相對座標，沒有滑鼠時跟主卡同步
+    let ppx=px, ppy=py; if(hovering && lastPt){ const r=c3.getBoundingClientRect(); if(r.width>0){ ppx=Math.min(1,Math.max(0,(lastPt.x-r.left)/r.width)); ppy=Math.min(1,Math.max(0,(lastPt.y-r.top)/r.height)); } }
+    const c=c3._c||(c3._c={px:ppx,py:ppy}); c.px+=(ppx-c.px)*.4; c.py+=(ppy-c.py)*.4;
+    c3.querySelectorAll('.card.face').forEach(f=>applyPointer(f,c.px,c.py,hov)); }); }
+let lastPt=null;
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
   const P=S.paper, lx=px;
@@ -2046,7 +2107,7 @@ function sceneLightFrom(e){
 }
 stage.addEventListener('pointermove', e=>{
   if(viewMode==='scene'){ if(lightDrag) sceneLightFrom(e); return; }
-  const r=card.getBoundingClientRect();
+  const r=card.getBoundingClientRect(); lastPt={x:e.clientX,y:e.clientY};
   target.px=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)); target.py=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)); target.hov=1;
   hovering=true; lastMove=performance.now();
 });
@@ -2092,6 +2153,7 @@ PAPER_SWATCHES.forEach(([c,n])=>{ const b=document.createElement('button'); b.st
 
 /* ---------- (i) 說明：每個可調項目旁的小圓 i，點一下顯示詳細說明 ---------- */
 const HELP = {
+  'btnMulti':'把目前所有文件並列在畫面上一起預覽（↔ 水平／↕ 垂直，滑桿調間隔；預設等高／等寬方便比較，「1:1」改成依各檔實際比例）。所有卡片一起翻面、一起受滑鼠光照；點兩下某張卡就切換去編輯它。已綁定正反面的文件會合成同一張卡（正面／反面），並共用同一種紙。',
   /* 紙張 */
   pColor:'紙張本身的顏色。滿版底色矩形上傳時會自動抓成紙色。深色紙上透明油墨（色彩增值）幾乎看不見，這就是黑卡要燙箔或用白墨／網版的原因。',
   pTex:'紙質決定表面凹凸的樣子：塗佈紙（銅版、雪銅）平滑反光；非塗佈（象牙卡、美術紙）有毛面與微凹凸；壓紋紙（萊妮、麻布、皮紋）有規則紋路；再生／特殊（牛皮、啤酒紙、荷蘭板）有纖維與斑點。換紙會帶入該紙的預設凹凸、顆粒與光澤。',
@@ -2497,14 +2559,14 @@ $('#btnShotsExport').addEventListener('click', async ()=>{
 });
 /* ---------- 復原／重做：每次存檔記一個狀態快照（不含 SVG 原文） ---------- */
 const hist={stack:[],idx:-1,max:60,busy:false}; const svgArchive={};
-function stateSnapshot(){ syncDocFromS(); return JSON.stringify({paper:S.paper,layers:(S.layers||[]).map(({_count,...l})=>l),assign:S.assign,koGap:S.koGap,scene:S.scene,docs:(S.docs||[]).map(({svgText,...d})=>({...d,layers:(d.layers||[]).map(({_count,...l})=>l)})),docId:S.docId,shots:S.shots||[],side:S.side||'front'}); }
+function stateSnapshot(){ syncDocFromS(); return JSON.stringify({paper:S.paper,layers:(S.layers||[]).map(({_count,...l})=>l),assign:S.assign,koGap:S.koGap,scene:S.scene,docs:(S.docs||[]).map(({svgText,...d})=>({...d,layers:(d.layers||[]).map(({_count,...l})=>l)})),docId:S.docId,shots:S.shots||[],side:S.side||'front',preview:S.preview||null}); }
 function updateHistButtons(){ $('#btnUndo').disabled=hist.idx<=0; $('#btnRedo').disabled=hist.idx>=hist.stack.length-1; }
 function pushHistory(){ if(hist.busy||!S) return; (S.docs||[]).forEach(d=>{ if(d.svgText) svgArchive[d.id]=d.svgText; }); const snap=stateSnapshot(); if(hist.stack[hist.idx]===snap) return; hist.stack.length=hist.idx+1; hist.stack.push(snap); if(hist.stack.length>hist.max) hist.stack.shift(); hist.idx=hist.stack.length-1; updateHistButtons(); }
 function applyState(o){
   hist.busy=true;
   try{
     const docChanged = o.docId!==S.docId || JSON.stringify(o.docs.map(d=>d.id))!==JSON.stringify((S.docs||[]).map(d=>d.id));
-    S.docs=o.docs.map(d=>({...d, svgText:svgArchive[d.id]||''})).filter(d=>d.svgText); S.shots=o.shots||[]; S.scene=Object.assign(defaultScene(),o.scene); S.side=o.side||'front';
+    S.docs=o.docs.map(d=>({...d, svgText:svgArchive[d.id]||''})).filter(d=>d.svgText); S.shots=o.shots||[]; S.scene=Object.assign(defaultScene(),o.scene); S.side=o.side||'front'; if(o.preview) S.preview=o.preview;
     Object.keys(docStore).forEach(id=>{ if(!S.docs.find(d=>d.id===id)){ docStore[id].root.remove(); delete docStore[id]; } });
     const d=S.docs.find(x=>x.id===o.docId)||S.docs[0];
     if(docChanged || !d){ S.docId=null; switchDoc(d.id,false); }
@@ -3023,7 +3085,7 @@ function buildSceneLists(){
   $('#viewPresets').innerHTML=''; VIEW_PRESETS.forEach(([n,p,y])=>{ const b=document.createElement('button'); b.textContent=n; b.dataset.v=p+','+y; b.addEventListener('click',()=>{ C.pitch=p; C.yaw=y; sceneChanged(false); }); $('#viewPresets').appendChild(b); });
   $('#kelvinPresets').innerHTML=''; [['燭光',2200],['鎢絲',2900],['暖白',3800],['日光',5500],['閃燈',6000],['陰天',7000],['藍天',9000]].forEach(([n,k])=>{ const b=document.createElement('button'); b.textContent=`${n} ${k}K`; b.dataset.v=k; b.addEventListener('click',()=>{ C.kelvin=k; C.useLightColor=false; sceneChanged(false); }); $('#kelvinPresets').appendChild(b); });
   $('#sBgSwatches').innerHTML=''; SCENE_BG.forEach(([c,n])=>{ const b=document.createElement('button'); b.style.background=c; b.title=n; b.dataset.v=c; b.addEventListener('click',()=>{ C.bg=c; sceneChanged(false); }); $('#sBgSwatches').appendChild(b); });
-  renderVariantList(); renderDocList(); renderShotList();
+  renderVariantList(); renderDocList(); renderShotList(); if(viewMode!=='scene' && (S.preview||{}).multi) renderPeers();
 }
 /* 每次變更都同步的數值、可見性與選取狀態（便宜） */
 function syncSceneValues(){
