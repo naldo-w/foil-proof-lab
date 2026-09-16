@@ -136,7 +136,7 @@ body.empty .panel{visibility:hidden}
 /* 效能：卡片模式裡隨滑鼠移動的漸層改用 transform 位移（合成器直接搬圖，不重畫）：元素撐成卡片的 N 倍，再平移到對應位置。
    f-base：原 background-size 280%、position p% → 位移 −1.8pW；f-holo：220%、position 100%−p → −1.2W+1.2pW；高光：以滑鼠為圓心 → 2.4 倍大的圓形漸層置中後平移 */
 .card-wrap .m>.f-base.dyn{width:calc(var(--cwd,100%) * 2.8);height:calc(var(--cht,100%) * 2.8);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * -0.642857),calc(var(--py,50%) * -0.642857))}
-.card-wrap .m>.f-holo.dyn{width:calc(var(--cwd,100%) * 2.2);height:calc(var(--cht,100%) * 2.2);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * 0.545454 - 54.5454%),calc(var(--py,50%) * 0.545454 - 54.5454%))}
+.card-wrap .m>.f-holo.dyn{width:calc(var(--cwd,100%) * 2.2);height:calc(var(--cht,100%) * 2.2);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * 0.545454 - 54.5454%),calc(var(--py,50%) * 0.545454 - 54.5454%))} /* 場景：色帶以卡片尺寸平鋪，位移限制在一個週期內 */
 .card-wrap .m>.f-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,var(--g1,rgba(255,255,255,.55)) 0%,var(--g2,rgba(255,255,255,.22)) 22%,rgba(60,60,60,.14) 60%,rgba(0,0,0,var(--gd,.35)) 100%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%)) scale(var(--gsz,1))}
 .card-wrap .m>.i-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
 .card-wrap .m>.u-glare.dyn{width:calc(var(--cwd,100%) * .6);height:calc(var(--cht,100%) * .6);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.5) 0%,rgba(255,255,255,.12) 20%,rgba(255,255,255,0) 60%);transform:translate(calc(var(--px,50%) / .6 - 50%),calc(var(--py,50%) / .6 - 50%))} /* 上光的光點：小而集中，離光遠的地方看起來就是透明 */
@@ -231,8 +231,8 @@ body.empty .panel{visibility:hidden}
 /* 印刷油墨：薄墨層 → 紙紋透出、低頻斑駁；金屬油墨：鋁粉／銅粉的弱方向性反光 + 細閃點，比燙箔暗、鈍、粗 */
 .m.ink .i-mottle{background-image:var(--mottle);background-size:var(--motsz,420px) var(--motsz,420px);mix-blend-mode:soft-light;opacity:var(--mot,.22)}
 .m.ink .i-mesh{display:none}
-.m.ink.screen .i-mesh{display:block;position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:var(--meshop,.15);
-  background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.9) 0 1px,transparent 1px var(--meshp,3px)),repeating-linear-gradient(90deg,rgba(0,0,0,.9) 0 1px,transparent 1px var(--meshp,3px))}
+.m.ink.screen .i-mesh{display:block;position:absolute;left:-25%!important;top:-25%!important;width:150%!important;height:150%!important;pointer-events:none;mix-blend-mode:multiply;opacity:var(--meshop,.15);transform:rotate(45deg);
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.95) 0,rgba(0,0,0,.95) 30%,rgba(0,0,0,0) 38%);background-size:var(--meshp,3px) var(--meshp,3px)} /* 網版：目數＝每吋網孔數，墨層透出的是「網點」（45° 網角），不是格線；目數越低點越粗、越明顯 */
 .m.ink .i-metal{display:none}.m.ink .i-spark{display:none}
 .m.ink.metal .i-fill{opacity:.9}
 .m.ink.metal .i-metal{display:block;background-image:linear-gradient(112deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.38) 28%,rgba(0,0,0,.28) 52%,rgba(255,255,255,.22) 78%,rgba(0,0,0,.15) 100%);background-size:260% 260%;background-position:var(--px) var(--py);mix-blend-mode:overlay;opacity:.7}
@@ -310,8 +310,9 @@ body.empty .panel{visibility:hidden}
 .light-svg #lightZ path{fill:#fff;stroke:rgba(0,0,0,.5);stroke-width:1;vector-effect:non-scaling-stroke}
 .scene{position:absolute;left:0;top:0;overflow:hidden;background:var(--sbg,#2a2a2e);transform-origin:0 0;box-shadow:0 30px 60px -20px rgba(0,0,0,.8)}
 .table .tbg{position:absolute;inset:-100%;background:var(--sbg,#2a2a2e);pointer-events:none}
-.table .tglow{position:absolute;inset:-100%;pointer-events:none}   /* 桌面上的光斑（在桌面座標系，會跟著視角變換）；放大到 3×，桌面旋轉後不露邊 */
-.table .tfall{position:absolute;inset:-100%;mix-blend-mode:multiply;pointer-events:none} /* 離燈越遠越暗（漫反射衰減） */
+.table .tglow{position:absolute;inset:-100%;pointer-events:none;will-change:transform} /* 各自成層：光斑變動時不重畫整張桌面 */
+.table .tspec{position:absolute;inset:-100%;pointer-events:none;will-change:transform}   /* 桌面上的光斑（在桌面座標系，會跟著視角變換）；放大到 3×，桌面旋轉後不露邊 */
+.table .tfall{position:absolute;inset:-100%;mix-blend-mode:multiply;pointer-events:none;will-change:transform} /* 離燈越遠越暗（漫反射衰減） */
 .table .tcast{position:absolute;inset:-100%;mix-blend-mode:multiply;opacity:.55;pointer-events:none} /* 相機會做白平衡，色偏只留一半 */ /* 光的顏色（色溫）對整個畫面的色偏 */
 .light-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;overflow:visible}
 .light-svg line{stroke:rgba(255,255,255,.7);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
@@ -329,7 +330,18 @@ body.empty .panel{visibility:hidden}
 .fxs.merged{position:absolute;inset:0;pointer-events:none}
 .fx.fast .f-paper,.fx.fast .f-brush,.fx.fast .i-grain{display:none} /* 快速預覽：略過紙紋與髮絲紋 */
 .fxs.merged .fx{position:absolute;inset:0;-webkit-mask-image:var(--vis);mask-image:var(--vis);-webkit-mask-size:var(--msz,100% 100%);mask-size:var(--msz,100% 100%);-webkit-mask-position:var(--mpos,0 0);mask-position:var(--mpos,0 0);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-.slot .card{position:relative;width:100%;max-width:none;pointer-events:none;box-shadow:var(--sh,none);transform:none}
+.slot .card{position:relative;width:100%;max-width:none;pointer-events:none;box-shadow:var(--sh,none);transform:none;will-change:filter}
+.slot .slot-sh{position:absolute;inset:0;pointer-events:none;will-change:filter}
+.slot .slot-sh.dc{background:#000}
+.fxs.merged .m{will-change:transform} /* 場景：每個遮罩層自己一層（子層不各自升層：合併層很大，太多大層反而讓合成變慢；實測 .m 一層最快） */
+.slot .card>.paper-glare{will-change:transform}
+/* 線框：卡片外框＋內容的線條（同一份 SVG 用 <symbol> 共用，每張卡只是一個 <use>） */
+.slot .wirecard svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.slot .wirecard .wn{position:absolute;left:6px;top:4px;font:600 12px var(--mono);color:var(--accent);background:rgba(0,0,0,.45);padding:0 5px;border-radius:3px}
+.slot .wirecard .wn small{display:inline;font:10px var(--sans);color:rgba(255,255,255,.75);margin-left:4px}
+#wiredefs{position:absolute;width:0;height:0;overflow:hidden}
+#wiredefs symbol *{fill:none!important;stroke:rgba(255,255,255,.75)!important;stroke-width:1px!important;vector-effect:non-scaling-stroke;opacity:1!important;filter:none!important}
+#wiredefs symbol image{display:none}
 .chip .lay{font-family:var(--sans);font-size:11px}
 .tn .tl.layer{color:var(--accent);font-weight:500}
 .row.three{grid-template-columns:76px 1fr 1fr}
@@ -390,7 +402,7 @@ body.empty .panel{visibility:hidden}
 .adv summary{font:11px var(--mono);letter-spacing:.08em;color:var(--faint);cursor:pointer;list-style:none;margin-bottom:4px}
 .adv summary::before{content:"+ "}
 .adv[open] summary::before{content:"− "}
-.slot .wirecard{position:absolute;inset:0;border:1.5px dashed var(--accent);background:rgba(255,85,17,.08);color:#fff;display:grid;place-items:center;font:600 22px var(--mono);text-align:center;box-sizing:border-box}
+.slot .wirecard{position:absolute;inset:0;border:1.5px dashed var(--accent);background:rgba(255,85,17,.05);color:#fff;box-sizing:border-box}
 .slot .wirecard small{display:block;font:11px var(--sans);color:rgba(255,255,255,.7);font-weight:400}
 .table .tguide{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .table .tguide path,.table .tguide line{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:10 8;vector-effect:non-scaling-stroke}
@@ -1714,7 +1726,11 @@ function layerBBox(L, eff, mirror=false){
 function applyCrop(d, L, eff, mirror=false){
   const bb=layerBBox(L, eff, mirror); if(!bb) return;
   const ar=(S.vb?S.vb[0]/S.vb[1]:2); const padX=0.035+((L.maskBlur||0)+ (L.reliefDepth||0)*3)/600, padY=padX*ar; // 留邊：陰影、模糊、壓痕溢出（約卡寬 3.5%＋）
-  const x0=Math.max(0,bb.x0-padX), y0=Math.max(0,bb.y0-padY), x1=Math.min(1,bb.x1+padX), y1=Math.min(1,bb.y1+padY);
+  applyCropBox(d, bb.x0-padX, bb.y0-padY, bb.x1+padX, bb.y1+padY);
+}
+function uncrop(d){ if(!d.classList.contains('cropped')) return; const st=d.style; st.inset='0'; st.left=st.top=st.width=st.height=''; ['--msz','--mpos','--cl','--ct','--cwd','--cht'].forEach(v=>st.removeProperty(v)); d.classList.remove('cropped'); } // 匯出時合併層會整個換框，先還原成整框
+function applyCropBox(d, x0, y0, x1, y1){ // 把 .fx 裁到 0–1 比例的框，遮罩與子層對回整個母框
+  x0=Math.max(0,x0); y0=Math.max(0,y0); x1=Math.min(1,x1); y1=Math.min(1,y1);
   const w=x1-x0, h=y1-y0; if(!(w>0&&h>0) || w*h>0.8) return; // 幾乎整張就不裁
   const st=d.style; st.inset='auto'; st.left=(x0*100).toFixed(3)+'%'; st.top=(y0*100).toFixed(3)+'%'; st.width=(w*100).toFixed(3)+'%'; st.height=(h*100).toFixed(3)+'%';
   st.setProperty('--msz', `${(100/w).toFixed(4)}% ${(100/h).toFixed(4)}%`);
@@ -1896,7 +1912,7 @@ function styleFx(d,L,paper=S.paper){
     // 不平均：斑駁層的強度與尺寸（值越高越像吸墨不均／手工網印）
     const mot=L.mottle ?? (L.proc==='screen'?.1:.25); st.setProperty('--mot', (mot*.9).toFixed(3)); st.setProperty('--motsz', Math.round(420-200*mot)+'px');
     // 網版目數：目數越低網紋越粗、越明顯（以 90mm 寬名片換算網格週期，畫面上以卡片寬的百分比表示）
-    if(L.proc==='screen'){ const mesh=L.mesh||120; const cells=mesh*3.54; st.setProperty('--meshp', `calc(100% / ${Math.round(cells/2)})`); st.setProperty('--meshop', Math.max(.03, .45-mesh/700).toFixed(3)); }
+    if(L.proc==='screen'){ const mesh=L.mesh||120; const cells=mesh*3.54; st.setProperty('--meshp', `calc(100% / ${Math.round(cells/2.4)})`); st.setProperty('--meshop', Math.max(.05, .6-mesh/500).toFixed(3)); } // 以 90mm 寬換算每卡網孔數（畫面上放大 2.4 倍才看得到點）
     // 漸層（雙色分色印刷）：水平／垂直，從 tint 到 tint2
     if(L.grad && L.grad!=='none'){ st.setProperty('--fill', `linear-gradient(${L.grad==='v'?'180deg':'90deg'}, ${L.tint}, ${L.tint2||mix(L.tint,'#ffffff',.5)})`); } else st.removeProperty('--fill');
   }
@@ -2197,12 +2213,12 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   const ux=Math.cos(a6*Math.PI/180), uy=Math.sin(a6*Math.PI/180);
   const sx=ux.toFixed(3), sy=uy.toFixed(3), sa=(Math.atan2(uy,ux)*180/Math.PI+90).toFixed(1)+'deg';
   if(el.closest('#cardwrap')){ if(!el._ldir || el._ldirRev!==sceneRev){ el._ldir=[...el.querySelectorAll('.ldir')]; el._ldirRev=sceneRev; } for(const t of el._ldir){ t.style.setProperty('--sdx',sx); t.style.setProperty('--sdy',sy); t.style.setProperty('--sang',sa); } }
-  else { el.style.setProperty('--sdx',sx); el.style.setProperty('--sdy',sy); el.style.setProperty('--sang',sa); } // 場景卡片：燈固定，寫在根元素就好
+  else { el.querySelectorAll('.ldir').forEach(t=>{ t.style.setProperty('--sdx',sx); t.style.setProperty('--sdy',sy); t.style.setProperty('--sang',sa); }); } // 場景：只寫在用到的子層（--sdx 只有 .ldir 在用；寫在 .fx 根會讓整層含遮罩重畫）
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if(pointerMoving && f.classList.contains('press') && performance.now()-pressT<110){ pressStale=true; return; } // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）移動中最多每 110ms 重算一次，停下再補最後一次
-    const flt=document.getElementById(id); if(!flt) return; if(f.classList.contains('press')){ pressT=performance.now(); pressStale=false; } flt.querySelector('feDistantLight').setAttribute('azimuth',az);
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((pointerMoving || lightDrag) && (f.classList.contains('press') || lightDrag) && performance.now()-pressT<50){ pressStale=true; el.dataset.la=''; return; } // 場景拖燈時所有 bump 一律最多每 50ms 重算（清掉量化快取，下次才會補算） // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）移動中最多每 50ms 重算一次，停下再補最後一次
+    const flt=document.getElementById(id); if(!flt) return; if(f.classList.contains('press') || lightDrag){ pressT=performance.now(); pressStale=false; } flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
 /* 打凸／打凹濾鏡：模糊 alpha 當高度圖 → feDiffuseLighting（遠光 45°）→ 對齊到中灰 → 限制在圖形內；打凸另加一道投影。整層用 hard-light 疊上去。 */
@@ -2326,7 +2342,7 @@ stage.addEventListener('pointerdown', e=>{
   if(focusPick){ const C=S.scene, {sx,sy}=scenePt(e), t=screenToTable(sx,sy,0); C.dfx=t.x/C.W; C.dfy=t.y/C.H; if(!C.aperture) C.aperture=.5; focusPick=false; stage.classList.remove('picking'); $('#sFocusPick').textContent='點畫布對焦'; sceneChanged(false); e.preventDefault(); return; }
   dragWhat=pickLightHandle(e); dragStart=null; lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} if(dragWhat!=='lz') sceneLightFrom(e); e.preventDefault();
 });
-const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; dragStart=null; stage.classList.remove('dragging-light'); save(); };
+const endLightDrag=()=>{ if(!lightDrag) return; lightDrag=false; dragStart=null; stage.classList.remove('dragging-light'); if(pressStale){ pressStale=false; applySceneLight(); } save(); }; // 放開後補最後一次 bump 光向
 stage.addEventListener('pointerup', endLightDrag); stage.addEventListener('pointercancel', endLightDrag);
 stage.addEventListener('pointerleave', ()=>{ hovering=false; lastMove=performance.now(); });
 function loop(){
@@ -2411,7 +2427,7 @@ const HELP = {
   metallic:'金屬油墨（871／877 系）：含鋁粉或銅粉，比燙箔暗、鈍、粗——只有微弱的方向性反光與細閃點，不會像鏡子。要亮就用燙箔。',
   spread:'油墨溢出：圖形外擴並把邊緣暈開（viewBox 單位）。平版 0.3–0.8 像網點擴張，網版 1–2 像手工印的毛邊。',
   mottle:'不平均：吸墨不均、墨量不勻的斑駁程度。0 = 完全平整（像螢幕填色），高 = 手工網印、粗紙吸墨。',
-  mesh:'網版目數：每吋網線數。80–100 目墨層厚、網紋明顯；150 目常用；200–300 目細節好、墨薄。切換時墨層厚度會跟著換。',
+  mesh:'網版目數：每吋網孔數。墨層透出的是網點（45° 網角）：80–100 目墨厚、網點粗而明顯；150 目常用；200–300 目細節好、墨薄、幾乎看不到點。切換時墨層厚度會跟著換。',
   grad:'漸層印刷（分色／撞色）：油墨從第一色漸變到第二色，水平或垂直。',
   tint2:'漸層的第二色。',
   knockout:'被上層圖形挖空：關掉的話這一層會完整印出，上層直接疊在上面（例如白墨打底再印彩色時要關掉底層的挖空）。',
@@ -2660,14 +2676,14 @@ async function exportScene3D(k){
   const clone=$('#scene').cloneNode(true); clone.id=''; if($('#dcdefs')) clone.appendChild($('#dcdefs').cloneNode(true)); if($('#fxdefs')) clone.appendChild($('#fxdefs').cloneNode(true)); clone.style.transform=`scale(${sA})`; clone.style.width=E.w+'px'; clone.style.height=E.h+'px'; clone.style.boxShadow='none';
   clone.querySelector('.floor')?.remove(); clone.querySelectorAll('.light-svg,.light-handle,.tguide,.tdof').forEach(n=>n.remove());
   const tbl=clone.querySelector('.table'); tbl.style.transform=`translate(${-E.minX}px,${-E.minY}px)`; tbl.style.transformOrigin='0 0'; tbl.style.width=C.W+'px'; tbl.style.height=C.H+'px'; tbl.style.inset='auto'; tbl.style.left='0'; tbl.style.top='0';
-  clone.querySelectorAll('.tbg,.tbgimg,.tbgtex,.tglow,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
+  clone.querySelectorAll('.tbg,.tbgimg,.tbgtex,.tglow,.tspec,.tfall,.tcast').forEach(n=>{ n.style.inset='auto'; n.style.left=(-C.W)+'px'; n.style.top=(-C.H)+'px'; n.style.width=(3*C.W)+'px'; n.style.height=(3*C.H)+'px'; });
   toast('合成 2/4：點陣化遮罩…', true); await new Promise(r=>setTimeout(r,20));
   // 合併效果層原本涵蓋所有卡片的聯集（可能比畫布大很多倍）；匯出只裁到看得到的區域，遮罩圖才不會大到失效
   const hostEl=clone.querySelector('.fxs.merged'); let crop=null;
   if(hostEl){ const src={minX:parseFloat(hostEl.style.left)||0, minY:parseFloat(hostEl.style.top)||0, w:parseFloat(hostEl.style.width)||C.W, h:parseFloat(hostEl.style.height)||C.H};
     crop={src, dst:{minX:E.minX,minY:E.minY,w:E.w,h:E.h}}; Object.assign(hostEl.style,{left:E.minX+'px',top:E.minY+'px',width:E.w+'px',height:E.h+'px'});
     // 高光位置以 % 表示，裁切後要換算到新的參考框
-    hostEl.querySelectorAll('.fx').forEach(d=>{ const px=parseFloat(d.style.getPropertyValue('--px'))/100*src.w+src.minX, py=parseFloat(d.style.getPropertyValue('--py'))/100*src.h+src.minY; d.style.setProperty('--px',((px-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((py-E.minY)/E.h*100).toFixed(2)+'%'); const g=parseFloat(d.style.getPropertyValue('--gsz'))||1; d.style.setProperty('--gsz',(g*src.w/E.w).toFixed(3)); }); }
+    hostEl.querySelectorAll('.fx').forEach(d=>{ uncrop(d); [d,...d.querySelectorAll('.dyn')].forEach(el=>{ const s0=el.style.getPropertyValue('--px'); if(!s0) return; const px=parseFloat(s0)/100*src.w+src.minX, py=parseFloat(el.style.getPropertyValue('--py'))/100*src.h+src.minY; el.style.setProperty('--px',((px-E.minX)/E.w*100).toFixed(2)+'%'); el.style.setProperty('--py',((py-E.minY)/E.h*100).toFixed(2)+'%'); const g=parseFloat(el.style.getPropertyValue('--gsz'))||1; el.style.setProperty('--gsz',(g*src.w/E.w).toFixed(3)); }); }); }
   await rasterizeMasks(clone, sA, undefined, undefined, crop);
   toast('合成 3/4：平視渲染桌面…', true); await new Promise(r=>setTimeout(r,20));
   const aw=Math.round(E.w*sA), ah=Math.round(E.h*sA);
@@ -3040,6 +3056,13 @@ function visibleRectsMask(slots, idxs){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${E.minX} ${E.minY} ${E.w} ${E.h}" width="${E.w}" height="${E.h}"><defs>${defs}</defs>${body}</svg>`;
   return cachePut(key,`url("${svgBlobURL(svg)}")`);
 }
+/* 效能：合併層裁到「它負責的那些卡片」的外框（卡片只佔畫面一部分時，每層要合成的像素少很多） */
+function cropToSlots(d, slots, idxs){
+  const E=slotsExtent(slots); let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  idxs.forEach(i=>{ slotCorners(slots[i]).forEach(([x,y])=>{ x0=Math.min(x0,x); y0=Math.min(y0,y); x1=Math.max(x1,x); y1=Math.max(y1,y); }); });
+  if(!(x1>x0)) return; const pad=Math.max(12, (S.scene.thick??2)*4);
+  applyCropBox(d, (x0-pad-E.minX)/E.w, (y0-pad-E.minY)/E.h, (x1+pad-E.minX)/E.w, (y1+pad-E.minY)/E.h);
+}
 function buildMergedFx(host, pool, slotOwner, slots){
   host.innerHTML='';
   const groups=[]; pool.forEach((pe,pi)=>{ groups.push({pe, front:pe.back||null, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side!=='back')}); if(pe.back) groups.push({pe:pe.back, front:pe, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side==='back')}); });
@@ -3059,11 +3082,12 @@ function buildMergedFx(host, pool, slotOwner, slots){
       d.style.setProperty('--vis', visibleRectsMask(slots, idxs)); // 整個效果層（含溢出的壓痕陰影）只在這些卡片沒被蓋住的區域顯示
       // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
       const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
-      d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); host.appendChild(d); styleFx(d,L,pe.paper);
+      d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); cropToSlots(d, slots, idxs); host.appendChild(d); styleFx(d,L,pe.paper);
       // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
       const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');
+
       const R = L.proc==='none' ? null : (L.relief!=='none' ? reliefCompanion(L) : (fast ? null : pressCompanion(L))); // 壓痕邊緣光影（快速預覽略過）
-      if(R){ const d2=document.createElement('div'); d2.className='fx fx-relief relief-only'; d2.dataset.layer=R.id; d2.style.setProperty('--own',own); d2.style.setProperty('--mask',own); d2.style.setProperty('--vis', visibleRectsMask(slots, idxs)); d2.innerHTML=fxDOM(R,fast); host.appendChild(d2); styleFx(d2,R,pe.paper); }
+      if(R){ const d2=document.createElement('div'); d2.className='fx fx-relief relief-only'; d2.dataset.layer=R.id; d2.style.setProperty('--own',own); d2.style.setProperty('--mask',own); d2.style.setProperty('--vis', visibleRectsMask(slots, idxs)); d2.innerHTML=fxDOM(R,fast); cropToSlots(d2, slots, idxs); host.appendChild(d2); styleFx(d2,R,pe.paper); }
     });
    });
    // 另一面（front = 這一面的另一面）：把它的壓痕／打凸打凹以相反、鏡射的方式印在這一面
@@ -3179,6 +3203,19 @@ function layoutSlots(){
   out.forEach(sl=>{ sl.rz=sl.r; sl.rx=(sl.rx||0)+(jr()*2-1)*t3; sl.ry=(sl.ry||0)+(jr()*2-1)*t3; sl.rz+= (jr()*2-1)*t3*.5; sl.r=sl.rz; sl._m=null; });
   return out;
 }
+/* 線框用的內容輪廓：每份文件一個 <symbol>（把 SVG 複製一份，樣式全部改成細線），卡片以 <use> 引用 */
+function wireSymbol(docId){
+  let defs=$('#wiredefs'); if(!defs){ defs=document.createElementNS('http://www.w3.org/2000/svg','svg'); defs.id='wiredefs'; defs.setAttribute('aria-hidden','true'); document.body.appendChild(defs); }
+  const id='wire-'+(docId||S.docId||'cur'); let sym=document.getElementById(id);
+  if(sym && sym.dataset.rev===String(sceneRev)) return id;
+  if(sym) sym.remove();
+  sym=document.createElementNS('http://www.w3.org/2000/svg','symbol'); sym.id=id; sym.dataset.rev=sceneRev;
+  withDoc(docId, ()=>{ if(!svgRoot) return; const vb=svgRoot.getAttribute('viewBox')||`0 0 ${S.vb[0]} ${S.vb[1]}`; sym.setAttribute('viewBox',vb); const cl=svgRoot.cloneNode(true);
+    // <use> 複製出來的影子樹吃不到文件的 CSS 選擇器，線條樣式直接寫成 inline
+    cl.querySelectorAll('*').forEach(e=>{ if(e.tagName==='image'){ e.remove(); return; } e.removeAttribute('class'); ['fill','stroke','stroke-width','opacity','filter','fill-opacity','stroke-opacity','stroke-dasharray'].forEach(k=>e.removeAttribute(k)); e.setAttribute('style','fill:none;stroke:rgba(255,255,255,.7);stroke-width:1px;vector-effect:non-scaling-stroke;opacity:1;filter:none'); });
+    [...cl.childNodes].forEach(n=>sym.appendChild(n)); });
+  defs.appendChild(sym); return id;
+}
 function renderScene(){
   if(!S || !S.vb) return;
   if(viewMode!=='scene'){ sceneDirty=true; return; }
@@ -3207,7 +3244,7 @@ function renderScene(){
     Object.assign(d.style,{left:(sl.x-sl.w/2)+'px',top:(sl.y-sl.h/2)+'px',width:sl.w+'px',height:sl.h+'px',transform:`matrix(${m.a.toFixed(5)},${m.b.toFixed(5)},${m.c.toFixed(5)},${m.d.toFixed(5)},${(m.e-sl.x).toFixed(2)},${(m.f-sl.y).toFixed(2)})`,transformOrigin:'50% 50%',zIndex:i+1});
     const pi=owner[i];
     const pick=sl.side==='back' && pool[pi].back ? pool[pi].back : pool[pi];
-    if(wire){ d.innerHTML=`<div class="wirecard">${i+1}${(nu>1)?`<small>${pick.name}${sl.side==='back'?'（背）':''}</small>`:''}</div>`; tb.appendChild(d); return; }
+    if(wire){ const vb=pick.vb||S.vb||[2,1]; d.innerHTML=`<div class="wirecard"><svg viewBox="0 0 ${vb[0]} ${vb[1]}" preserveAspectRatio="none"><use href="#${wireSymbol(pick.doc)}"/></svg><span class="wn">${i+1}${(nu>1)?`<small>${esc(pick.name)}${sl.side==='back'?'（背）':''}</small>`:''}</span></div>`; tb.appendChild(d); return; }
     const c=pick.el.cloneNode(true); c.title=pick.name;
     const f=c.querySelector('.fxs'); if(f) f.innerHTML='';
     d.appendChild(c); tb.appendChild(d);
@@ -3224,6 +3261,7 @@ function renderScene(){
   const timg=document.createElement('div'); timg.className='tbgimg'; tb.insertBefore(timg, tbg.nextSibling);
   const ttex=document.createElement('div'); ttex.className='tbgtex'; tb.insertBefore(ttex, timg.nextSibling); applyBgMaterial(ttex);
   const glow=document.createElement('div'); glow.className='tglow'; tb.insertBefore(glow, ttex.nextSibling);
+  const tspec=document.createElement('div'); tspec.className='tspec'; tb.insertBefore(tspec, glow.nextSibling); // 桌面鏡面反光：固定漸層、用 transform 跟著反光點走
   if(C.layout==='fan' && C.fanGuide!==false && slots.fan && renderQuality==='fast'){ // 扇形路徑（虛線）：只在預覽顯示
     const {px,py,R,a0,a1}=slots.fan, D=Math.PI/180, b0=a0-10, b1=a1+10, pt=a=>[px+R*Math.sin(a*D), py-R*Math.cos(a*D)];
     const [x0,y0]=pt(b0), [x1,y1]=pt(b1), large=(b1-b0)>180?1:0, sweep=b1>b0?1:0;
@@ -3242,7 +3280,7 @@ function applySceneView(){
   sc.style.setProperty('--sbg',C.bg); tb.style.setProperty('--sbg',C.bg); tb.style.setProperty('--ev',Math.pow(2,C.ev||0).toFixed(3)); sc.querySelector('.floor').style.opacity=C.vig;
   const tt=tb.querySelector('.tbgtex'); if(tt) applyBgMaterial(tt);
 }
-function applySceneLight(hov=1){
+function applySceneLight(hov=1, gizmoOnly=false){
   const C=S.scene, tb=$('#table'), slots=tb._slots||[];
   const {L,A,P,cam,h}=lightModel();
   const inten=C.intensity??1, lsz=C.lsize??1, elev=C.elev??8;
@@ -3267,26 +3305,31 @@ function applySceneLight(hov=1){
   const refl=0.12+0.88*Math.pow(hsl(C.bg||'#2a2a2e').l,1.3);
   const reflOn=C.reflOn!==false, Rs=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W));
   const glow=tb.querySelector('.tglow'); if(glow){ const a=reflOn?Math.min(.75,(C.glow??.35)*inten*refl):0, ga=reflOn?Math.min(.9,(C.bgGloss??.3)*inten*(0.35+0.65*refl)):0, sr=Rs*(0.5+0.5*lsz)*(1.3-0.6*(C.bgGloss??.3));
-    const spec=ga>0.005 ? `radial-gradient(circle ${sr.toFixed(0)}px at ${(P.x+C.W).toFixed(1)}px ${(P.y+C.H).toFixed(1)}px, rgba(${lcs},${ga.toFixed(2)}) 0%, rgba(${lcs},${(ga*.45).toFixed(2)}) ${Math.round(25+30*soft)}%, rgba(${lcs},0) 100%), ` : '';
-    glow.style.background=spec+`radial-gradient(circle ${Rg.toFixed(0)}px at ${cx}px ${cy}px, rgba(${lcs},${a.toFixed(2)}) 0%, rgba(${lcs},${(a*.75).toFixed(2)}) ${innerG}%, rgba(${lcs},0) 100%)`; }
+    const ts=tb.querySelector('.tspec'); if(ts){ const sbg=ga>0.005 ? `radial-gradient(circle ${sr.toFixed(0)}px at 50% 50%, rgba(${lcs},${ga.toFixed(2)}) 0%, rgba(${lcs},${(ga*.45).toFixed(2)}) ${Math.round(25+30*soft)}%, rgba(${lcs},0) 100%)` : 'none'; if(ts._bg!==sbg){ ts._bg=sbg; ts.style.background=sbg; } ts.style.transform=`translate(${(P.x-C.W/2).toFixed(1)}px,${(P.y-C.H/2).toFixed(1)}px)`; }
+    const spec='';
+    const gbg=spec+`radial-gradient(circle ${Rg.toFixed(0)}px at ${cx}px ${cy}px, rgba(${lcs},${a.toFixed(2)}) 0%, rgba(${lcs},${(a*.75).toFixed(2)}) ${innerG}%, rgba(${lcs},0) 100%)`; if(glow._bg!==gbg){ glow._bg=gbg; glow.style.background=gbg; } } // 3× 桌面大小的漸層：沒變就不重設（免得整張桌面重畫）
   applyDoF();
   const fall=tb.querySelector('.tfall'); if(fall){ const Rf=Rg*(1.3+1.6*(1-spot)), a=Math.min(.75,(.22+spot*.5)/Math.max(.5,h/(0.6*C.W))), innerF=Math.round((0.15+0.6*(1-soft))*100);
-    fall.style.background=`radial-gradient(circle ${Rf.toFixed(0)}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${innerF}%, rgba(0,0,0,${a.toFixed(2)}) 100%)`; fall.style.opacity=(1/(0.75+inten*.25)).toFixed(2); }
-  const cast=tb.querySelector('.tcast'); if(cast){ cast.style.background=`rgb(${lcs})`; }
+    const fbg=`radial-gradient(circle ${Rf.toFixed(0)}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${innerF}%, rgba(0,0,0,${a.toFixed(2)}) 100%)`; if(fall._bg!==fbg){ fall._bg=fbg; fall.style.background=fbg; } fall.style.opacity=(1/(0.75+inten*.25)).toFixed(2); }
+  const cast=tb.querySelector('.tcast'); if(cast){ const cb=`rgb(${lcs})`; if(cast._bg!==cb){ cast._bg=cb; cast.style.background=cb; } }
+  if(gizmoOnly) return;
   const R=lsz*C.W*0.22*(0.7+0.3*Math.min(2,h/C.W)); // 高光半徑（桌面 px）
   const host=tb.querySelector('.fxs.merged'); if(host){
     const E=tb._ext||{minX:0,minY:0,w:C.W,h:C.H};
-    host.querySelectorAll('.fx').forEach(d=>{ d.style.setProperty('--px',((P.x-E.minX)/E.w*100).toFixed(2)+'%'); d.style.setProperty('--py',((P.y-E.minY)/E.h*100).toFixed(2)+'%'); d.style.setProperty('--hov',Math.min(1.6,hov*inten).toFixed(3)); d.style.setProperty('--gsz',(R/(1.2*E.w)).toFixed(2)); setLightDir(d, A.x-L.x, A.y-L.y); });
+    const pxs=((P.x-E.minX)/E.w*100).toFixed(2)+'%', pys=((P.y-E.minY)/E.h*100).toFixed(2)+'%', hv=Math.min(1.6,hov*inten).toFixed(3), gs=(R/(1.2*E.w)).toFixed(2);
+    // 效能：光的變數只寫在會變的 .dyn 子層（寫在 .fx 根會讓整層含遮罩全部重畫）
+    if(!host._dyn || host._dynRev!==sceneRev){ host._dyn=[...host.querySelectorAll('.dyn')]; host._dynRev=sceneRev; }
+    for(const el of host._dyn){ const st=el.style; st.setProperty('--px',pxs); st.setProperty('--py',pys); st.setProperty('--hov',hv); st.setProperty('--gsz',gs); }
+    host.querySelectorAll('.fx').forEach(d=>setLightDir(d, A.x-L.x, A.y-L.y));
   }
   [...tb.querySelectorAll(':scope > .slot')].forEach((d,i)=>{
     const sl=slots[i]; if(!sl) return; const c=d.firstElementChild; const m=slotMatrix(sl); const z=sl.z||0;
     // 高光：傾斜卡片用鏡像相機求交點，再轉回卡片座標
     const hl=cardHighlight(sl,L,cam); const lpx=.5+hl.u/sl.w, lpy=.5+hl.v/sl.h;
-    c.style.setProperty('--px',(lpx*100).toFixed(1)+'%'); c.style.setProperty('--py',(lpy*100).toFixed(1)+'%');
     // 聚光錐衰減 × 法向量對光的餘弦（背光的卡變暗）
     const f=spotFalloff(L,A,{x:sl.x,y:sl.y,z}); const ll=Math.hypot(L.x-sl.x,L.y-sl.y,L.z-z)||1; const ndl=Math.max(0,(m.n[0]*(L.x-sl.x)+m.n[1]*(L.y-sl.y)+m.n[2]*(L.z-z))/ll);
     const lit=f*(0.35+0.65*ndl);
-    c.style.setProperty('--hov',Math.min(1.6,hov*inten*lit).toFixed(3)); c.style.setProperty('--gsz',(R/(1.2*sl.w)).toFixed(2));
+    { const pg=c.querySelector('.paper-glare'); if(pg){ pg.style.setProperty('--px',(lpx*100).toFixed(1)+'%'); pg.style.setProperty('--py',(lpy*100).toFixed(1)+'%'); pg.style.setProperty('--hov',Math.min(1.6,hov*inten*lit).toFixed(3)); } } // 卡片本體只有紙面反光會動，變數寫在它身上就好
     { const v=tableToSlot(sl, sl.x+(sl.x-L.x), sl.y+(sl.y-L.y)); setLightDir(c, v.x, v.y); } // 光→卡片 方向，轉到卡片座標
     c.style.setProperty('--hfall', (1-0.55*Math.min(1,Math.hypot(lpx-.5,lpy-.5)/.9)).toFixed(3));
     c.style.filter=`brightness(${(0.75+inten*.25*(0.4+0.6*lit)).toFixed(3)})`;
@@ -3296,8 +3339,8 @@ function applySceneLight(hov=1){
     const bl=(2+elevT*1.2)*(0.5+lsz*0.8)*(0.5+C.shadow*.5)*(0.6+0.8*soft), a=Math.max(.06,(.6-elevT*.008)*C.shadow/(0.7+lsz*0.3)/(1+z/80));
     const th=C.thick??2; if(sl._edge==null){ const pc=(c.querySelector('.paper')?.style.getPropertyValue('--paper')||'#888').trim(); sl._edge=mix(pc.startsWith('#')&&pc.length===7?pc:'#888888','#000000',.42); }
     const edgeSh = th>0 ? `0 ${(th*.9).toFixed(1)}px 0 0 ${sl._edge}, ` : '';
-    if(sl.doc && diecutGeom(sl.doc)){ c.style.setProperty('--sh','none'); d.style.filter=`${th>0?`drop-shadow(0 ${(th*.9).toFixed(1)}px 0 ${sl._edge}) `:''}drop-shadow(${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${(bl*.6).toFixed(0)}px rgba(0,0,0,${a.toFixed(2)})) drop-shadow(0 ${(1+elevT*.15+th).toFixed(1)}px ${(2+elevT*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)}))`; }
-    else { d.style.filter=''; c.style.setProperty('--sh',`${edgeSh}${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elevT*.15+th).toFixed(1)}px ${(2+elevT*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`); }
+    if(sl.doc && diecutGeom(sl.doc)){ c.style.setProperty('--sh','none'); d.style.filter=''; let sh=d.querySelector(':scope > .slot-sh'); if(!sh){ sh=document.createElement('div'); sh.className='slot-sh dc'; d.insertBefore(sh, c); } sh.style.clipPath=getComputedStyle(c).clipPath; sh.style.filter=`${th>0?`drop-shadow(0 ${(th*.9).toFixed(1)}px 0 ${sl._edge}) `:''}drop-shadow(${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${(bl*.6).toFixed(0)}px rgba(0,0,0,${a.toFixed(2)})) drop-shadow(0 ${(1+elevT*.15+th).toFixed(1)}px ${(2+elevT*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)}))`; } // 刀模：影子做在一個同形狀的黑盒子上（drop-shadow 不必每幀重畫卡片內容）
+    else { d.style.filter=''; let sh=d.querySelector(':scope > .slot-sh'); if(!sh){ sh=document.createElement('div'); sh.className='slot-sh'; sh.style.borderRadius=getComputedStyle(c).borderRadius; d.insertBefore(sh, c); } sh.style.boxShadow=`${edgeSh}${ox.toFixed(1)}px ${(oy+th*.9).toFixed(1)}px ${bl.toFixed(0)}px rgba(0,0,0,${a.toFixed(2)}), 0 ${(1+elevT*.15+th).toFixed(1)}px ${(2+elevT*.3).toFixed(1)}px rgba(0,0,0,${(.35*C.shadow).toFixed(2)})`; c.style.setProperty('--sh','none'); } // 影子放在卡片後面的空盒子上，影子變動時不必重畫卡片本體
   });
 }
 /* 景深（預覽）：桌面是平面，相機深度 w 在桌面座標裡是線性的，所以「對焦線」是桌面上的一條直線；
@@ -3374,15 +3417,15 @@ function syncSceneValues(){
   document.querySelectorAll('[data-scene-pane] [data-for]').forEach(r=>{ r.style.display = r.dataset.for.split(' ').includes(C.layout)?'':'none'; });
 }
 /* 更新排程：同一幀多次變更只做一次；0 = 只重算光、1 = 視角＋光、2 = 重建版面 */
-let pendingLevel=-1, pendingRaf=0, interacting=false, interactT=0, interactDirty=false;
+let pendingLevel=-1, pendingRaf=0, interacting=false, interactT=0, interactDirty=false, lightDirty=false;
 function requestSceneUpdate(level){
   pendingLevel=Math.max(pendingLevel,level); if(pendingRaf) return;
   pendingRaf=requestAnimationFrame(()=>{ pendingRaf=0; const lv=pendingLevel; pendingLevel=-1;
     if(viewMode!=='scene'){ if(lv>=2) sceneDirty=true; return; }
-    if(lv>=2){ renderScene(); if(interacting) interactDirty=true; } else if(lv===1){ applySceneView(); applySceneLight(); } else applySceneLight(); });
+    if(lv>=2){ renderScene(); if(interacting) interactDirty=true; } else if(lv===1){ applySceneView(); if(interacting){ applySceneLight(1,true); lightDirty=true; } else applySceneLight(); } else applySceneLight(); }); // 拖曳相機滑桿時只更新 gizmo，放開再算卡片光影
 }
 function beginInteract(){ interacting=true; clearTimeout(interactT); $('#table').classList.add('interacting'); }
-function endInteract(){ clearTimeout(interactT); interactT=setTimeout(()=>{ interacting=false; $('#table').classList.remove('interacting'); if(interactDirty){ interactDirty=false; if(viewMode==='scene') renderScene(); } save(); },250); }
+function endInteract(){ clearTimeout(interactT); interactT=setTimeout(()=>{ interacting=false; $('#table').classList.remove('interacting'); if(interactDirty){ interactDirty=false; lightDirty=false; if(viewMode==='scene') renderScene(); } else if(lightDirty){ lightDirty=false; if(viewMode==='scene') applySceneLight(); } save(); },250); }
 document.addEventListener('pointerdown', e=>{ if(e.target.closest('[data-scene-pane] input[type=range]')) beginInteract(); }, true);
 document.addEventListener('pointerup', e=>{ if(interacting) endInteract(); }, true);
 let saveT=0; function saveSoon(){ clearTimeout(saveT); saveT=setTimeout(save,500); }
