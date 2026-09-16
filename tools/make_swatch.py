@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """產生效果樣本卡（每一類一張，比較省效能）：swatch/swatch-foil.svg、swatch-holo.svg、swatch-ink.svg、swatch-finish.svg。
-五張（燙箔金屬色／燙箔純色／燙雷射／油墨／表面處理），每張 105×55mm 橫式（viewBox 單位 0.1mm），每格是一個依「工法 · 顏色 + 加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。
+五張（燙箔金屬色／燙箔純色／燙雷射／油墨／表面處理），每張 105×55mm 橫式（viewBox 單位 0.1mm），每格是一個依「工法_色碼+加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。
 logo.svg 存在時嵌入右上角。"""
 import pathlib, re, math, json
 ROOT=pathlib.Path(__file__).resolve().parent.parent
@@ -54,27 +54,27 @@ def make(fname, title, items, kind):
     y0=220                                # 標題線下方置中
     out=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
          f'  <g id="刀模"><rect x="0" y="0" width="{W}" height="{H}" rx="24" fill="none" stroke="#ff5511" stroke-width="1"/></g>',
-         f'  <g id="紙 · 新百代 {PAPER}"><rect x="0" y="0" width="{W}" height="{H}" fill="{PAPER}"/></g>']
+         f'  <g id="紙_新百代 {PAPER}"><rect x="0" y="0" width="{W}" height="{H}" fill="{PAPER}"/></g>']
     labels=[]
     for i,(name,val) in enumerate(items):
         col=i%cols; row=i//cols; x=gx+col*(CELL+GAP); yy=y0+row*PITCH
-        if kind=='foil': gid=f'燙箔 · {name}'; fill=val; lab=name
-        elif kind=='holo': gid=f'燙雷射 · {name}'; fill=val; lab=name
-        elif kind=='ink': gid=f'印刷 · {name}'; fill=val; lab=name
-        else: gid=f'加工 · {name}'; fill=PAPER; lab=val
+        if kind=='foil': gid=f'燙箔_{name}'; fill=val; lab=name
+        elif kind=='holo': gid=f'燙雷射_{name}'; fill=val; lab=name
+        elif kind=='ink': gid=f'印刷_{name}'; fill=val; lab=name
+        else: gid=f'加工_{name}'; fill=PAPER; lab=val
         g,l=cell(gid,fill,x,yy,lab); out.append(g); labels.append(l)
     logo=''
     if logo_inner:
         inner,vx,vy,vw,vh=logo_inner; bw,bh=240,56; k=min(bw/vw,bh/vh); lx=W-56-vw*k; ly=44
         logo=f'    <g id="logo" transform="translate({lx:.1f} {ly:.1f}) scale({k:.5f}) translate({-vx} {-vy})" fill="#b9bbc2">{inner}</g>'
     mx=56
-    out.append(f'''  <g id="燙箔 · 霧銀">
+    out.append(f'''  <g id="燙箔_霧銀 MS-03">
     <text x="{mx}" y="82" font-family="Georgia, 'Times New Roman', serif" font-size="36" letter-spacing="5" fill="#b9bbc2">FOIL PROOF</text>
     <text x="{mx}" y="106" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="3" fill="#b9bbc2">{esc(title)} · {len(items)} SWATCHES</text>
     <line x1="{mx}" y1="122" x2="{W-mx}" y2="122" stroke="#b9bbc2" stroke-width="0.8"/>
 {logo}
   </g>''')
-    out.append('  <g id="印刷 · 白墨 標籤">'); out+=labels
+    out.append('  <g id="印刷_白墨 標籤">'); out+=labels
     out.append(f'    <text x="{mx}" y="{H-22}" font-family="Helvetica, Arial, sans-serif" font-size="10" letter-spacing="2" fill="#f3f1ec">MMXXVI · FOIL PROOF LAB · NALDO.DESIGN · instagram.com/naldo.design</text>')
     out.append('  </g>'); out.append('</svg>')
     s='\n'.join(out)+'\n'; (OUT/fname).write_text(s); print('→',OUT/fname, len(s),'bytes,',len(items),'cells, y0=',y0); return s
