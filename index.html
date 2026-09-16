@@ -1869,7 +1869,7 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
     d.classList.toggle('matte', !!L.matte); d.classList.toggle('gloss', !L.matte && L.proc==='foil');
     // 箔面紋理（可選可調）：平滑鏡面／透出紙紋／髮絲拉絲／消光顆粒 × 強度；紙紋透出量也跟著走
-    { const ft=L.ftex||(L.matte?'grain':'smooth'), tk=L.texK??1; ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
+    { const ft=L.ftex||'smooth', tk=L.texK??1; // 預設平滑，霧箔也一樣（霧面靠色帶與高光表現，不靠顆粒） ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
       st.setProperty('--texk', tk.toFixed(2)); st.setProperty('--ptexk', (({smooth:.15,paper:1.3,brushed:.35,grain:.5})[ft]*tk).toFixed(3)); }
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
@@ -2084,7 +2084,7 @@ function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='texK') 
 const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 function paramRows(L){
   const r=(label,p,min,max,step)=>rowR(L,label,p,min,max,step);
-  if(L.proc==='foil'){ const ft=L.ftex||(L.matte?'grain':'smooth'); const FT={smooth:'平滑（鏡面）',paper:'透出紙紋',brushed:'髮絲拉絲',grain:'消光顆粒'};
+  if(L.proc==='foil'){ const ft=L.ftex||'smooth'; const FT={smooth:'平滑（鏡面）',paper:'透出紙紋',brushed:'髮絲拉絲',grain:'消光顆粒'};
     return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('光澤','gloss',0,1,.01)+
       `<div class="row two"><label>箔面紋理</label><select data-p="ftex">${Object.entries(FT).map(([k,v])=>`<option value="${k}"${ft===k?' selected':''}>${v}</option>`).join('')}</select></div>`+r('紋理強度','texK',0,2,.05); }
   if(L.proc==='holo') return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05);
