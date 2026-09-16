@@ -119,8 +119,8 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
   -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)*1.1) calc(var(--sdy,.7)*var(--dd,1px)*1.1) calc(var(--db,1px)*1.3) rgba(0,0,0,var(--shi,.5)));opacity:var(--dop,1)}   /* 壓入：近光側內緣陰影 */
 .i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)*.8) calc(-1*var(--sdy,.7)*var(--dd,1px)*.8) var(--db,1px) rgba(255,255,255,var(--hli,.3)));opacity:var(--dop,1)} /* 壓入：遠光側內緣受光 */
-.i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.6)));opacity:var(--ro,1)} /* 隆起：近光側內緣高光 */
-.i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,var(--rshi,.42)));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影 */
+.i-in.rl{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.6)));opacity:var(--ro,1)} /* 隆起：近光側內緣受光（白色外圍往遠光側位移 → 白邊出現在近光側） */
+.i-in.rd{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,var(--rshi,.42)));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影（黑色外圍往近光側位移 → 暗邊出現在遠光側） */
 .m .dome{position:absolute;inset:0!important;background:linear-gradient(var(--sang,135deg),rgba(255,255,255,.28),rgba(255,255,255,0) 42%,rgba(0,0,0,0) 58%,rgba(0,0,0,.3));mix-blend-mode:soft-light;opacity:var(--ro,1);pointer-events:none} /* 圓頂：沿光線方向的明→暗 */
 .m.foil .i-in{opacity:calc(var(--dop,1)*.7)}
 .m.rim{background:var(--pcol,#000)} /* 壓痕用的形狀本身填紙色：油墨半透明或濃度 0 時透出來的是紙，不是黑 */
@@ -174,8 +174,8 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .fx.relief-only .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rd,1px)*1.2 + 2px) rgba(0,0,0,var(--rsha,.1)))}
 .fx.relief-only .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)) calc(var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(0,0,0,var(--shi,.05)))}
 .fx.relief-only .i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)) calc(-1*var(--sdy,.7)*var(--dd,1px)) var(--db,1px) rgba(255,255,255,var(--hli,.05)))}
-.fx.relief-only .i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(0,0,0,var(--rshi,.05)))}
-.fx.relief-only .i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.05)))}
+.fx.relief-only .i-in.rd{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(0,0,0,var(--rshi,.05)))}
+.fx.relief-only .i-in.rl{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.05)))}
 .f-rim.rev{opacity:var(--ro,1)}
 .f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)*1.6) calc(var(--sdy,.7)*var(--rd,1px)*1.6) calc(var(--rb,1px)*1.4) rgba(0,0,0,var(--rsha,.5)))}   /* 隆起：遠光側投影 */
 .f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,var(--rhla,.45)))} /* 隆起：近光側外緣受光 */
@@ -1659,7 +1659,7 @@ function styleFx(d,L,paper=S.paper){
   const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0, L.uv==='raised'?(L.uvDepth??0):0, L.proc==='screen'?(L.thick??0):0);
   if(L.proc==='none' || L.relief!=='none'){
     // 純加工（打凸／打凹／另一面效果）依 Figma 參考：深度 1／2／4 = 偏移 2／4／8px；內緣影 α.05、內緣受光 α.05、打凸再加一道 α.10 的投影；無外緣亮邊
-    const k=(paper.reliefK??1)*(L.backK??1), d=Math.max(pd,rd)*2, bl=d*1.5+1+(L.maskBlur||0);
+    const dep=Math.max(pd,rd), k=(paper.reliefK??1)*(L.backK??1), d=dep*2*1.414, bl=(dep<=1?4:dep<=2?5+(dep-1)*3:8+(dep-2)*4)+(L.maskBlur||0); // Figma：深度 1/2/4 → 偏移分量 2/4/8、模糊 4/5～8/16
     st.setProperty('--shi',(0.05*k*pk).toFixed(3)); st.setProperty('--hli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--sha','0'); st.setProperty('--hla','0');
     st.setProperty('--rshi',(0.05*k*pk).toFixed(3)); st.setProperty('--rhli',(0.05*k*(0.2+0.8*pl)).toFixed(3)); st.setProperty('--rsha',(0.10*k*pk).toFixed(3)); st.setProperty('--rhla','0');
     st.setProperty('--dd', d.toFixed(2)+'px'); st.setProperty('--db', bl.toFixed(2)+'px'); st.setProperty('--dop', pd>0?'1':'0');
