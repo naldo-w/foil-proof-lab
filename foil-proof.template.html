@@ -1494,7 +1494,7 @@ function backReliefLayers(layers, eff){
     // 另一面只看得到「壓過紙厚門檻的部分」：門檻 = 紙厚 × 2.5（0.35mm ≈ 1）；超過的部分乘「另一面強度」；輪廓依紙厚模糊
     const P=S.paper, thr=thickThreshold(P), bk=P.backK??1, blur=P.backBlur??(P.thickMM??.35)*6;
     const mk=(rel,d)=>{ const B={id:'B'+L.id, srcLayer:L.id, proc:'none', relief:rel, reliefDepth:Math.max(.15,(d-thr)*.8*bk), uv:'none', visible:true, knockout:false, mirror:true, maskBlur:blur, backK:bk, named:true, name:'另一面'+(rel==='emboss'?'浮凸':'壓凹')+' · '+L.name}; normalizeLayer(B); syncType(B); return B; };
-    if(bk>0 && pd>thr) out.push(mk('emboss',pd)); else if(bk>0 && rd>thr) out.push(mk('deboss',rd));
+    if(bk>0 && pd-thr>0.15) out.push(mk('emboss',pd)); else if(bk>0 && rd-thr>0.15) out.push(mk('deboss',rd)); // 只差一點點不算透
   });
   return out;
 }
@@ -2016,7 +2016,7 @@ $('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; apply
 });
 $('#pAuto').addEventListener('change', e=>{ S.paper.auto=e.target.checked; save(); });
 /* 紙厚：越厚，透到另一面的門檻越高、另一面輪廓越模糊（模糊未手動改過時自動跟紙厚走） */
-function thickThreshold(P){ return (P.thickMM??.35)*2.5; } // 凹凸深度單位：0.35mm ≈ 1
+function thickThreshold(P){ return (P.thickMM??.35)*3; } // 凹凸深度單位：0.35mm 的卡 ≈ 1.05，預設燙箔壓痕 1.0 不會透
 $('#pThickMM').addEventListener('input', e=>{ const P=S.paper; P.thickMM=+e.target.value; if(!P.backBlurManual) P.backBlur=+(P.thickMM*6).toFixed(1); clearMasks(); applyPaper(); renderFx(); save(); });
 $('#pReliefK').addEventListener('input', e=>{ S.paper.reliefK=+e.target.value; applyPaper(); renderFx(); save(); });
 $('#pBackBlur').addEventListener('input', e=>{ S.paper.backBlur=+e.target.value; S.paper.backBlurManual=true; clearMasks(); applyPaper(); renderFx(); save(); });
@@ -2039,7 +2039,7 @@ const HELP = {
   pRadius:'卡片圓角半徑（px）。名片常見 3–6mm，換算後大約 6–12px。',
   pAuto:'單張模式沒有滑鼠時自動掃光，方便錄影或展示。',
   'sec-thick':'紙厚決定兩件事：壓多深才會透到另一面（門檻 = 紙厚 × 2.5，0.35mm 的 300gsm 卡約等於深度 1），以及另一面輪廓有多模糊（紙越厚越糊，預設跟紙厚走，可手動改）。光影強度是打凸／打凹／另一面效果整體的明暗倍率（1× = Figma 參考值：內緣影 5%、受光 5%、投影 10%）。',
-  pThickMM:'紙厚（mm）。名片常見：250gsm ≈ 0.3、300gsm ≈ 0.35、350gsm ≈ 0.42、荷蘭板 1.0。旁邊會換算 gsm 與透印門檻。',
+  pThickMM:'紙厚（mm）。名片常見：250gsm ≈ 0.3、300gsm ≈ 0.35、350gsm ≈ 0.42、荷蘭板 1.0。旁邊會換算 gsm 與透印門檻（紙厚 × 3）。',
   pReliefK:'打凸／打凹與另一面效果的光影倍率。1× = 依 Figma 參考（弱／中／強對應深度 1／2／4）。',
   pBackBlur:'另一面輪廓模糊（px）。紙越厚纖維越多層，另一面看到的邊緣越糊；改紙厚時會自動更新，手動調過就固定。',
   pBackK:'另一面效果強度：超過門檻的深度乘上這個倍率；0 = 另一面完全不顯示。',
