@@ -168,6 +168,14 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .holo-glitter .h-rain.b{background-position:calc(var(--px)*-1.3) calc(var(--py)*-0.8);opacity:calc(var(--holo,.8)*.7);filter:hue-rotate(90deg)}
 .holo-cosmos .h-rain:not(.b){display:block;background-image:var(--cosmos);background-size:calc(var(--hs,1)*400px) calc(var(--hs,1)*400px);background-position:calc(var(--px)*.6) calc(var(--py)*.6);filter:saturate(1.6) brightness(.9)}
 .holo-cosmos .h-rain.b{display:block;background-image:var(--glit);background-size:calc(var(--hs,1)*160px) calc(var(--hs,1)*160px);background-position:calc(var(--px)*-1.2) calc(var(--py)*-1.2);opacity:calc(var(--holo,.8)*.5)}
+.holo-shards .h-rain:not(.b){display:block;background-image:var(--shards);background-size:calc(var(--hs,1)*240px) calc(var(--hs,1)*240px);background-position:calc(var(--px)*.5) calc(var(--py)*.5);filter:hue-rotate(calc(var(--pxn,.5)*300deg)) saturate(1.5) brightness(.95);mix-blend-mode:color-dodge}
+.holo-shards .h-rain.b{display:block;background-image:var(--glit);background-size:calc(var(--hs,1)*140px) calc(var(--hs,1)*140px);background-position:calc(var(--px)*-1.2) calc(var(--py)*-.9);opacity:calc(var(--holo,.8)*.35)}
+.holo-sand .h-rain:not(.b){display:block;background-image:var(--sand);background-size:calc(var(--hs,1)*72px) calc(var(--hs,1)*72px);background-position:calc(var(--px)*1.3) calc(var(--py)*.9);filter:hue-rotate(calc(var(--pxn,.5)*360deg)) saturate(1.4) brightness(1.05);mix-blend-mode:screen}
+.holo-sand .h-rain.b{display:block;background-image:var(--sand);background-size:calc(var(--hs,1)*72px) calc(var(--hs,1)*72px);background-position:calc(36px + var(--px)*-.9) calc(36px + var(--py)*-1.1);filter:hue-rotate(calc(var(--pxn,.5)*-200deg)) saturate(1.2);opacity:calc(var(--holo,.8)*.6);mix-blend-mode:screen}
+.holo-crumple .h-rain:not(.b){display:block;background-image:var(--crumple);background-size:calc(var(--hs,1)*320px) calc(var(--hs,1)*320px);background-position:calc(var(--px)*.4) calc(var(--py)*.4);mix-blend-mode:hard-light;opacity:calc(var(--holo,.8)*.9);filter:contrast(1.25)}
+.holo-crumple .h-rain.b{display:block;background-image:linear-gradient(115deg,#ff0a54 0%,#ff8c00 16%,#ffef00 32%,#2bff6f 48%,#00d4ff 64%,#8a5cff 80%,#ff0a54 96%);background-size:calc(var(--hs,1)*300%) calc(var(--hs,1)*300%);background-position:var(--px) var(--py);mix-blend-mode:color-dodge;opacity:calc(var(--holo,.8)*.5)}
+.holo-starburst .h-rain:not(.b){display:block;background-image:var(--starburst);background-size:calc(var(--hs,1)*180px) calc(var(--hs,1)*180px);background-position:calc(var(--px)*.8) calc(var(--py)*.6);filter:hue-rotate(calc(var(--pxn,.5)*360deg)) saturate(1.3);mix-blend-mode:screen;opacity:calc(var(--holo,.8)*.95)}
+.holo-starburst .h-rain.b{display:block;background-image:var(--starburst);background-size:calc(var(--hs,1)*260px) calc(var(--hs,1)*260px);background-position:calc(90px + var(--px)*-.7) calc(40px + var(--py)*-.5);filter:hue-rotate(calc(var(--pxn,.5)*-240deg)) saturate(1.2);mix-blend-mode:screen;opacity:calc(var(--holo,.8)*.5)}
 .holo-cracked .h-rain:not(.b){display:block;background-image:var(--crack);background-size:calc(var(--hs,1)*300px) calc(var(--hs,1)*300px);background-position:calc(var(--px)*.7) calc(var(--py)*.7);filter:saturate(1.5) brightness(.85)}
 /* pokemon-cards-css 的幾種 holo：reverse（直條）、radiant（交叉放射）、amazing（流動色塊）、secret（金蔥）、trainer（星塵＋線）、shiny（閃鑽 V） */
 .holo-reverse .h-rain:not(.b){display:block;background-image:repeating-linear-gradient(90deg,#ff0a54 0,#ff8c00 calc(var(--hs,1)*9px),#ffef00 calc(var(--hs,1)*18px),#2bff6f calc(var(--hs,1)*27px),#00d4ff calc(var(--hs,1)*36px),#8a5cff calc(var(--hs,1)*45px),#ff0a54 calc(var(--hs,1)*54px));background-size:200% 200%;background-position:var(--px) var(--py);filter:blur(.3px) saturate(1.3) brightness(.7)}
@@ -554,7 +562,7 @@ body.viewer .stage-tools{bottom:44px}
           <div class="menu-h">效果樣本卡（每類一張）</div>
           <button data-swatch="swatch-foil-metal.svg">燙箔 · 金屬色 · 10 格</button>
           <button data-swatch="swatch-foil-pigment.svg">燙箔 · 純色 · 18 格</button>
-          <button data-swatch="swatch-holo.svg">燙雷射 · 13 格</button>
+          <button data-swatch="swatch-holo.svg">燙雷射 · 17 格</button>
           <button data-swatch="swatch-ink.svg">油墨 · 14 格</button>
           <button data-swatch="swatch-finish.svg">表面處理 · 7 格</button>
           <button id="btnReset">重新偵測顏色與圖層</button>
@@ -923,18 +931,22 @@ const PRESETS = {
   'foil-matte-white': FPM('燙霧白','#ececee',{sat:1,contrast:.15}),
   'foil-matte-black': FPM('燙霧黑','#26262a',{sat:1,bright:.35}),
   /* 燙雷射（參考 pokemon-cards-css 的 holo / rainbow / cosmos / glitter） */
-  'holo-lines':   H('雷射銀（線條）','lines','#cfd0d6'),
-  'holo-lines-gold':H('雷射金（線條）','lines','#d8b25a',{sat:1.15}),
-  'holo-rainbow': H('彩虹雷射','rainbow','#dcdce2',{holo:.9,hscale:1.2}),
-  'holo-glitter': H('碎片雷射（亮粉）','glitter','#c9c9cf',{holo:.85,hscale:1}),
-  'holo-cosmos':  H('星空雷射（宇宙）','cosmos','#aeb2c2',{holo:.9,hscale:1,bright:.45}),
-  'holo-cracked': H('碎冰雷射','cracked','#d0d2da',{holo:.8,hscale:1}),
-  'holo-reverse': H('直條反轉雷射','reverse','#d4d4da',{holo:.85,hscale:1}),
-  'holo-radiant': H('放射交叉雷射','radiant','#d6d6dc',{holo:.8,hscale:1}),
-  'holo-amazing': H('幻彩流動雷射','amazing','#cfd2dc',{holo:.9,hscale:1.2}),
-  'holo-secret':  H('金蔥亮粉','secret','#d4a84a',{holo:.9,hscale:1,sat:1.2}),
-  'holo-trainer': H('星塵線條','trainer','#c9ccd6',{holo:.85,hscale:1}),
-  'holo-shiny':   H('閃鑽 V 雷射','shiny','#d8d8de',{holo:.85,hscale:1}),
+  'holo-lines':   H('雷射銀（線條）','lines','#888888'),
+  'holo-lines-gold':H('雷射金（線條）','lines','#b89858',{sat:1.15}),
+  'holo-rainbow': H('彩虹雷射','rainbow','#888888',{holo:.9,hscale:1.2}),
+  'holo-glitter': H('碎片雷射（亮粉）','glitter','#888888',{holo:.85,hscale:1}),
+  'holo-cosmos':  H('星空雷射（宇宙）','cosmos','#888888',{holo:.9,hscale:1,bright:.45}),
+  'holo-cracked': H('碎冰雷射','cracked','#888888',{holo:.8,hscale:1}),
+  'holo-shards':  H('碎鑽雷射','shards','#888888',{holo:.9,hscale:1}),
+  'holo-sand':    H('砂點雷射','sand','#888888',{holo:.9,hscale:1}),
+  'holo-crumple': H('皺紋雷射','crumple','#888888',{holo:.7,hscale:1}),
+  'holo-starburst':H('星芒雷射','starburst','#888888',{holo:.9,hscale:1}),
+  'holo-reverse': H('直條反轉雷射','reverse','#888888',{holo:.85,hscale:1}),
+  'holo-radiant': H('放射交叉雷射','radiant','#888888',{holo:.8,hscale:1}),
+  'holo-amazing': H('幻彩流動雷射','amazing','#888888',{holo:.9,hscale:1.2}),
+  'holo-secret':  H('金蔥亮粉','secret','#b8924a',{holo:.9,hscale:1,sat:1.2}),
+  'holo-trainer': H('星塵線條','trainer','#888888',{holo:.85,hscale:1}),
+  'holo-shiny':   H('閃鑽 V 雷射','shiny','#888888',{holo:.85,hscale:1}),
   'holo-pearl':   H('珍珠箔','pearl','#f1eff0',{holo:.5,sat:1,contrast:.3,gloss:.55,brush:.05,hscale:1.4}),
   'holo-pearl-pink':H('珍珠粉箔','pearl','#f3d9e0',{holo:.5,sat:1.05,contrast:.3,gloss:.55,brush:.05,hscale:1.4}),
   'holo-clear':   H('透明雷射膜（疊在印刷上）','clear','#ffffff',{holo:.55,contrast:.3,gloss:.5,brush:0,depth:0,noKnock:true}),
@@ -1219,6 +1231,24 @@ const COSMOS = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="
 /* 油墨斑駁：低頻雲狀不均，模擬吸墨不均與網點 */
 const MOTTLE = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><filter id="m" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="1.4" intercept="-0.2"/><feFuncG type="linear" slope="1.4" intercept="-0.2"/><feFuncB type="linear" slope="1.4" intercept="-0.2"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#m)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 const CRACK = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="k" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="saturate" values="3"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncG type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncB type="discrete" tableValues="0 0.25 0.5 0.75 1"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#k)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+/* 雷射：碎鑽（不規則多邊形碎面）——週期性抖動格點的三角剖分，無接縫平鋪；每片給不同色相與明度 */
+const SHARDS = (()=>{ let seed=13; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  const T=240, N=11, c=T/N, pts=[]; for(let j=0;j<=N;j++){ pts.push([]); for(let i=0;i<=N;i++){ const bx=(i<N&&j<N)?[ (rnd()-.5)*c*.9, (rnd()-.5)*c*.9 ]:[0,0]; pts[j].push([i*c+bx[0], j*c+bx[1]]); } }
+  for(let j=0;j<=N;j++){ pts[j][N]=[pts[j][0][0]+T, pts[j][0][1]]; } for(let i=0;i<=N;i++){ pts[N][i]=[pts[0][i][0], pts[0][i][1]+T]; } pts[N][N]=[pts[0][0][0]+T, pts[0][0][1]+T];
+  let g=''; const col=()=>{ const h=Math.floor(rnd()*360), l=35+Math.floor(rnd()*45); return `hsl(${h} 90% ${l}%)`; };
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const a=pts[j][i], b=pts[j][i+1], d=pts[j+1][i], e=pts[j+1][i+1]; if(rnd()<.35){ g+=`<polygon points="${a} ${b} ${e} ${d}" fill="${col()}"/>`; } else if(rnd()<.5){ g+=`<polygon points="${a} ${b} ${e}" fill="${col()}"/><polygon points="${a} ${e} ${d}" fill="${col()}"/>`; } else { g+=`<polygon points="${a} ${b} ${d}" fill="${col()}"/><polygon points="${b} ${e} ${d}" fill="${col()}"/>`; } }
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${T}" height="${T}" viewBox="0 0 ${T} ${T}"><g stroke="rgba(255,255,255,.25)" stroke-width=".6">${g}</g></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+/* 雷射：砂點（細小圓點，每點不同色相） */
+const SAND = (()=>{ let seed=29; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; }; const T=72, P=6; let g='';
+  for(let y=P/2;y<T;y+=P) for(let x=P/2;x<T;x+=P){ const h=Math.floor(rnd()*360), l=45+Math.floor(rnd()*40), r=1+rnd()*.9; g+=`<circle cx="${(x+(rnd()-.5)*2).toFixed(1)}" cy="${(y+(rnd()-.5)*2).toFixed(1)}" r="${r.toFixed(2)}" fill="hsl(${h} 95% ${l}%)"/>`; }
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${T}" height="${T}">${g}</svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+/* 雷射：皺紋（低頻亂數高度圖打光 → 皺褶的明暗） */
+const CRUMPLE = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320"><filter id="w" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="4" seed="21" stitchTiles="stitch" result="n"/><feColorMatrix type="saturate" values="0" in="n" result="g"/><feComponentTransfer in="g" result="h"><feFuncR type="gamma" exponent="2.2"/><feFuncG type="gamma" exponent="2.2"/><feFuncB type="gamma" exponent="2.2"/></feComponentTransfer><feDiffuseLighting in="h" surfaceScale="14" diffuseConstant="1" lighting-color="#fff" result="lit"><feDistantLight azimuth="135" elevation="42"/></feDiffuseLighting><feComponentTransfer in="lit"><feFuncR type="linear" slope=".8" intercept="-.06"/><feFuncG type="linear" slope=".8" intercept="-.06"/><feFuncB type="linear" slope=".8" intercept="-.06"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#w)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
+/* 雷射：星芒（散布的小放射光點，每道光線不同色相；平鋪時邊緣的星芒也複製到對面，無接縫） */
+const STARBURST = (()=>{ let seed=41; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; }; const T=180; let g='';
+  const star=(cx,cy,R,h0)=>{ let o=''; const n=18; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+rnd()*.12, r=R*(.55+rnd()*.45), h=(h0+i*20)%360; o+=`<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${(cx+Math.cos(a)*r).toFixed(1)}" y2="${(cy+Math.sin(a)*r).toFixed(1)}" stroke="hsl(${h} 95% 65%)" stroke-width="${(0.6+rnd()*.6).toFixed(2)}" stroke-opacity="${(0.55+rnd()*.45).toFixed(2)}"/>`; } o+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.6" fill="#fff"/>`; return o; };
+  for(let k=0;k<6;k++){ const cx=rnd()*T, cy=rnd()*T, R=28+rnd()*30, h0=Math.floor(rnd()*360); for(const dx of [-T,0,T]) for(const dy of [-T,0,T]) g+=star(cx+dx,cy+dy,R,h0); }
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${T}" height="${T}" viewBox="0 0 ${T} ${T}" stroke-linecap="round">${g}</svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 function paperBlend(P){ if(P.blend!=='auto') return P.blend; return hsl(P.color).l<.35 ? 'hard-light' : 'overlay'; }
 
 /* ---------- color helpers ---------- */
@@ -1411,7 +1441,7 @@ const PROCS = {
   none:{label:'不上色（只做加工）',colored:false},
   hide:{label:'不印',colored:false},
 };
-const HOLO_SUBS={lines:'線條雷射',reverse:'直條反轉',radiant:'放射交叉',rainbow:'彩虹雷射',amazing:'幻彩流動',glitter:'碎片亮粉',secret:'金蔥亮粉',cosmos:'星空宇宙',trainer:'星塵線條',shiny:'閃鑽 V',cracked:'碎冰',pearl:'珍珠箔',clear:'透明雷射膜'};
+const HOLO_SUBS={lines:'線條雷射',reverse:'直條反轉',radiant:'放射交叉',rainbow:'彩虹雷射',amazing:'幻彩流動',glitter:'碎片亮粉',secret:'金蔥亮粉',cosmos:'星空宇宙',trainer:'星塵線條',shiny:'閃鑽 V',cracked:'碎冰',shards:'碎鑽',sand:'砂點',crumple:'皺紋',starburst:'星芒',pearl:'珍珠箔',clear:'透明雷射膜'};
 const UV_SUBS={none:'無',gloss:'亮面 UV',matte:'霧面 UV',frost:'磨砂 UV',raised:'立體 UV／水晶膠',glitter:'亮粉 UV'};
 const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
 const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
@@ -1774,7 +1804,7 @@ function styleFx(d,L,paper=S.paper){
   const st = d.style; st.setProperty('--pcol', paper.color);
   if(L.proc==='foil' || L.proc==='holo'){
     const c = L.band ?? L.contrast ?? .45, sp = L.spec ?? L.contrast ?? .45;
-    if(L.proc==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); }
+    if(L.proc==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); st.setProperty('--shards', SHARDS); st.setProperty('--sand', SAND); st.setProperty('--crumple', CRUMPLE); st.setProperty('--starburst', STARBURST); }
     st.setProperty('--grad', foilGradient(L.tint, c));
     st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
     const hi=rgb(foilShades(L.tint,c).hi), ga=0.15+sp*0.75;
@@ -2124,7 +2154,7 @@ function applyPointer(card,px,py,hov,mirror=false){
   // 效能：--px 等變數若寫在卡片根元素，Blink 會把整棵子樹（含靜態紋理、壓痕影子）全部重畫；改成只寫在真的用到的 .dyn 元素上
   const pxs=(lx*100).toFixed(2)+'%', pys=(py*100).toFixed(2)+'%', hf=(1-0.55*Math.min(1,Math.hypot(px-.5,py-.5)/.7)).toFixed(3), hv=hov.toFixed(3);
   if(!card._dyn || card._dynRev!==sceneRev){ card._dyn=[...card.querySelectorAll('.dyn')]; card._dynRev=sceneRev; }
-  for(const el of card._dyn){ const s=el.style; s.setProperty('--px',pxs); s.setProperty('--py',pys); s.setProperty('--hov',hv); s.setProperty('--hfall',hf); }
+  const pxn=lx.toFixed(3); for(const el of card._dyn){ const s=el.style; s.setProperty('--px',pxs); s.setProperty('--py',pys); s.setProperty('--hov',hv); s.setProperty('--hfall',hf); s.setProperty('--pxn',pxn); }
   setLightDir(card, 0.5-lx, 0.5-py);
   card.style.transform=`${card.classList.contains('back')?'rotateY(180deg) ':''}rotateX(${((0.5-py)*P.tilt*2).toFixed(2)}deg) rotateY(${((px-0.5)*P.tilt*2).toFixed(2)}deg)`;
 }
