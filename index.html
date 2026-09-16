@@ -264,8 +264,7 @@ body.empty .panel{visibility:hidden}
 .fx.matte .m.foil{filter:saturate(calc(var(--sat,1)*.95)) contrast(.95)}
 .fx.matte .m.foil .f-base{filter:brightness(calc(var(--fb,1)*1.02)) contrast(calc(var(--fc,1)*.85))}
 .fx.matte .m.foil .f-glare{opacity:calc(var(--gloss,.2) * (.2 + .3*var(--hov)))}
-.fx.ftex-smooth .m.foil .f-brush{opacity:calc(.1*var(--texk,1))}
-.fx.ftex-paper .m.foil .f-brush{opacity:calc(.12*var(--texk,1))}
+.fx.ftex-smooth .m.foil .f-brush,.fx.ftex-paper .m.foil .f-brush{display:none} /* 平滑／透出紙紋：完全沒有髮絲斜紋（之前留 10% 放大就看得到斜線） */
 .fx.ftex-brushed .m.foil .f-brush{opacity:calc(.6*var(--texk,1));mix-blend-mode:soft-light}
 .fx.ftex-grain .m.foil .f-brush{opacity:calc(.4*var(--texk,1));mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
@@ -1884,8 +1883,8 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
     d.classList.toggle('matte', !!L.matte); d.classList.toggle('gloss', !L.matte && L.proc==='foil');
     // 箔面紋理（可選可調）：平滑鏡面／透出紙紋／髮絲拉絲／消光顆粒 × 強度；紙紋透出量也跟著走
-    { const ft=L.ftex||'smooth', tk=L.texK??1; // 預設平滑，霧箔也一樣（霧面靠色帶與高光表現，不靠顆粒） ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
-      st.setProperty('--texk', tk.toFixed(2)); st.setProperty('--ptexk', (({smooth:.15,paper:1.3,brushed:.35,grain:.5})[ft]*tk).toFixed(3)); }
+    { const ft=L.ftex||'smooth', tk=L.texK??1; /* 預設平滑，霧箔也一樣 */ ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
+      st.setProperty('--texk', tk.toFixed(2)); st.setProperty('--ptexk', (({smooth:0,paper:1.3,brushed:.3,grain:.4})[ft]*tk).toFixed(3)); } // 平滑＝完全沒有紙紋（新百代這種十字斜壓紋之前會從箔面透出來）
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     const opaque = L.fluo || L.proc==='screen';
