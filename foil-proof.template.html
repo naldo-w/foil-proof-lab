@@ -1238,7 +1238,13 @@ const PAPERS = {
   recycled: {label:'再生紙',        group:'再生／特殊', bf:'.5',  oct:3, relief:1.2, grain:.35, gloss:.1, speck:true, note:'再生紙，散布的深色纖維斑點。'},
   felt:     {label:'毛氈紙',                group:'再生／特殊', bf:'.3',  oct:4, relief:2.2, grain:.5, gloss:.05, note:'鬆軟不規則的毛面，吸光。'},
   /* 台灣印刷廠常用名 */
-  shinbaidai:{label:'新百代',               group:'台灣常用', bf:'.5 .5', oct:2, relief:1.9, grain:.3, gloss:.15, lines:[{dir:45,period:5,str:.09},{dir:-45,period:5,str:.09}], note:'細緻的十字斜壓紋，微毛面；名片、卡片常用。'},
+  shinbaidai:{label:'新百代',               group:'紙樣', bf:'.6', oct:3, relief:1.6, grain:.3, gloss:.1, color:'#dedbd6', gsm:[120,250,300,450], strength:0.45, note:'英國 新百代 02：細緻的毛氈面、微起伏，偏灰的冷白；120／250／300／450 gsm。名片、卡片常用。'},
+  sakemat:  {label:'酒墊紙',                group:'紙樣', bf:'.9', oct:2, relief:1.0, grain:.2, gloss:.12, color:'#e8e6e1', gsm:[300,570], strength:0.3, note:'日本 酒墊紙：手感佳、紙面精緻、硬挺度極佳，偏灰的冷白像沒上釉的白瓷；300／570 gsm，凸版壓痕深而俐落。'},
+  beercard: {label:'啤酒卡',                group:'紙樣', bf:'.7', oct:3, relief:1.2, grain:.3, gloss:.1, color:'#e4e2dd', gsm:[285,480,570], strength:0.35, note:'SS 啤酒卡：乾淨紙面帶自然觸感，厚、輕、硬挺、吸水性強；285／480／570 gsm，可做杯墊，適合各種加工。'},
+  matisse:  {label:'馬諦斯',                group:'紙樣', bf:'1.0', oct:2, relief:.7, grain:.2, gloss:.15, color:'#ecebe8', gsm:[100,300], strength:0.25, note:'德國 馬諦斯 F6150：極細的均勻紋理、平滑，冷白；100／300 gsm。'},
+  scent:    {label:'香氛紙',                group:'紙樣', bf:'.28', oct:4, relief:2.6, grain:.4, gloss:.06, color:'#e9e4da', gsm:[100,130,190,250,300,350], strength:0.7, note:'香氛紙：米白、無塗佈、吸墨性強，毛氈般的粗起伏，手感溫柔；100–350 gsm。'},
+  vanilla:  {label:'香草紙',                group:'紙樣', bf:'.4', oct:4, relief:2.0, grain:.45, gloss:.05, color:'#e2dfd9', gsm:[70,90,115,200,250,300], strength:0.6, note:'香草紙：輕量蓬鬆、偏灰白，纖維細緻無塗佈，手感溫柔氣質自然；70–300 gsm。'},
+  chipboard:{label:'黃心模型紙板',          group:'紙樣', bf:'.3 .22', oct:4, relief:3.2, grain:.55, gloss:.03, color:'#c4b69c', gsm:[], strength:.7, note:'黃心模型紙板（1mm）：表面纖維感極明顯、厚而密度低，打凹效果明顯，人文手作風。'},
   beer:     {label:'啤酒紙',                group:'台灣常用', bf:'.55', oct:3, relief:1.3, grain:.45, gloss:.08, speck:true, note:'未漂白、帶褐色纖維斑點的手感紙。'},
   stardream:{label:'星幻紙',    group:'台灣常用', bf:'1.1', oct:2, relief:.5,  grain:.25, gloss:.85, note:'Stardream 金屬珠光表面，反光帶會隨角度流動。'},
   conqueror:{label:'剛古紙',        group:'台灣常用', bf:'.6',  oct:2, relief:1.1, grain:.3,  gloss:.2, lines:[{dir:180,period:5,str:.14}], note:'英國 Conqueror 橫紋壓紋，信封信紙標配。'},
@@ -1490,9 +1496,9 @@ function autoLayers(){
     let L;
     if(r.proc==='diecut'){ S.diecut={k:g.getAttribute('data-k')}; S._dc=undefined; L = hideL || (hideL=newLayer('hide','不印 · 底色')); }
     else if(r.proc==='paper'){ // 紙張群組：套紙質、抓紙色（名稱色碼 → 群組內最大圖形的填色），整組不印
-      if(r.paper) S.paper.texture=r.paper; if(r.gsm){ S.paper.thickMM=+(r.gsm/860).toFixed(2); if(!S.paper.backBlurManual) S.paper.backBlur=+(S.paper.thickMM*6).toFixed(1); }
+      if(r.paper){ S.paper.texture=r.paper; const t=PAPERS[r.paper]; if(t.strength!=null) S.paper.strength=t.strength; S.paper.grain=t.grain; S.paper.gloss=t.gloss; } if(r.gsm){ S.paper.thickMM=+(r.gsm/860).toFixed(2); if(!S.paper.backBlurManual) S.paper.backBlur=+(S.paper.thickMM*6).toFixed(1); }
       let best=null,ba=0; Object.entries(shapes).forEach(([k,sh])=>{ if(!sh.fill || !g.contains(sh.el)) return; let a=0; try{ const b=sh.el.getBBox(); a=b.width*b.height; }catch(e){} if(a>ba){ ba=a; best=sh.fill; } });
-      S.paper.color = r.tint || best || S.paper.color;
+      S.paper.color = r.tint || best || (r.paper && PAPERS[r.paper]?.color) || S.paper.color; // 名稱色碼 > 群組底色 > 紙樣預設色
       L = hideL || (hideL=newLayer('hide','不印 · 底色'));
     }
     else if(r.proc==='hide'){ L = hideL || (hideL=newLayer('hide', groupName(g))); }
@@ -2362,7 +2368,7 @@ new ResizeObserver(()=>{ if(S){ fitCard(); fitScene(); } }).observe(stage);
 
 /* ---------- paper controls ---------- */
 $('#pColor').addEventListener('input', e=>{ S.paper.color=e.target.value; applyPaper(); save(); });
-$('#pTex').addEventListener('change', e=>{ const P=S.paper, t=PAPERS[e.target.value]; P.texture=e.target.value; P.grain=t.grain; P.gloss=t.gloss; P.relief=1; applyPaper(); save(); });
+$('#pTex').addEventListener('change', e=>{ const P=S.paper, t=PAPERS[e.target.value]; P.texture=e.target.value; P.grain=t.grain; P.gloss=t.gloss; P.relief=1; if(t.color) P.color=t.color; if(t.strength!=null) P.strength=t.strength; if(t.gsm&&t.gsm.length){ const g=t.gsm.includes(300)?300:t.gsm[Math.min(t.gsm.length-1,Math.floor(t.gsm.length/2))]; P.thickMM=+(g/860).toFixed(2); if(!P.backBlurManual) P.backBlur=+(P.thickMM*6).toFixed(1); } applyPaper(); save(); }); // 紙樣：帶預設紙色與常用克重（有 300 就用 300）
 $('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; applyPaper(); save(); });
 [['#pStrength','strength'],['#pRelief','relief'],['#pAz','az'],['#pGrain','grain'],['#pScale','scale'],['#pGloss','gloss'],['#pTilt','tilt'],['#pRadius','radius']].forEach(([sel,p])=>{
   $(sel).addEventListener('input', e=>{ S.paper[p]=+e.target.value; applyPaper(); save(); });
