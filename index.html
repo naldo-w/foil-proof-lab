@@ -254,7 +254,10 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .fx.matte .m.foil{filter:saturate(calc(var(--sat,1)*.95)) contrast(.95)}
 .fx.matte .m.foil .f-base{filter:brightness(calc(var(--fb,1)*1.02)) contrast(calc(var(--fc,1)*.85))}
 .fx.matte .m.foil .f-glare{opacity:calc(var(--gloss,.2) * (.2 + .3*var(--hov)))}
-.fx.matte .m.foil .f-brush{opacity:calc(var(--brush,.7)*.55);mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px} /* 霧面是平的一塊色，只留一點消光顆粒 */
+.fx.ftex-smooth .m.foil .f-brush{opacity:calc(.1*var(--texk,1))}
+.fx.ftex-paper .m.foil .f-brush{opacity:calc(.12*var(--texk,1))}
+.fx.ftex-brushed .m.foil .f-brush{opacity:calc(.6*var(--texk,1));mix-blend-mode:soft-light}
+.fx.ftex-grain .m.foil .f-brush{opacity:calc(.4*var(--texk,1));mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
@@ -1499,6 +1502,7 @@ const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
 const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
 /* 依 type 反推 proc（舊資料相容），並補齊欄位 */
 function normalizeLayer(L){
+  if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
   if(!L.proc){
     const t=L.type;
     if(t==='foil') L.proc='foil'; else if(t==='holo') L.proc='holo';
@@ -1863,7 +1867,10 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--g1', `rgba(${hi.join(',')},${ga.toFixed(3)})`); st.setProperty('--g2', `rgba(${hi.join(',')},${(ga*.4).toFixed(3)})`); st.setProperty('--gd', (0.08+sp*0.55).toFixed(3));
     st.setProperty('--sat', (L.sat ?? 1.15).toFixed(2));
     st.setProperty('--holo', L.holo); st.setProperty('--brush', L.brush); st.setProperty('--gloss', L.gloss);
-    d.classList.toggle('matte', !!L.matte); d.classList.toggle('gloss', !L.matte && L.proc==='foil'); st.setProperty('--ptexk', L.matte ? '1.15' : '.4'); // 亮箔是鏡面，紙紋幾乎透不出來；霧箔是消光面，紙紋較明顯
+    d.classList.toggle('matte', !!L.matte); d.classList.toggle('gloss', !L.matte && L.proc==='foil');
+    // 箔面紋理（可選可調）：平滑鏡面／透出紙紋／髮絲拉絲／消光顆粒 × 強度；紙紋透出量也跟著走
+    { const ft=L.ftex||(L.matte?'grain':'smooth'), tk=L.texK??1; ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
+      st.setProperty('--texk', tk.toFixed(2)); st.setProperty('--ptexk', (({smooth:.15,paper:1.3,brushed:.35,grain:.5})[ft]*tk).toFixed(3)); }
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     const opaque = L.fluo || L.proc==='screen';
@@ -2073,11 +2080,13 @@ function colorChipsHTML(L){
 }
 function tileHTML({attr,key,label,cls,on,c}){ return `<button class="tile${on?' on':''}" ${attr}="${key}" title="${esc(label)}" style="--c:${c||'#999'};--grad:${(cls||'').includes('foil')?foilGradient(c||'#c9cacf',.45):'none'}"><span class="sh ${cls||''}"></span><span class="lb">${esc(label)}</span></button>`; }
 function procTileClass(k,L){ return ({foil:'foil',holo:'holo lines',ink:'ink',letterpress:'ink press',screen:'ink screen',none:'none',hide:'hide'})[k]||''; }
-function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='texK') return (+v).toFixed(2)+'×'; if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 function paramRows(L){
   const r=(label,p,min,max,step)=>rowR(L,label,p,min,max,step);
-  if(L.proc==='foil') return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('髮絲紋','brush',0,1,.01)+r('光澤','gloss',0,1,.01);
+  if(L.proc==='foil'){ const ft=L.ftex||(L.matte?'grain':'smooth'); const FT={smooth:'平滑（鏡面）',paper:'透出紙紋',brushed:'髮絲拉絲',grain:'消光顆粒'};
+    return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('飽和度','sat',0,2,.01)+r('壓痕深度','depth',0,3,.05)+r('全息','holo',0,1,.01)+r('光澤','gloss',0,1,.01)+
+      `<div class="row two"><label>箔面紋理</label><select data-p="ftex">${Object.entries(FT).map(([k,v])=>`<option value="${k}"${ft===k?' selected':''}>${v}</option>`).join('')}</select></div>`+r('紋理強度','texK',0,2,.05); }
   if(L.proc==='holo') return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05);
   const inkX = r('溢出','spread',0,6,.1)+r('不平均','mottle',0,1,.01);
   if(L.proc==='ink') return r('濃度','opacity',0,1,.01)+inkX+(L.fluo?'':`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`)+r('光澤','gloss',0,.5,.01);
@@ -2367,6 +2376,8 @@ const HELP = {
   depth:'壓痕深度：燙箔時箔被壓進紙面的深度，會在箔面外圍的紙上留下一圈明暗（跟著光線方向）。細線與小字建議 ≤ 1px。',
   holo:'全息／雷射強度：彩虹色帶的不透明度。一般燙箔留 5–15% 當作箔面的輕微虹彩；雷射箔 70–100%。',
   brush:'髮絲紋：箔面的細直紋，霧銀、拉絲金常見；鏡面箔設 0。',
+  ftex:'箔面紋理：平滑＝鏡面箔，幾乎不透紙紋；透出紙紋＝箔貼合粗紋紙時紙紋會透上來；髮絲拉絲＝拉絲金／拉絲銀的細直紋；消光顆粒＝霧箔的微顆粒。',
+  texK:'紋理強度：上面選的紋理有多明顯（同時影響紙紋透出量）。',
   gloss:'光澤：光源移動時的反光範圍與強度。燙箔 60–90%，油墨 5–10%，霧面幾乎 0。',
   hscale:'雷射紋路尺寸：線條間距、亮粉大小、星空色塊的縮放。',
   opacity:'油墨濃度：印刷油墨是薄薄一層，實際滿版大約 90–95% 且紙紋會透出；100% 只有網版厚墨或白墨打底才成立。降低可模擬淡色或網點。',
