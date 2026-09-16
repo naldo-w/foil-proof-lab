@@ -786,8 +786,7 @@ input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;bac
     <label class="toggle"><input type="checkbox" data-k="docs"> 檔案（含 SVG 原文，較大）</label>
   </div>
   <div id="shareOpts" hidden>
-    <div class="row two"><label>檔案</label><select id="shareDocs"><option value="none">不含（開啟的人要自己上傳同一份 SVG）</option><option value="inline">壓進網址（gzip，小檔可行）</option><option value="url">外部連結（GitHub raw、Dropbox 直連等可 CORS 的網址）</option></select></div>
-    <div id="shareUrls"></div>
+    <div class="row two"><label>檔案</label><label class="toggle"><input type="checkbox" id="shareDocs" checked> 含 SVG 檔案（gzip 壓進網址）</label></div>
     <div class="row two"><label>模式</label><label class="toggle"><input type="checkbox" id="shareViewer"> 只分享「卡片」互動預覽（隱藏編輯面板，可翻面、滑鼠打光；右上有「編輯」可展開）</label></div>
   </div>
   <div id="shareOut" hidden><textarea id="shareUrl" readonly spellcheck="false" style="width:100%;height:64px;font:11px var(--mono);background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;color:var(--text);padding:6px;resize:vertical"></textarea></div>
@@ -2449,8 +2448,8 @@ const b64u=bytes=>{ let s=''; for(let i=0;i<bytes.length;i+=0x8000) s+=String.fr
 const unb64u=str=>{ const b=atob(str.replace(/-/g,'+').replace(/_/g,'/')); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; };
 async function gzipB64(str){ if(!('CompressionStream' in window)) return null; const cs=new CompressionStream('gzip'); const w=cs.writable.getWriter(); w.write(new TextEncoder().encode(str)); w.close(); return b64u(new Uint8Array(await new Response(cs.readable).arrayBuffer())); }
 async function gunzipB64(b){ const ds=new DecompressionStream('gzip'); const w=ds.writable.getWriter(); w.write(unb64u(b)); w.close(); return await new Response(ds.readable).text(); }
-async function makeShareURL(sel, docMode='none'){
-  const obj=exportParams(sel); if(docMode==='url' && obj.docs) obj.docs.forEach(d=>{ d.url=d.srcUrl; delete d.svgText; }); if($('#shareViewer').checked) obj.viewer='card'; const json=JSON.stringify(obj); const gz=await gzipB64(json);
+async function makeShareURL(sel){
+  const obj=exportParams(sel); if($('#shareViewer').checked) obj.viewer='card'; const json=JSON.stringify(obj); const gz=await gzipB64(json);
   const base=location.origin+location.pathname; return gz ? `${base}#p=${gz}` : `${base}#pj=${b64u(new TextEncoder().encode(json))}`;
 }
 async function loadFromHash(){
@@ -2461,13 +2460,10 @@ async function loadFromHash(){
 }
 /* 檢視模式：只有卡片互動預覽，沒有面板 */
 function enterViewer(){ document.body.classList.add('viewer'); setViewMode('single'); setSide('front'); view.mode='fit'; applyZoom(); if(!$('#viewerExit')){ const b=document.createElement('button'); b.id='viewerExit'; b.className='btn ghost'; b.textContent='編輯'; b.title='展開完整編輯介面'; b.addEventListener('click',()=>{ document.body.classList.remove('viewer'); fitCard(); }); $('.topbar').appendChild(b); } }
-function renderShareUrls(){ const host=$('#shareUrls'); host.innerHTML=''; if($('#shareDocs').value!=='url') return; (S.docs||[]).forEach(d=>{ const row=document.createElement('div'); row.className='row two'; row.innerHTML=`<label title="${esc(d.name)}" style="overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</label><input type="text" placeholder="https://raw.githubusercontent.com/…/card.svg" value="${esc(d.srcUrl||'')}" spellcheck="false">`; row.querySelector('input').addEventListener('change',e=>{ d.srcUrl=e.target.value.trim(); save(); }); host.appendChild(row); }); }
-$('#shareDocs').addEventListener('change',renderShareUrls);
-$('#btnShare').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOpts').hidden=false; $('#shareOut').hidden=false; renderShareUrls(); $('#paramModal').classList.add('on'); });
+$('#btnShare').addEventListener('click',()=>{ $('#paramMsg').textContent=''; $('#shareOpts').hidden=false; $('#shareOut').hidden=false; $('#paramModal').classList.add('on'); });
 $('#paramShare').addEventListener('click', async ()=>{
-  const mode=$('#shareDocs').value; const sel=paramSel(); sel.docs = mode!=='none';
-  if(mode==='url' && (S.docs||[]).some(d=>!d.srcUrl)) { $('#paramMsg').textContent='外部連結模式：每份 SVG 都要填網址'; return; }
-  const url=await makeShareURL(sel, mode); const ta=$('#shareUrl'); ta.value=url; $('#shareOut').hidden=false; const kb=(url.length/1024).toFixed(1);
+  const sel=paramSel(); sel.docs=$('#shareDocs').checked;
+  const url=await makeShareURL(sel); const ta=$('#shareUrl'); ta.value=url; $('#shareOut').hidden=false; const kb=(url.length/1024).toFixed(1);
   $('#paramMsg').textContent=`網址 ${kb} KB` + (url.length>60000?'（太長，通訊軟體可能截斷；瀏覽器直接貼網址列通常沒問題，或改匯出 JSON）':''); try{ await navigator.clipboard.writeText(url); toast('已複製分享網址'); }catch(e){} });
 /* ---------- 參數 JSON 匯出／匯入 ---------- */
 const VIEW_KEYS=['W','H','exportScale','quality','pitch','yaw','roll','fov','zoom','shift','shiftX','dfx','dfy','aperture','ev','mix','includeCurrent','flipRatio'];
