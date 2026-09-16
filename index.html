@@ -116,8 +116,8 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
   -webkit-mask-composite:xor;mask-composite:exclude;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
 .i-in.pd{filter:drop-shadow(calc(var(--sdx,.7)*var(--dd,1px)*1.1) calc(var(--sdy,.7)*var(--dd,1px)*1.1) calc(var(--db,1px)*1.3) rgba(0,0,0,var(--shi,.5)));opacity:var(--dop,1)}   /* 壓入：近光側內緣陰影 */
 .i-in.pl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--dd,1px)*.8) calc(-1*var(--sdy,.7)*var(--dd,1px)*.8) var(--db,1px) rgba(255,255,255,var(--hli,.3)));opacity:var(--dop,1)} /* 壓入：遠光側內緣受光 */
-.i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,.6));opacity:var(--ro,1)} /* 隆起：近光側內緣高光 */
-.i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,.42));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影 */
+.i-in.rl{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)) calc(-1*var(--sdy,.7)*var(--rd,1px)) var(--rb,1px) rgba(255,255,255,var(--rhli,.6)));opacity:var(--ro,1)} /* 隆起：近光側內緣高光 */
+.i-in.rd{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)) calc(var(--sdy,.7)*var(--rd,1px)) calc(var(--rb,1px)*1.2) rgba(0,0,0,var(--rshi,.42)));opacity:var(--ro,1)}  /* 隆起：遠光側內緣陰影 */
 .m .dome{position:absolute;inset:0!important;background:linear-gradient(var(--sang,135deg),rgba(255,255,255,.28),rgba(255,255,255,0) 42%,rgba(0,0,0,0) 58%,rgba(0,0,0,.3));mix-blend-mode:soft-light;opacity:var(--ro,1);pointer-events:none} /* 圓頂：沿光線方向的明→暗 */
 .m.foil .i-in{opacity:calc(var(--dop,1)*.7)}
 .m.rim{background:var(--pcol,#000)} /* 壓痕用的形狀本身填紙色：油墨半透明或濃度 0 時透出來的是紙，不是黑 */
@@ -168,8 +168,8 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
 .m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:color-dodge;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
 .f-rim.rev{opacity:var(--ro,1)}
-.f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)*1.6) calc(var(--sdy,.7)*var(--rd,1px)*1.6) calc(var(--rb,1px)*1.4) rgba(0,0,0,.5))}   /* 隆起：遠光側投影 */
-.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,.45))} /* 隆起：近光側外緣受光 */
+.f-rim.rev.dk{filter:drop-shadow(calc(var(--sdx,.7)*var(--rd,1px)*1.6) calc(var(--sdy,.7)*var(--rd,1px)*1.6) calc(var(--rb,1px)*1.4) rgba(0,0,0,var(--rsha,.5)))}   /* 隆起：遠光側投影 */
+.f-rim.rev.lt{filter:drop-shadow(calc(-1*var(--sdx,.7)*var(--rd,1px)*.5) calc(-1*var(--sdy,.7)*var(--rd,1px)*.5) var(--rb,1px) rgba(255,255,255,var(--rhla,.45)))} /* 隆起：近光側外緣受光 */
 .m.r-face{background:var(--face);mix-blend-mode:multiply} /* 半透明壓色：紙紋要透得出來 */
 /* 發泡印花：外緣立體陰影 + 內側圓頂明暗（反向遮罩 drop-shadow）+ 霧面顆粒 */
 /* 印刷油墨：薄墨層 → 紙紋透出、低頻斑駁；金屬油墨：鋁粉／銅粉的弱方向性反光 + 細閃點，比燙箔暗、鈍、粗 */
@@ -1637,7 +1637,10 @@ function styleFx(d,L,paper=S.paper){
   const pd=Math.max((L.proc==='foil'||L.proc==='holo')?(L.depth??0):0, L.proc==='letterpress'?(L.press??0):0, L.relief==='deboss'?(L.reliefDepth??0):0);
   // 深色紙：黑影本來就快看不見 → 影子加深、加寬；白色受光邊反而搶眼 → 收斂
   const pl=hsl(paper.color).l, dk=1-pl, pk=1+0.6*dk;
-  st.setProperty('--sha',(0.35+0.55*dk).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--shi',(0.5+0.45*dk).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)).toFixed(2));
+  // 純加工（打凸／打凹／另一面效果）：只有邊緣的細影與極淡的受光線，強度比燙箔壓痕低很多（參考實物：影子約 8%、受光約 1.5%）
+  const rk = L.proc==='none' ? {s:.45,h:.22} : {s:1,h:1};
+  st.setProperty('--sha',((0.35+0.55*dk)*rk.s).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)*rk.h).toFixed(2)); st.setProperty('--shi',((0.5+0.45*dk)*rk.s).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)*rk.h).toFixed(2));
+  st.setProperty('--rsha',((0.5+0.4*dk)*rk.s).toFixed(2)); st.setProperty('--rhla',(0.45*(0.2+0.8*pl)*rk.h).toFixed(2)); st.setProperty('--rshi',((0.42+0.4*dk)*rk.s).toFixed(2)); st.setProperty('--rhli',(0.6*(0.2+0.8*pl)*rk.h).toFixed(2));
   st.setProperty('--dd', (pd*0.9*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
   // 隆起式外緣（打凸／發泡／立體 UV／網版墨層）
   const rd=Math.max(L.relief==='emboss'?(L.reliefDepth??0):0, L.puff?(L.puffDepth??0)*.8:0, L.uv==='raised'?(L.uvDepth??0):0, L.proc==='screen'?(L.thick??0):0);
