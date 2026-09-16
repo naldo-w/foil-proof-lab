@@ -9,7 +9,8 @@ ROOT=pathlib.Path(__file__).resolve().parent.parent
 T=(ROOT/'foil-proof.template.html').read_text()
 LINK='原始碼：<a href="https://github.com/naldo-w/foil-proof-lab" target="_blank" rel="noopener">github.com/naldo-w/foil-proof-lab</a>'
 def build(svg,name,credit,out,wrap):
-    s=T.replace('__SAMPLE_SVG__',pathlib.Path(svg).read_text()).replace('__SAMPLE_NAME__',name).replace('__SAMPLE_CREDIT__',credit).replace('__SOURCE_LINK__',LINK)
+    sw=ROOT/'swatch-card.svg'; swatch=sw.read_text() if sw.exists() else ''
+    s=T.replace('__SAMPLE_SVG__',pathlib.Path(svg).read_text()).replace('__SWATCH_SVG__',swatch).replace('__SAMPLE_NAME__',name).replace('__SAMPLE_CREDIT__',credit).replace('__SOURCE_LINK__',LINK)
     if wrap: s='<!doctype html>\n<html lang="zh-Hant">\n'+s
     pathlib.Path(out).write_text(s); print('→',out)
 build(ROOT/'sample-card.svg','sample-card.svg','內建範例卡為本工具自製的示範圖，隨程式碼一併以 MIT 授權釋出。',ROOT/'index.html',True)
