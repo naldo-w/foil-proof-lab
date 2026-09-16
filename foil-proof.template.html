@@ -130,14 +130,14 @@ body.empty .panel{visibility:hidden}
 .m>div:not(.i-in):not(.dome){position:absolute;left:var(--cl,-2px);top:var(--ct,-2px);width:var(--cwd,calc(100% + 4px));height:var(--cht,calc(100% + 4px))}
 .m>.i-in,.m>.dome{position:absolute}
 /* 效能：卡片模式裡隨滑鼠變的子層（漸層底、高光、雷射紋）各自升成合成層 → 刷紋、紙紋、斑駁等靜態紋理不必每幀重畫；場景的卡片燈是固定的，不升層省記憶體 */
-.card-wrap .m>.f-base,.card-wrap .m>.f-holo,.card-wrap .m>.f-glare,.card-wrap .m>.h-rain,.card-wrap .m>.u-glare,.card-wrap .m>.u-edge,.card-wrap .m>.i-glare,.card-wrap .m>.i-spark,.card-wrap .m>.i-metal{will-change:transform}
+.card-wrap .m>.f-base,.card-wrap .m>.f-holo,.card-wrap .m>.f-glare,.card-wrap .m>.h-rain,.card-wrap .m>.u-glare,.card-wrap .m>.u-band,.card-wrap .m>.u-spark,.card-wrap .m>.i-glare,.card-wrap .m>.i-spark,.card-wrap .m>.i-metal{will-change:transform}
 /* 效能：卡片模式裡隨滑鼠移動的漸層改用 transform 位移（合成器直接搬圖，不重畫）：元素撐成卡片的 N 倍，再平移到對應位置。
    f-base：原 background-size 280%、position p% → 位移 −1.8pW；f-holo：220%、position 100%−p → −1.2W+1.2pW；高光：以滑鼠為圓心 → 2.4 倍大的圓形漸層置中後平移 */
 .card-wrap .m>.f-base.dyn{width:calc(var(--cwd,100%) * 2.8);height:calc(var(--cht,100%) * 2.8);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * -0.642857),calc(var(--py,50%) * -0.642857))}
 .card-wrap .m>.f-holo.dyn{width:calc(var(--cwd,100%) * 2.2);height:calc(var(--cht,100%) * 2.2);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * 0.545454 - 54.5454%),calc(var(--py,50%) * 0.545454 - 54.5454%))}
 .card-wrap .m>.f-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,var(--g1,rgba(255,255,255,.55)) 0%,var(--g2,rgba(255,255,255,.22)) 22%,rgba(60,60,60,.14) 60%,rgba(0,0,0,var(--gd,.35)) 100%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%)) scale(var(--gsz,1))}
 .card-wrap .m>.i-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
-.card-wrap .m>.u-glare.dyn{width:calc(var(--cwd,100%) * 1.3);height:calc(var(--cht,100%) * 1.3);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.5) 0%,rgba(255,255,255,.14) 25%,rgba(255,255,255,.02) 55%,rgba(255,255,255,0) 75%);transform:translate(calc(var(--px,50%) / 1.3 - 50%),calc(var(--py,50%) / 1.3 - 50%))}
+.card-wrap .m>.u-glare.dyn{width:calc(var(--cwd,100%) * .6);height:calc(var(--cht,100%) * .6);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.5) 0%,rgba(255,255,255,.12) 20%,rgba(255,255,255,0) 60%);transform:translate(calc(var(--px,50%) / .6 - 50%),calc(var(--py,50%) / .6 - 50%))} /* 上光的光點：小而集中，離光遠的地方看起來就是透明 */
 .card-wrap .card>.paper-glare.dyn{inset:auto;left:0;top:0;width:240%;height:240%;will-change:transform,opacity;background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
 /* （移動中暫停紋理的 LOD 已移除：紋理層現在不會每幀重畫，而且一動就消失、停下又出現看起來像「穿圖」） */
 .m.foil,.m.ink{isolation:isolate}
@@ -211,12 +211,6 @@ body.empty .panel{visibility:hidden}
 .holo-clear .h-rain:not(.b){display:block;mix-blend-mode:screen;filter:blur(.3px) saturate(1.3) brightness(.7);background-image:repeating-linear-gradient(115deg,#ff0a54 0,#ff8c00 calc(var(--hs,1)*7px),#ffef00 calc(var(--hs,1)*14px),#2bff6f calc(var(--hs,1)*21px),#00d4ff calc(var(--hs,1)*28px),#8a5cff calc(var(--hs,1)*35px),#ff0a54 calc(var(--hs,1)*42px));background-size:200% 200%;background-position:var(--px) var(--py)}
 .holo-clear .f-glare{mix-blend-mode:screen}
 /* UV 變化 */
-.m.uv.uv-matte .u-glare{display:none}
-.m.uv.uv-matte .u-edge{opacity:.8;mix-blend-mode:screen;background-image:var(--ptexg);background-size:160px 160px;background-color:rgba(255,255,255,.05)}
-.m.uv.uv-frost .u-edge{opacity:.9;mix-blend-mode:normal;background-image:var(--ptexg);background-size:120px 120px;background-color:rgba(255,255,255,.22)}
-.m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.35)*.6)}
-.m.uv.uv-raised .u-edge{opacity:.25;background:rgba(255,255,255,.3)}
-.m.uv.uv-glitter .u-edge{opacity:calc(.55+var(--uvg,.6)*.4);mix-blend-mode:screen;background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
 .fx.relief-only{mix-blend-mode:hard-light} /* 打凸／打凹：光影圖以 hard-light 疊在紙與油墨上（中灰 = 不變；深色紙也看得到受光邊） */
 .fx.relief-only .bump{position:absolute;inset:0}
 .fx.relief-only .m.bumpsrc{background:#fff}
@@ -274,10 +268,24 @@ body.empty .panel{visibility:hidden}
 .fx.ftex-grain .m.foil .f-brush{opacity:calc(.4*var(--texk,1));mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
-/* spot uv */
-.m.uv .u-glare{opacity:var(--uvg,.8);mix-blend-mode:screen;
-  background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.75) 0%,rgba(255,255,255,.28) 18%,rgba(255,255,255,.05) 45%,rgba(255,255,255,0) 70%)}
-.m.uv .u-edge{opacity:.6;mix-blend-mode:screen;background:linear-gradient(var(--sang,135deg),rgba(255,255,255,.12),rgba(255,255,255,.03) 50%,rgba(255,255,255,.08))} /* 亮膜的基本光澤：screen 在深色紙上也看得到 */
+/* 局部 UV：本體是透明的上光層——亮面靠「無色的高光帶＋光點」，霧面幾乎沒有高光只有一點消光顆粒，磨砂是半透明白＋顆粒（覆蓋率、顆粒可調）。
+   注意：mask 會讓 .m 變成獨立群組，子層的 mix-blend-mode 只會跟透明底混（出來是灰塊），所以混合模式要掛在 .m 本身：uf（覆蓋／顆粒）、ub（高光帶 hard-light：亮部 screen、暗部 multiply）、ug（光點 screen）三組 */
+.m.uv.ub{mix-blend-mode:hard-light}
+.m.uv.ug{mix-blend-mode:screen}
+.m.uv.uf{mix-blend-mode:normal}
+.m.uv.uv-matte.uf{mix-blend-mode:screen} /* 霧面：一點點散射的灰，帶細顆粒 */
+.m.uv .u-fill{background:#fff;opacity:var(--uvop,0)}
+.m.uv .u-grain{background-image:var(--ptexg);background-size:110px 110px;mix-blend-mode:overlay;opacity:var(--uvgr,0)}
+.m.uv .u-band{opacity:calc(var(--uvg,.8)*var(--uvbk,1));background-image:linear-gradient(112deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,0) 11%,rgba(255,255,255,0) 13%,rgba(255,255,255,.7) 15%,rgba(255,255,255,0) 17.5%,rgba(0,0,0,0) 22%,rgba(0,0,0,.28) 33.3%,rgba(0,0,0,0) 44%,rgba(255,255,255,0) 46%,rgba(255,255,255,.7) 48.3%,rgba(255,255,255,0) 51%,rgba(0,0,0,0) 55%,rgba(0,0,0,.28) 66.6%,rgba(0,0,0,0) 77%,rgba(255,255,255,0) 79%,rgba(255,255,255,.7) 81.6%,rgba(255,255,255,0) 84%,rgba(0,0,0,0) 89%,rgba(0,0,0,.28) 100%);background-size:280% 280%;background-position:var(--px) var(--py)}
+.card-wrap .m>.u-band.dyn{width:calc(var(--cwd,100%) * 2.8);height:calc(var(--cht,100%) * 2.8);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * -0.642857),calc(var(--py,50%) * -0.642857))}
+.m.uv .u-glare{opacity:calc(var(--uvg,.8)*var(--uvbk,1));
+  background:radial-gradient(circle closest-side at var(--px) var(--py),rgba(255,255,255,.55) 0%,rgba(255,255,255,.14) 24%,rgba(255,255,255,.02) 60%,rgba(255,255,255,0) 100%)}
+.m.uv .u-spark{display:none}
+.m.uv.uv-glitter .u-spark{display:block;opacity:calc(.5+var(--uvg,.6)*.4);background-image:var(--glit);background-size:110px 110px;background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)}
+.m.uv.uv-matte .u-glare{display:none}
+.m.uv.uv-matte .u-band{opacity:calc(var(--uvg,.8)*.12)} /* 霧面：高光幾乎消失，只剩很淡的方向性明暗 */
+.m.uv.uv-frost .u-band{opacity:calc(var(--uvg,.8)*.35)}
+.m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.8)*.5)}
 /* deboss / emboss: mask lives on the children */
 .m.r-dark{background:rgba(0,0,0,.6);transform:translate(var(--dx),var(--dy))}
 .m.r-light{background:rgba(255,255,255,.42);transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)))}
@@ -578,8 +586,8 @@ body.viewer .stage-tools{bottom:44px}
         <div class="menu" id="moreMenu" hidden>
           <button id="btnSample" hidden>載入內建設計稿</button>
           <div class="menu-h">效果樣本卡（每類一張）</div>
-          <button data-swatch="swatch-foil-metal.svg">燙箔 · 金屬色 · 10 格</button>
-          <button data-swatch="swatch-foil-pigment.svg">燙箔 · 純色 · 18 格</button>
+          <button data-swatch="swatch-foil-metal.svg">燙箔 · 金屬色 · 18 格</button>
+          <button data-swatch="swatch-foil-pigment.svg">燙箔 · 純色 · 14 格</button>
           <button data-swatch="swatch-holo.svg">燙雷射 · 17 格</button>
           <button data-swatch="swatch-ink.svg">油墨 · 14 格</button>
           <button data-swatch="swatch-finish.svg">表面處理 · 7 格</button>
@@ -932,17 +940,25 @@ const FPM= (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純
 const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
 const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.93,blend:'normal',gloss:.08},o);
 const PRESETS = {
-  /* 燙箔：金屬色／純色，各有亮（鏡面）與霧（消光）兩種 */
-  'foil-silver': F('燙亮銀','#c9cacf',{sat:1,holo:.12,brush:.3,gloss:.6}),
-  'foil-gold':   F('燙亮金','#d3a84a',{bright:.55,holo:.08,gloss:.75}),
-  'foil-champagne':F('燙亮香檳金','#d9c39a',{bright:.55,holo:.06,gloss:.7}),
-  'foil-rose':   F('燙亮玫瑰金','#d9a091',{bright:.55,holo:.08,gloss:.75}),
-  'foil-copper': F('燙亮古銅','#b87333',{holo:.05,brush:.4}),
-  'foil-matte-silver':FM('燙霧銀','#b9bbc2',{sat:1}),
-  'foil-matte-gold':  FM('燙霧金','#c9a75a'),
-  'foil-matte-champagne':FM('燙霧香檳金','#d0bc95'),
-  'foil-matte-rose':  FM('燙霧玫瑰金','#cf9f92'),
-  'foil-matte-copper':FM('燙霧古銅','#a8703a'),
+  /* 燙箔：金屬色（依箔廠色樣編號）／純色，各有亮（鏡面）與霧（消光）兩種 */
+  'foil-gold':        F('燙亮金 G-22','#c9a640',{bright:.55,holo:.08,gloss:.75,code:'G-22'}),
+  'foil-gold-green':  F('燙青口亮金 G-24','#d1c26c',{bright:.55,holo:.08,gloss:.75,code:'G-24'}),
+  'foil-gold-red31':  F('燙紅口亮金 G-31','#c99a34',{bright:.55,holo:.08,gloss:.75,code:'G-31'}),
+  'foil-gold-red40':  F('燙紅口亮金 G-40','#c39b2c',{bright:.55,holo:.08,gloss:.75,code:'G-40'}),
+  'foil-redgold':     F('燙亮紅金 RE-90','#c31420',{sat:1.25,brush:.2,gloss:.8,code:'RE-90'}),
+  'foil-copper':      F('燙亮古銅金 CG-45','#c67c3c',{holo:.05,brush:.3,code:'CG-45'}),
+  'foil-rose':        F('燙玫瑰金 CG-71','#cf9d8a',{bright:.55,holo:.08,gloss:.75,code:'CG-71'}),
+  'foil-black':       F('燙亮黑 CK-11','#2b2b31',{sat:1,bright:.4,holo:.04,brush:.15,gloss:.95,code:'CK-11'}),
+  'foil-silver':      F('燙亮銀 S-01','#c9cbcd',{sat:1,holo:.12,brush:.3,gloss:.6,code:'S-01'}),
+  'foil-matte-gold-green':FM('燙青口霧金 MG-22','#e3c463',{code:'MG-22'}),
+  'foil-matte-gold':  FM('燙霧金 MG-04','#e2a94a',{code:'MG-04'}),
+  'foil-matte-copper-light':FM('燙霧淺古銅金 MG-25','#d8a17c',{code:'MG-25'}),
+  'foil-matte-copper':FM('燙霧深古銅金 MG-76','#e28a5f',{code:'MG-76'}),
+  'foil-matte-black': FM('燙霧黑 8800','#141416',{sat:1,bright:.35,code:'8800'}),
+  'foil-matte-gray':  FM('燙霧鐵灰 CK-10','#7b7672',{sat:1,code:'CK-10'}),
+  'foil-matte-silver':FM('燙霧銀 MS-03','#c7cbcb',{sat:1,code:'MS-03'}),
+  'foil-matte-silver-cool':FM('燙霧銀 MS-01','#d3d7d8',{sat:1,code:'MS-01'}),
+  'foil-matte-white': FM('燙霧白 7801','#f4f4f2',{sat:1,contrast:.08,code:'7801'}),
   'foil-red':    FP('燙亮紅','#d1202c',{sat:1.25,brush:.25}),
   'foil-orange': FP('燙亮橘','#e0581c'),
   'foil-pink':   FP('燙亮粉','#e56a9a'),
@@ -950,8 +966,6 @@ const PRESETS = {
   'foil-blue':   FP('燙亮藍','#2f56b5',{holo:.1}),
   'foil-teal':   FP('燙亮湖水綠','#1f8f8a'),
   'foil-green':  FP('燙亮綠','#1f7a4d'),
-  'foil-white':  FP('燙亮白','#f2f2f4',{sat:1,holo:.04,contrast:.3,gloss:.6}),
-  'foil-black':  FP('燙亮黑','#2b2b30',{sat:1,bright:.4,holo:.04,brush:.15,gloss:.95}),
   'foil-matte-red':   FPM('燙霧紅','#c8303a'),
   'foil-matte-orange':FPM('燙霧橘','#d9602a'),
   'foil-matte-pink':  FPM('燙霧粉','#e07aa3'),
@@ -959,8 +973,6 @@ const PRESETS = {
   'foil-matte-blue':  FPM('燙霧藍','#3b5ea8'),
   'foil-matte-teal':  FPM('燙霧湖水綠','#2d8c88'),
   'foil-matte-green': FPM('燙霧綠','#2d7a53'),
-  'foil-matte-white': FPM('燙霧白','#ececee',{sat:1,contrast:.15}),
-  'foil-matte-black': FPM('燙霧黑','#26262a',{sat:1,bright:.35}),
   /* 燙雷射（參考 pokemon-cards-css 的 holo / rainbow / cosmos / glitter） */
   'holo-lines':   H('雷射銀（線條）','lines','#888888'),
   'holo-lines-gold':H('雷射金（線條）','lines','#b89858',{sat:1.15}),
@@ -1377,6 +1389,7 @@ function parseLayerName(raw){
   const r={proc:null, preset:null, tint:null, fluo:has(/螢光|fluo|neon/i), metallic:has(/金屬(?!箔)|metallic/i), puff:has(/發泡|puff/i), flock:has(/植絨|flock/i), relief:'none', uv:'none', sub:null};
   // 紙張：名稱含「紙／紙張／paper／卡紙／底紙」或任何紙名 → 設定紙質（與紙色），該群組不印
   { let pk=null; for(const [k,t] of Object.entries(PAPERS)){ const lab=t.label.replace(/紙$/,''); if((lab.length>=2 && n.includes(lab)) || new RegExp('\\b'+k+'\\b','i').test(n)){ pk=k; break; } }
+    if(pk && has(/foil|燙|holo|雷射|ink|印刷|油墨/i) && !has(/紙|paper/i)) pk=null; // 「matte gold foil」不是紙
     if(pk || has(/^(紙|紙張|紙色|底紙|卡紙|paper)(\s|·|・|\/|$)/i) || has(/(^|\s|·)(紙|紙張|paper)(\s|·|$)/i)){
       r.proc='paper'; r.paper=pk;
       const hex=n.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/i); if(hex) r.tint = hex[1].length===3 ? '#'+[...hex[1]].map(ch=>ch+ch).join('') : '#'+hex[1];
@@ -1404,19 +1417,22 @@ function parseLayerName(raw){
     if(pz.type!=='foil' && pz.type!=='ink' && pz.type!=='holo') continue;
     if(pz.group==='特殊工藝') continue; // 發泡／植絨屬加工旗標，不當顏色比對
     if(code && new RegExp(code[1]+'\\s*'+code[2],'i').test(pz.label)){ best=k; bestLen=99; break; }
-    const cands=[pz.label, pz.label.replace(/^燙/,''), pz.label.replace(/^專色/,''), pz.label.replace(/（.*）/,''), pz.label.replace(/\s.*$/,''), pz.label.replace(/^燙/,'').replace(/（.*）/,''), pz.label.replace(/^燙亮/,'燙'), pz.label.replace(/^燙亮/,''), pz.label.replace(/墨$/,'')].filter(x=>x&&x.length>=1&&x!=='印'); // 「燙箔 · 金」＝亮金；「燙霧金」才是霧面
+    if(pz.code && new RegExp('(^|[^A-Z0-9])'+pz.code.replace('-','-?')+'(?![A-Z0-9])','i').test(n)){ best=k; bestLen=99; break; } // 箔廠編號（G-22、MS-03、8800…）
+    const lab=pz.code ? pz.label.replace(/\s+\S+$/,'') : pz.label; // 去掉編號後綴
+    const cands=[lab, lab.replace(/^燙/,''), lab.replace(/^專色/,''), lab.replace(/（.*）/,''), lab.replace(/\s.*$/,''), lab.replace(/^燙/,'').replace(/（.*）/,''), lab.replace(/^燙亮/,'燙'), lab.replace(/^燙亮/,''), lab.replace(/墨$/,'')].filter(x=>x&&x.length>=1&&x!=='印'); // 「燙箔 · 金」＝亮金；「燙霧金」才是霧面
     const same = (['ink','letterpress','screen'].includes(r.proc) && pz.type==='ink') || (r.proc==='foil' && pz.type==='foil') || (r.proc==='holo' && pz.type==='holo'); // 同工法的色票優先（印刷 · 香檳金 → 香檳金墨，不是箔）
     for(const c of cands){ const sc=c.length+(same?.5:0); if(sc>bestLen && n.includes(c)){ if(pz.type==='foil' && r.proc && r.proc!=='foil' && r.proc!=='holo' && c.length<3) continue; if(pz.type==='ink' && (r.proc==='foil'||r.proc==='holo') && c.length<3) continue; best=k; bestLen=sc; } }
   }
   // 英文色名／油墨常用單字
   if(!best){
     const matte=has(/霧|matte/i);
-    const EN={gold:'foil-gold',silver:'foil-silver',champagne:'foil-champagne',rose:'foil-rose',copper:'foil-copper',red:'foil-red',orange:'foil-orange',pink:'foil-pink',purple:'foil-purple',blue:'foil-blue',teal:'foil-teal',green:'foil-green',white:'foil-white',black:'foil-black'};
+    const EN={gold:'foil-gold',silver:'foil-silver',champagne:'foil-champagne',rose:'foil-rose',copper:'foil-copper',red:'foil-red',orange:'foil-orange',pink:'foil-pink',purple:'foil-purple',blue:'foil-blue',teal:'foil-teal',green:'foil-green',white:'foil-matte-white',black:'foil-black'};
     const INK={'香檳金':'ink-champagne','玫瑰金':'ink-rose','古銅':'ink-copper','銀':'ink-silver',silver:'ink-silver','金':'ink-gold',gold:'ink-gold','灰':'ink-gray',gray:'ink-gray',grey:'ink-gray','白':'ink-white',white:'ink-white','黑':'ink-black',black:'ink-black','紅':'ink-red',red:'ink-red'};
     const isInk=['ink','letterpress','screen'].includes(r.proc);
-    const table=isInk?INK:EN;
+    const CN={'玫瑰金':'foil-rose','紅金':'foil-redgold','古銅':'foil-copper','鐵灰':'foil-matte-gray','金':'foil-gold','銀':'foil-silver','白':'foil-matte-white','黑':'foil-black'};
+    const table=isInk?INK:Object.assign({},CN,EN);
     for(const [w,k] of Object.entries(table)){ if(new RegExp(/^[a-z]+$/.test(w)?'\\b'+w+'\\b':w,'i').test(n)){ best=k; break; } }
-    if(best && isInk && !PRESETS[best]) best=null;
+    if(best && !PRESETS[best]) best=null;
     if(best && !isInk && matte && PRESETS[best.replace('foil-','foil-matte-')]) best=best.replace('foil-','foil-matte-'); // matte gold → 霧金
   }
   const hex=n.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/i); if(hex){ r.tint = hex[1].length===3 ? '#'+[...hex[1]].map(ch=>ch+ch).join('') : '#'+hex[1]; }
@@ -1487,7 +1503,7 @@ const PROCS = {
 const HOLO_SUBS={lines:'線條雷射',reverse:'直條反轉',radiant:'放射交叉',rainbow:'彩虹雷射',amazing:'幻彩流動',glitter:'碎片亮粉',secret:'金蔥亮粉',cosmos:'星空宇宙',trainer:'星塵線條',shiny:'閃鑽 V',cracked:'碎冰',shards:'碎鑽',sand:'砂點',crumple:'皺紋',starburst:'星芒',pearl:'珍珠箔',clear:'透明雷射膜'};
 const UV_SUBS={none:'無',gloss:'亮面 UV',matte:'霧面 UV',frost:'磨砂 UV',raised:'立體 UV／水晶膠',glitter:'亮粉 UV'};
 const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
-const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
+const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1.5,uvOpacity:.35,uvGrain:.6,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
 /* 依 type 反推 proc（舊資料相容），並補齊欄位 */
 function normalizeLayer(L){
   if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
@@ -1535,7 +1551,7 @@ function autoName(L){
 /* 套用一個顏色預設（PRESETS 表）：帶入顏色與該工法的參數，保留工法與加工 */
 function applyColorPreset(L, key){
   const p=PRESETS[key]; if(!p) return;
-  const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
+  const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,uvOpacity:L.uvOpacity,uvGrain:L.uvGrain,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
   const {label,group,type,sub,puff,flock,dir,...params}=p;
   Object.assign(L, params, keep, {preset:key, cname:label});
   L.fluo = !!p.fluo; L.metallic = !!p.metallic;
@@ -1763,7 +1779,7 @@ function fxDOM(L, fast=false){
   let h='';
   // 打凸／打凹（含另一面效果）：以 SVG feDiffuseLighting 對「模糊過的圖形 alpha」打光 = 真正的斜面光影，整層以 hard-light 疊在紙上
   if(L.proc==='none' || L.bump){ let b = (L.bump || L.relief!=='none' || L.uv==='raised') ? `<div class="bump"><div class="m bumpsrc"></div></div>` : '';
-    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv}"><div class="u-edge dyn ldir"></div><div class="u-glare dyn"></div></div>`; // 純加工層也可以只有局部 UV
+    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div><div class="u-grain"></div></div><div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark dyn"></div></div>`; // 純加工層也可以只有局部 UV
     return b; }
   const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress';
   const raised = L.puff || L.uv==='raised' || L.proc==='screen';
@@ -1777,7 +1793,7 @@ function fxDOM(L, fast=false){
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.metallic?' metal':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div>${fast?'':'<div class="i-mottle"></div>'}${L.proc==='screen'&&!fast?'<div class="i-mesh"></div>':''}<div class="i-grain"></div>${L.metallic?'<div class="i-metal dyn"></div><div class="i-spark dyn"></div>':''}${dome}${inner(innerParts)}<div class="i-glare dyn"></div></div>`;
   }
-  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv}"><div class="u-edge dyn ldir"></div><div class="u-glare dyn"></div></div>`;
+  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div><div class="u-grain"></div></div><div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark dyn"></div></div>`;
   return h;
 }
 function renderFx(){
@@ -1889,7 +1905,10 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--dd', (pd*0.9*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
     st.setProperty('--rd', (rd*0.9).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd).toFixed(2));
   }
-  if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.6)); }
+  if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.7));
+    // 磨砂：覆蓋率（半透明白）與顆粒可調；霧面：一點點平的消光與細顆粒；其他：全透明
+    const op = L.uv==='frost' ? (L.uvOpacity ?? .35) : (L.uv==='matte' ? .07 : 0), gr = L.uv==='frost' ? (L.uvGrain ?? .6) : (L.uv==='matte' ? (L.uvGrain ?? .3)*.6 : 0);
+    st.setProperty('--uvop', op.toFixed(3)); st.setProperty('--uvgr', gr.toFixed(3)); }
 }
 function paperApply(cards, P){
   if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
@@ -2092,7 +2111,7 @@ function finishRows(L){
   const tilesRow=(label,items)=>`<div class="row two" style="align-items:start"><label style="padding-top:6px">${label}</label><div class="tiles">${items.join('')}</div></div>`;
   h+=tilesRow('壓凸／壓凹',[tileHTML({attr:'data-relief',key:'none',label:'無',cls:'off',on:L.relief==='none',c}),tileHTML({attr:'data-relief',key:'emboss',label:'打凸',cls:'emboss',on:L.relief==='emboss',c}),tileHTML({attr:'data-relief',key:'deboss',label:'打凹',cls:'deboss',on:L.relief==='deboss',c})])+(L.relief!=='none'?r('深度','reliefDepth',.3,4,.1):'');
   const uvCls={none:'off',gloss:'uvg',matte:'uvm',frost:'uvf',raised:'uvr',glitter:'uvgl'};
-  h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):''):'');
+  h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):'')+(L.uv==='frost'?r('覆蓋率','uvOpacity',0,1,.01):'')+(L.uv==='frost'||L.uv==='matte'?r('顆粒','uvGrain',0,1,.01):''):'');
   if(['ink','letterpress','screen'].includes(L.proc)){
     h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
     if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
@@ -2373,7 +2392,9 @@ const HELP = {
   press:'凸版壓印深度：油墨隨凸版壓進紙面的深度，邊緣留壓痕、墨面偏霧。厚紙（象牙卡、棉紙）壓得深，銅版紙幾乎壓不出來。',
   thick:'網版墨層厚度：網版油墨堆在紙面上的厚度，邊緣會有微微隆起與投影。',
   reliefDepth:'打凸／打凹深度：紙張被模具壓出的高度。名片常見 0.3–0.6mm，這裡 1–2px 左右；做大面積可拉到 3px。',
-  uvGloss:'表面處理的光澤：亮面 UV 越高越像鏡面，霧面 UV 這個值幾乎沒差。',
+  uvGloss:'上光層本身是透明的：光澤決定無色高光帶與光點有多強（亮面像鏡面；霧面幾乎沒有高光，只剩很淡的方向性明暗）。',
+  uvOpacity:'磨砂 UV 的覆蓋率：半透明白的濃度，0 = 全透明。',
+  uvGrain:'磨砂／霧面 UV 的顆粒感。',
   uvDepth:'立體 UV／水晶膠的厚度：越厚邊緣的高光與陰影越明顯。',
   puffDepth:'發泡厚度：發泡油墨加熱後隆起的高度，越厚圓頂越明顯。',
   fluo:'螢光墨：以不透明方式覆蓋、飽和拉高、外緣微微發光。螢幕無法真正顯示螢光，只能近似。',
