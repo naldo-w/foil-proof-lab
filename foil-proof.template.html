@@ -123,8 +123,7 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .card-wrap .m>.i-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
 .card-wrap .m>.u-glare.dyn{width:calc(var(--cwd,100%) * 1.3);height:calc(var(--cht,100%) * 1.3);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.5) 0%,rgba(255,255,255,.14) 25%,rgba(255,255,255,.02) 55%,rgba(255,255,255,0) 75%);transform:translate(calc(var(--px,50%) / 1.3 - 50%),calc(var(--py,50%) / 1.3 - 50%))}
 .card-wrap .card>.paper-glare.dyn{inset:auto;left:0;top:0;width:240%;height:240%;will-change:transform,opacity;background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
-/* 效能：圖層多（≥6）的卡片在滑鼠移動中暫時關掉邊緣壓痕影子與靜態紋理，停下 160ms 後恢復完整細節 */
-.stage.lod.moving .card-wrap .fx.press,.stage.lod.moving .card-wrap .i-mottle,.stage.lod.moving .card-wrap .f-brush,.stage.lod.moving .card-wrap .f-paper,.stage.lod.moving .card-wrap .i-mesh{display:none}
+/* （移動中暫停紋理的 LOD 已移除：紋理層現在不會每幀重畫，而且一動就消失、停下又出現看起來像「穿圖」） */
 .m.foil,.m.ink{isolation:isolate}
 .fx.hidden{display:none}
 /* 燙印壓痕：在箔面「外圍」的紙面上壓出一圈明暗——未遮罩的父層做 drop-shadow，影子從遮罩子層外緣溢出；箔面本身不受影響 */
@@ -248,12 +247,12 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
 .m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:calc(var(--ptex-foil,.2)*var(--ptexk,1))}
 /* 亮箔：鏡面——色帶對比高、高光強、幾乎沒有紙紋與刷紋；霧箔：消光——色帶平、高光弱、細顆粒、略降飽和與對比 */
-.fx.gloss .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*1.12)) saturate(1.05)}
+.fx.gloss .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*1.15))}
 .fx.gloss .m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.45 + .55*var(--hov)))}
-.fx.matte .m.foil{filter:saturate(calc(var(--sat,1)*.88)) contrast(.9) brightness(.95)}
-.fx.matte .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*.8))}
+.fx.matte .m.foil{filter:saturate(calc(var(--sat,1)*.95)) contrast(.95)}
+.fx.matte .m.foil .f-base{filter:brightness(calc(var(--fb,1)*1.02)) contrast(calc(var(--fc,1)*.85))}
 .fx.matte .m.foil .f-glare{opacity:calc(var(--gloss,.2) * (.2 + .3*var(--hov)))}
-.fx.matte .m.foil .f-brush{opacity:calc(var(--brush,.7)*1.15);mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
+.fx.matte .m.foil .f-brush{opacity:calc(var(--brush,.7)*.55);mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px} /* 霧面是平的一塊色，只留一點消光顆粒 */
 .m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* spot uv */
@@ -895,9 +894,9 @@ const LS_KEY = 'foil-proof-v1';
 const SAMPLE_NAME = '__SAMPLE_NAME__';
 
 const F = (label,tint,o={}) => Object.assign({label,group:'燙箔 · 金屬',type:'foil',tint,matte:false,bright:.5,contrast:.5,sat:1.15,holo:.06,brush:.22,gloss:.75,depth:1},o);
-const FM = (label,tint,o={}) => F(label,tint,Object.assign({matte:true,contrast:.14,holo:.02,brush:.75,gloss:.18,bright:.45},o));                      // 霧面金屬箔
+const FM = (label,tint,o={}) => F(label,tint,Object.assign({matte:true,contrast:.1,holo:.02,brush:.6,gloss:.15,bright:.5},o));                      // 霧面金屬箔
 const FP = (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',sat:1.2,holo:.04,gloss:.8},o));                       // 亮面純色箔（顏料箔）
-const FPM= (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',matte:true,sat:1.1,contrast:.12,holo:.01,brush:.65,gloss:.15,bright:.45},o)); // 霧面純色箔
+const FPM= (label,tint,o={}) => F(label,tint,Object.assign({group:'燙箔 · 純色',matte:true,sat:1.1,contrast:.08,holo:.01,brush:.5,gloss:.12,bright:.5},o)); // 霧面純色箔
 const H = (label,sub,tint,o={}) => Object.assign({label,group:'燙雷射',type:'holo',sub,tint,bright:.55,contrast:.4,sat:1.1,holo:.8,hscale:1,brush:.1,gloss:.7,depth:1},o);
 const I = (label,group,tint,o={}) => Object.assign({label,group,type:'ink',tint,opacity:.93,blend:'normal',gloss:.08},o);
 const PRESETS = {
@@ -1271,13 +1270,17 @@ function hslhex(h,s,l){ s=Math.max(0,Math.min(1,s)); l=Math.max(0,Math.min(1,l))
 /* 箔面漸層：亮部沿色相提高明度而不是混白，才不會把紅箔洗成粉紅、金箔洗成米色 */
 function foilShades(tint, c=.45){
   const {h,s,l}=hsl(tint); const up=(t)=>l+(1-l)*t, dn=(t)=>l*(1-t);
-  return { dark:hslhex(h,s*1.05,dn(.45+c*.3)), deep:hslhex(h,s*1.05,dn(.22+c*.2)), mid:tint,
-           light:hslhex(h,s,up(.18+c*.18)), spec:hslhex(h,s*.85,up(.34+c*.22)), hi:hslhex(h,s*.8,up(.58)) }; // 高光帶別亮到發白，金屬色才留得住
+  if(c<.2) return { dark:hslhex(h,s,dn(.10+c*.3)), deep:hslhex(h,s,dn(.05+c*.15)), mid:tint, light:hslhex(h,s,up(.05+c*.2)), spec:hslhex(h,s*.95,up(.08+c*.3)), hi:hslhex(h,s*.8,up(.4)) }; // 霧面：幾乎是平的一塊色
+  // 亮面（鏡面）：暗部要夠深、高光帶窄而亮，對比才像金屬反射
+  return { dark:hslhex(h,s,dn(.45+c*.25)), deep:hslhex(h,s,dn(.22+c*.2)), mid:tint,
+           light:hslhex(h,s,up(.2+c*.2)), spec:hslhex(h,s*.85,up(.4+c*.3)), hi:hslhex(h,s*.8,up(.6)) };
 }
-function foilGradient(tint, c=.45){
+function foilGradient(tint, c=.45, cycles=1){
   const {dark,deep,mid,light,spec}=foilShades(tint,c);
-  // 頭尾同色（dark），合併版面時以卡片尺寸平鋪不會有接縫
-  return `linear-gradient(112deg,${dark} 0%,${deep} 16%,${mid} 31%,${light} 41%,${spec} 45%,${light} 49%,${mid} 59%,${deep} 74%,${dark} 90%,${dark} 100%)`; // 高光帶收窄，其餘以中間色為主，看起來才像金屬而不是粉彩
+  // 頭尾同色（dark），合併版面時以卡片尺寸平鋪不會有接縫；亮箔用 2 個週期：任何光位下畫面裡都同時有暗部與高光帶（鏡面感）
+  const seq=[[dark,0],[deep,.16],[mid,.31],[light,.41],[spec,.45],[light,.49],[mid,.59],[deep,.74],[dark,.9],[dark,1]];
+  const stops=[]; for(let k=0;k<cycles;k++) seq.forEach(([col,p])=>{ if(k>0 && p===0) return; stops.push(`${col} ${((k+p)/cycles*100).toFixed(1)}%`); });
+  return `linear-gradient(112deg,${stops.join(',')})`;
 }
 function noiseURI(opts){
   const {bf='0.9', oct=2, op=.5, size=220, sat=0} = opts;
@@ -1805,7 +1808,7 @@ function styleFx(d,L,paper=S.paper){
   if(L.proc==='foil' || L.proc==='holo'){
     const c = L.band ?? L.contrast ?? .45, sp = L.spec ?? L.contrast ?? .45;
     if(L.proc==='holo'){ st.setProperty('--hs', (L.hscale ?? 1).toFixed(2)); st.setProperty('--glit', GLITTER); st.setProperty('--cosmos', COSMOS); st.setProperty('--crack', CRACK); st.setProperty('--shards', SHARDS); st.setProperty('--sand', SAND); st.setProperty('--crumple', CRUMPLE); st.setProperty('--starburst', STARBURST); }
-    st.setProperty('--grad', foilGradient(L.tint, c));
+    st.setProperty('--grad', foilGradient(L.tint, c, (L.proc==='foil' && !L.matte) ? 3 : 1));
     st.setProperty('--fb', (0.8+L.bright*0.45).toFixed(3)); st.setProperty('--fc', (0.9+L.bright*0.25).toFixed(3));
     const hi=rgb(foilShades(L.tint,c).hi), ga=0.15+sp*0.75;
     st.setProperty('--g1', `rgba(${hi.join(',')},${ga.toFixed(3)})`); st.setProperty('--g2', `rgba(${hi.join(',')},${(ga*.4).toFixed(3)})`); st.setProperty('--gd', (0.08+sp*0.55).toFixed(3));
@@ -2123,7 +2126,8 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; const flt=document.getElementById(id); if(!flt) return; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if(pointerMoving && f.classList.contains('press')){ pressStale=true; return; } // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）在滑鼠移動中不重算，停下再更新
+    const flt=document.getElementById(id); if(!flt) return; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
 /* 打凸／打凹濾鏡：模糊 alpha 當高度圖 → feDiffuseLighting（遠光 45°）→ 對齊到中灰 → 限制在圖形內；打凸另加一道投影。整層用 hard-light 疊上去。 */
@@ -2147,7 +2151,7 @@ function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer
     let ppx=px, ppy=py; if(hovering && lastPt){ const r=c3.getBoundingClientRect(); if(r.width>0){ ppx=Math.min(1,Math.max(0,(lastPt.x-r.left)/r.width)); ppy=Math.min(1,Math.max(0,(lastPt.y-r.top)/r.height)); } }
     const c=c3._c||(c3._c={px:ppx,py:ppy}); c.px+=(ppx-c.px)*.4; c.py+=(ppy-c.py)*.4;
     c3.querySelectorAll('.card.face').forEach(f=>applyPointer(f,c.px,c.py,hov)); }); }
-let lastPt=null, movT=0;
+let lastPt=null, movT=0, pointerMoving=false, pressStale=false;
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
   const P=S.paper, lx=px; if(card.style.visibility==='hidden') return; // 翻到背面看不到的那一面不用更新
@@ -2238,7 +2242,7 @@ function sceneLightFrom(e){
 stage.addEventListener('pointermove', e=>{
   if(viewMode==='scene'){ if(lightDrag) sceneLightFrom(e); return; }
   const r=card.getBoundingClientRect(); lastPt={x:e.clientX,y:e.clientY};
-  if(stage.classList.contains('lod')){ stage.classList.add('moving'); clearTimeout(movT); movT=setTimeout(()=>stage.classList.remove('moving'),160); }
+  pointerMoving=true; clearTimeout(movT); movT=setTimeout(()=>{ pointerMoving=false; if(pressStale){ pressStale=false; wrap.querySelectorAll('.card.face').forEach(f=>{ delete f.dataset.la; }); setPointer(cur.px,cur.py,cur.hov); } },140);
   target.px=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)); target.py=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)); target.hov=1;
   hovering=true; lastMove=performance.now();
 });
