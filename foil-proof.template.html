@@ -43,6 +43,7 @@ button{cursor:pointer}
 .menu{position:absolute;right:0;top:34px;z-index:50;background:#1c1c1c;border:1px solid var(--line-2);border-radius:6px;padding:4px;min-width:170px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
 .menu button{display:block;width:100%;text-align:left;height:30px;padding:0 10px;border:0;background:transparent;color:var(--text);border-radius:4px;font-size:12.5px}
 .menu button:hover{background:var(--panel-2)}
+.menu .menu-h{font:10px var(--mono);color:var(--faint);letter-spacing:.08em;padding:8px 10px 2px;border-top:1px solid var(--line);margin-top:4px}
 body.viewer .panel,body.viewer .top-actions,body.viewer #modeSeg,body.viewer .docchips .add,body.viewer #activeLbl{display:none!important}
 body.viewer .stage-hint{top:auto;bottom:82px;left:50%;transform:translateX(-50%)}
 body.viewer .app{grid-template-columns:1fr}
@@ -235,7 +236,7 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .m.r-light{background:rgba(255,255,255,.42);transform:translate(calc(-1*var(--dx)),calc(-1*var(--dy)))}
 .m.r-face.lt{mix-blend-mode:screen}
 
-.paper-glare{mix-blend-mode:overlay;opacity:calc(var(--pgloss,.3) * (.25 + .75*var(--hov)));
+.paper-glare{pointer-events:none;mix-blend-mode:overlay;opacity:calc(var(--pgloss,.3) * (.25 + .75*var(--hov)));
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%)}
 .paper-vignette{background:radial-gradient(ellipse at 50% 50%,transparent 60%,rgba(0,0,0,.18) 100%);pointer-events:none}
 
@@ -529,7 +530,11 @@ body.viewer .stage-tools{bottom:44px}
       <div class="more"><button class="btn ghost" id="btnMore" title="更多">⋯</button>
         <div class="menu" id="moreMenu" hidden>
           <button id="btnSample">載入範例卡</button>
-          <button id="btnSwatch">效果樣本卡（44 格）</button>
+          <div class="menu-h">效果樣本卡（每類一張）</div>
+          <button data-swatch="swatch-foil.svg">燙箔 · 16 格</button>
+          <button data-swatch="swatch-holo.svg">燙雷射 · 13 格</button>
+          <button data-swatch="swatch-ink.svg">油墨 · 8 格</button>
+          <button data-swatch="swatch-finish.svg">表面處理 · 7 格</button>
           <button id="btnReset">重新偵測顏色與圖層</button>
           <button id="btnAbout">關於與版權</button>
         </div></div>
@@ -849,7 +854,7 @@ body.viewer .stage-tools{bottom:44px}
 <div class="modal" id="modal"><div class="box"><img id="modalImg" alt="匯出結果"><div class="mb"><span id="modalMsg"></span><button class="btn" id="modalCopy">複製到剪貼簿</button><button class="btn primary" id="modalDl">下載 PNG</button><button class="btn ghost" id="modalClose">關閉</button></div></div></div>
 
 <script type="text/plain" id="sampleSvg">__SAMPLE_SVG__</script>
-<script type="text/plain" id="swatchSvg">__SWATCH_SVG__</script>
+<script type="application/json" id="swatchSvg">__SWATCH_SVG__</script>
 <script>
 (() => {
 'use strict';
@@ -1032,8 +1037,9 @@ function addDoc(text, name){
   const d={id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1e3), name, svgText:text, assign:{}, layers:[], paper:defaultPaper(), variants:[], koGap:2, use:true};
   S.docs.push(d); switchDoc(d.id, true);
   const same=S.docs.find(o=>o.id!==d.id && o.vb && S.vb && Math.abs(o.vb[0]-S.vb[0])<1e-6 && Math.abs(o.vb[1]-S.vb[1])<1e-6 && !o.backOf && !o.frontOf);
-  if(same) askLink(d, same);
+  if(same && !isSwatchName(name) && !isSwatchName(same.name)) askLink(d, same); // 樣本卡是參考用，不問正反面
 }
+const isSwatchName=n=>/^(swatch-|樣本卡)/i.test(n||'');
 function askLink(d, other){
   const m=$('#linkModal'); $('#linkMsg').innerHTML=`「${esc(d.name)}」與「${esc(other.name)}」尺寸相同（${fmt(S.vb[0])}×${fmt(S.vb[1])}）。要把它們連結為<b>正反面</b>嗎？連結後「${esc(d.name)}」當背面、與正面共用同一種紙：不再單獨進場景，改由「翻面比例」決定哪些卡翻到背面；「並排比較」會正反各放一張。（不同尺寸的文件也可以在「檔案」清單用「綁定反面…」手動綁定）`;
   m.classList.add('on');
@@ -1813,7 +1819,7 @@ const endPan=(e)=>{ if(!panDrag) return; const pd=panDrag; panDrag=null; $('#sta
   if(pd.tap && e && Math.hypot(e.clientX-pd.x,e.clientY-pd.y)<5 && performance.now()-pd.t<350){
     // 樣本卡：點格子 = 複製那一格的效果（不翻面）
     const el=document.elementFromPoint(e.clientX,e.clientY); const shape=el&&el.closest&&el.closest('#base [data-k]'); const k=shape&&shape.getAttribute('data-k');
-    if(k && effLayer[k] && /swatch/i.test(S.name||'')){ const L=S.layers.find(l=>l.id===effLayer[k]); if(L && L.type!=='hide'){ S.pickFx=deep(Object.fromEntries(Object.entries(L).filter(([kk])=>!['id','_count','name','named','visible'].includes(kk)))); S.pickFx.label=L.name; toast(`已複製效果「${L.name}」→ 切到你的檔案，在效果圖層按「貼上效果」`); renderLayerList(); return; } }
+    if(k && effLayer[k] && isSwatchName(S.name)){ const L=S.layers.find(l=>l.id===effLayer[k]); if(L && L.type!=='hide'){ S.pickFx=deep(Object.fromEntries(Object.entries(L).filter(([kk])=>!['id','_count','name','named','visible'].includes(kk)))); S.pickFx.label=L.name; toast(`已複製效果「${L.name}」→ 切到你的檔案，在效果圖層按「貼上效果」`); renderLayerList(); return; } }
     setSide(S.side==='back'?'front':'back'); saveSoon(); } };
 $('#btnFlip').addEventListener('click',()=>{ setSide(S.side==='back'?'front':'back'); saveSoon(); });
 $('#btnMulti').addEventListener('click',()=>{ const pv=previewCfg(); pv.multi=!pv.multi; view.mode='fit'; renderPeers(); save(); });
@@ -2367,7 +2373,8 @@ $('#btnExpand').addEventListener('click', ()=>{ svgRoot.querySelectorAll('g').fo
 $('#btnCollapse').addEventListener('click', ()=>{ treeOpen.clear(); svgRoot.querySelectorAll('g').forEach(g=>treeOpen.set(g.getAttribute('data-k'),false)); renderTree(); });
 $('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayers(); applyDiecut(); clearMasks(); applyPaper(); renderFx(); save(); toast('已重新偵測顏色並建立圖層'); });
 $('#btnSample').addEventListener('click', ()=>{ start($('#sampleSvg').textContent, SAMPLE_NAME, true); });
-$('#btnSwatch').addEventListener('click', ()=>{ const t=$('#swatchSvg').textContent.trim(); if(!t) return toast('這個版本沒有內建樣本卡'); const d=activeDoc(); if(d) delete docStore[d.id]; start(t, 'swatch-card.svg', true); if(viewMode!=='single') setViewMode('single'); toast('效果樣本卡：點任一格可複製該效果，切到你的檔案後在效果圖層按「貼上效果」'); });
+$('#moreMenu').addEventListener('click', e=>{ const b=e.target.closest('[data-swatch]'); if(!b) return; let all={}; try{ all=JSON.parse($('#swatchSvg').textContent||'{}'); }catch(x){} const t=all[b.dataset.swatch]; if(!t) return toast('這個版本沒有內建這張樣本卡');
+  const nm='樣本卡 · '+b.textContent.split(' · ')[0]; const ex=(S.docs||[]).find(d=>d.name===nm||d.name===b.dataset.swatch); if(ex){ switchDoc(ex.id); } else { addDoc(t, nm); const d=activeDoc(); if(d){ d.use=false; sceneChanged(true,true); } } /* 樣本卡預設不進場景 */ if(viewMode!=='single') setViewMode('single'); toast('效果樣本卡：點任一格可複製該效果，切到你的檔案後在效果圖層按「貼上效果」'); }); // 每類一張，比一張 44 格省效能；已載入過就直接切換
 $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=''; });
 ['#fileAdd','#fileAdd2'].forEach(sel=>$(sel).addEventListener('change', e=>{ [...e.target.files].forEach(f=>readFile(f,true)); e.target.value=''; }));
 $('#btnCompare').addEventListener('click',()=>{ const C=S.scene; const n=Math.max(1,(S.docs||[]).filter(d=>d.use!==false && !d.backOf).length+(S.docs||[]).filter(d=>d.frontOf).length); C.layout='grid'; C.cols=n; C.rows=1; C.mix='cycle'; C.includeCurrent=true; C.size=Math.min(60, Math.floor(90/n)); sceneChanged(true); if(viewMode!=='scene') setViewMode('scene'); });
