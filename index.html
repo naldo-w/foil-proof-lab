@@ -88,6 +88,7 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 .card>*{position:absolute;inset:0}
 .card-3d{position:relative;width:var(--w,800px);aspect-ratio:var(--ar,2/1);flex:none;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1);transform:rotateY(var(--flip,0deg))}
 .card-3d .card.face{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card-3d .card.face *{backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .card-3d .card.face.back{transform:rotateY(180deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
 @media (prefers-reduced-motion:reduce){.card-3d{transition:none}}
 .paper{background-color:var(--paper,#111)} /* background-image / size / blend 由 applyPaper() 逐層寫入 */
@@ -1608,7 +1609,14 @@ function renderFx(){
   renderLayerList(); renderChips(); renderTree(); updateActiveLbl(); renderScene(); attachHelp();
 }
 /* 單張的背面：有連結的背面文件就畫它（加正面的相反效果）；作用中是背面則畫連結的正面；沒有連結就是同一張紙的空白背面＋相反效果 */
-function setSide(side){ S.side=side; $('#card3d').style.setProperty('--flip', side==='back'?'180deg':'0deg'); $('#btnFlip').classList.toggle('primary', side==='back'); $('#btnFlip').textContent = side==='back' ? '翻回正面' : '翻面'; }
+let sideT=0;
+function setSide(side){
+  S.side=side; const c3=$('#card3d'); c3.style.setProperty('--flip', side==='back'?'180deg':'0deg'); $('#btnFlip').classList.toggle('primary', side==='back'); $('#btnFlip').textContent = side==='back' ? '翻回正面' : '翻面';
+  // Chrome 的 backface-visibility 對有 filter／mask 的子元素不一定生效（正面的壓痕影子會從背面透出來變成一圈灰邊），
+  // 所以翻轉動畫結束後把看不到的那一面整個 visibility:hidden
+  $('#card').style.visibility=''; $('#cardBack').style.visibility=''; clearTimeout(sideT);
+  sideT=setTimeout(()=>{ (side==='back'?$('#card'):$('#cardBack')).style.visibility='hidden'; }, 650);
+}
 function renderBackFace(){
   const cb=$('#cardBack'); if(!cb) return; const a=activeDoc(); if(!a) return;
   cb.innerHTML='<div class="paper"></div><div class="base"></div><div class="fxs"></div><div class="paper-glare"></div><div class="paper-vignette"></div>';
