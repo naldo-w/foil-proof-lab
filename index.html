@@ -2005,7 +2005,7 @@ let panDrag=null, spaceDown=false;
 document.addEventListener('keydown', e=>{ if(e.code==='Space' && !e.target.matches('input,textarea,select')) spaceDown=true; });
 document.addEventListener('keyup', e=>{ if(e.code==='Space') spaceDown=false; });
 $('#stage').addEventListener('pointerdown', e=>{
-  if(e.target.closest('.stage-tools')) return;
+  if(e.target.closest('.stage-tools, .empty-state, .brandbar')) return; // 空狀態面板：不要被平移／點擊翻面攔走（setPointerCapture 會讓 click 落到 stage 上，按鈕就收不到）
   const wantPan = e.button===1 || (e.button===0 && (e.altKey || spaceDown || viewMode!=='scene'));
   if(!wantPan) return;
   panDrag={x:e.clientX,y:e.clientY,px:view.pan.x,py:view.pan.y,t:performance.now(),tap:e.button===0&&!e.altKey&&!spaceDown&&viewMode==='single'&&!!e.target.closest('.card-3d')}; $('#stage').classList.add('panning'); try{ $('#stage').setPointerCapture(e.pointerId); }catch(x){} e.preventDefault();
@@ -2323,7 +2323,7 @@ stage.addEventListener('pointermove', e=>{
   hovering=true; lastMove=performance.now();
 });
 stage.addEventListener('pointerdown', e=>{
-  if(viewMode!=='scene' || e.button!==0 || e.altKey || spaceDown || e.target.closest('.stage-tools')) return;
+  if(viewMode!=='scene' || e.button!==0 || e.altKey || spaceDown || e.target.closest('.stage-tools, .empty-state, .brandbar')) return;
   if(focusPick){ const C=S.scene, {sx,sy}=scenePt(e), t=screenToTable(sx,sy,0); C.dfx=t.x/C.W; C.dfy=t.y/C.H; if(!C.aperture) C.aperture=.5; focusPick=false; stage.classList.remove('picking'); $('#sFocusPick').textContent='點畫布對焦'; sceneChanged(false); e.preventDefault(); return; }
   dragWhat=pickLightHandle(e); dragStart=null; lightDrag=true; stage.classList.add('dragging-light'); try{ stage.setPointerCapture(e.pointerId); }catch(x){} if(dragWhat!=='lz') sceneLightFrom(e); e.preventDefault();
 });
