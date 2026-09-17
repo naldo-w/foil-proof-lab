@@ -2466,7 +2466,7 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((pointerMoving || lightDrag) && performance.now()-pressT<40){ pressStale=true; el.dataset.la=''; return; } // bump（壓痕、打凹打凸）：移動中／場景拖燈統一每 40ms 重算一次（清掉量化快取，下次才會補算），停下再補最後一次最後一次
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if(lightDrag && performance.now()-pressT<40){ pressStale=true; el.dataset.la=''; return; } // bump（壓痕、打凹打凸）：卡片模式跟著 loop 的 40ms 節奏一起算（不能再各自節流：兩個計時器差幾 ms 就會每次都跳過，變成停下來才更新）；場景拖燈才自己每 40ms 一次最後一次
     const flt=document.getElementById(id); if(!flt) return; pressT=performance.now(); pressStale=false; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
@@ -2585,6 +2585,8 @@ stage.addEventListener('pointermove', e=>{
   pointerMoving=true; clearTimeout(movT); movT=setTimeout(()=>{ pointerMoving=false; if(pressStale){ pressStale=false; wrap.querySelectorAll('.card.face').forEach(f=>{ delete f.dataset.la; }); setPointer(cur.px,cur.py,cur.hov); } },80);
   target.px=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)); target.py=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)); target.hov=1;
   hovering=true; lastMove=performance.now();
+  // 移動中的光影直接在事件裡更新（每 40ms 一次），不靠 rAF loop：分頁被節流、iframe 或 120Hz 螢幕下 rAF 節奏不同時也一樣即時
+  const now=performance.now(); if(now-lastLightT>=40){ lastLightT=now; cur.px=target.px; cur.py=target.py; cur.hov=target.hov; setPointer(cur.px,cur.py,cur.hov); }
 });
 stage.addEventListener('pointerdown', e=>{
   if(viewMode!=='scene' || e.button!==0 || e.altKey || spaceDown || e.target.closest('.stage-tools, .empty-state, .brandbar')) return;
