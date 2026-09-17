@@ -1598,7 +1598,7 @@ const FIN_DEFAULTS={relief:'none',reliefDepth:.5,uv:'none',uvGloss:.8,uvDepth:.3
 function normalizeLayer(L){
   if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
   if(L.proc==='raster'){ const D={print:'offset',sat:1,regX:0,regY:0,lpi:175,dotGain:.12,colors:4,rOffX:0,rOffY:0,rScale:1,toner:.3,mesh:120,blend:'multiply',opacity:1,tint:'#161616',gloss:.08}; Object.entries(D).forEach(([k,v])=>{ if(L[k]==null) L[k]=v; }); }
-  if(['foil','holo','letterpress'].includes(L.proc)){ if(L.edgeRough==null) L.edgeRough=.2; if(L.edgeDens==null) L.edgeDens=.5; if(L.bleed==null) L.bleed=.5; } // 邊緣不規則 0.2px、溢出 0.5px
+  if(['foil','holo','letterpress'].includes(L.proc)){ if(L.edgeRough==null) L.edgeRough=.2; if(L.edgeDens==null) L.edgeDens=.5; if(L.bleed==null) L.bleed = L.proc==='letterpress' ? .5 : .25; } // 邊緣不規則 0.2px；溢出：燙箔／燙雷射 0.25px、凸版 0.5px
   if(!L.proc){
     const t=L.type;
     if(t==='foil') L.proc='foil'; else if(t==='holo') L.proc='holo';
@@ -1809,7 +1809,7 @@ async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {
 }
 function inkSpread(L){ return ['ink','letterpress','screen'].includes(L.proc) ? (L.spread||0) : 0; }
 function maskBlurVB(L){ return 0; } // 另一面輪廓模糊改加在光影模糊半徑上（遮罩維持銳利，否則邊緣會留一圈半透明黑邊）
-function edgeOf(L){ if(!L || !['foil','holo','letterpress'].includes(L.proc)) return null; const e={rough:L.edgeRough??.2, dens:L.edgeDens??.5, bleed:L.bleed??.5}; return (e.rough>0||e.bleed>0)?e:null; }
+function edgeOf(L){ if(!L || !['foil','holo','letterpress'].includes(L.proc)) return null; const e={rough:L.edgeRough??.2, dens:L.edgeDens??.5, bleed:L.bleed??(L.proc==='letterpress'?.5:.25)}; return (e.rough>0||e.bleed>0)?e:null; }
 function buildMask(L, eff=effLayer, vk='', mirror=false){
   const sp=inkSpread(L), id=L.srcLayer||L.id, bl=sp*.5+maskBlurVB(L), e=edgeOf(L);
   const ek=e?`:e${e.rough.toFixed(2)},${e.dens.toFixed(2)},${e.bleed.toFixed(2)}`:'';
@@ -2687,7 +2687,7 @@ const HELP = {
   brush:'髮絲紋：箔面的細直紋，霧銀、拉絲金常見；鏡面箔設 0。',
   edgeRough:'邊緣不規則：燙箔壓力與凸版油墨會讓邊緣不完全平滑，數值＝邊緣抖動幅度（px，以卡寬 850px 為基準）。',
   edgeDens:'不規則密度：抖動有多細碎，越高越像細鋸齒，越低越像大波浪。',
-  bleed:'溢出：箔／墨沿邊緣往外擴多少（px）。',
+  bleed:'溢出：箔／墨沿邊緣往外擴多少（px）。燙箔預設 0.25px，凸版 0.5px。',
   dpi:'上傳的圖片以這個解析度換算實際尺寸（寬 mm），紙紋與網點大小都依它計算；300 dpi 是一般印刷稿的解析度。',
   print:'點陣圖的印刷方式：數位＝連續調＋碳粉顆粒；網版＝依目數的粗網點、可設分色數（1 色時用墨色）；柯式（平版）＝CMYK 四色分色網點（15°/45°/75°/0°）＋網點增益＋套印偏移，油墨透明會透出紙紋。',
   sat:'飽和度：1 = 原圖；印刷通常略低。',
