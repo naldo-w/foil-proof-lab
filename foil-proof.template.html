@@ -2457,8 +2457,8 @@ function describe(el){ const id=groupName(el); return id?`「${id}」`:(el.tagNa
 const card=$('#card'), stage=$('#stage'), wrap=$('#cardwrap');
 const target={px:.5,py:.5,hov:0}, cur={px:.5,py:.5,hov:0};
 function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給壓痕／浮雕用）
-  // 效能：方向量化到 6°，沒變就不動——每個 drop-shadow／feDiffuseLighting 只在方向真的改變時才重算
-  const a6=Math.round(Math.atan2(dy,dx)*180/Math.PI/6)*6; if(el.dataset.la===String(a6)) return; el.dataset.la=a6;
+  // 效能：方向量化到 2°，沒變就不動——每個 drop-shadow／feDiffuseLighting 只在方向真的改變時才重算
+  const a6=Math.round(Math.atan2(dy,dx)*180/Math.PI/2)*2; if(el.dataset.la===String(a6)) return; el.dataset.la=a6;
   const ux=Math.cos(a6*Math.PI/180), uy=Math.sin(a6*Math.PI/180);
   const sx=ux.toFixed(3), sy=uy.toFixed(3), sa=(Math.atan2(uy,ux)*180/Math.PI+90).toFixed(1)+'deg';
   if(el.closest('#cardwrap')){ if(!el._ldir || el._ldirRev!==sceneRev){ el._ldir=[...el.querySelectorAll('.ldir')]; el._ldirRev=sceneRev; } for(const t of el._ldir){ t.style.setProperty('--sdx',sx); t.style.setProperty('--sdy',sy); t.style.setProperty('--sang',sa); } }
@@ -2466,7 +2466,7 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((pointerMoving || lightDrag) && performance.now()-pressT<40){ pressStale=true; el.dataset.la=''; return; } // 移動中所有 bump（壓痕、打凹打凸）每 40ms 重算一次（清掉量化快取，下次才會補算） // 效能：燙箔壓痕（整卡大小的 feDiffuseLighting）移動中最多每 50ms 重算一次，停下再補最後一次
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((lightDrag && performance.now()-pressT<40) || (pointerMoving && frameDt>20 && performance.now()-pressT<33)){ pressStale=true; el.dataset.la=''; return; } // bump（壓痕、打凹打凸）：卡片模式每幀即時重算；只有當上一幀已經超過 20ms（圖層很多）才退到每 33ms 一次；場景拖燈 40ms（清掉量化快取，下次才會補算）最後一次
     const flt=document.getElementById(id); if(!flt) return; pressT=performance.now(); pressStale=false; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
@@ -2491,7 +2491,7 @@ function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer
     let ppx=px, ppy=py; if(hovering && lastPt){ const r=c3.getBoundingClientRect(); if(r.width>0){ ppx=Math.min(1,Math.max(0,(lastPt.x-r.left)/r.width)); ppy=Math.min(1,Math.max(0,(lastPt.y-r.top)/r.height)); } }
     const c=c3._c||(c3._c={px:ppx,py:ppy}); c.px+=(ppx-c.px)*.4; c.py+=(ppy-c.py)*.4;
     c3.querySelectorAll('.card.face').forEach(f=>applyPointer(f,c.px,c.py,hov)); }); }
-let lastPt=null, movT=0, pointerMoving=false, pressStale=false, pressT=0;
+let lastPt=null, movT=0, pointerMoving=false, pressStale=false, pressT=0, frameDt=0, lastFrameT=0;
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
   const P=S.paper, lx=px; if(card.style.visibility==='hidden') return; // 翻到背面看不到的那一面不用更新
@@ -2598,13 +2598,14 @@ function loop(){
   requestAnimationFrame(loop); if(!S) return;
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(viewMode==='scene') return; // 版面：燈固定，沒有任何自動移動；只在使用者操作時重算
+  { const now=performance.now(); frameDt=lastFrameT?now-lastFrameT:0; lastFrameT=now; }
   frameNo++; if(!hovering && (frameNo % ($('#stage').classList.contains('lod')?3:2))) return; // 效能：沒有滑鼠時的自動光只跑 30fps（圖層多：20fps）
-  if(hovering){ const now=performance.now(); if(now-lastLightT<40) return; lastLightT=now; } // 移動中：光影固定每 40ms 更新一次（色帶、高光、紙面反光、壓痕一起）
+  // 移動中：每一幀都更新（色帶、高光、紙面反光、壓痕一起即時跟著滑鼠）
   if(!hovering){
     if(S.paper.auto && !reduce && performance.now()-lastMove>1800){ autoT+=0.006; target.px=.5+.38*Math.cos(autoT); target.py=.5+.3*Math.sin(autoT*.8); target.hov=.8; }
     else { target.px=.5; target.py=.5; target.hov=0; }
   }
-  const k = hovering ? 1 : (reduce ? 1 : .06); // 移動中直接到位（40ms 一格），停下才用緩動
+  const k = hovering ? 1 : (reduce ? 1 : .06); // 移動中直接到位，停下才用緩動
   let moved=false;
   for(const key of ['px','py','hov']){ const d=target[key]-cur[key]; if(Math.abs(d)>1e-4){ cur[key]+=d*k; moved=true; } }
   if(moved) setPointer(cur.px,cur.py,cur.hov);
