@@ -254,8 +254,8 @@ body.empty .panel{visibility:hidden}
 /* ink */
 .m.ink{mix-blend-mode:var(--blend,normal);opacity:var(--op,1)}
 .m.ink .i-fill{background:var(--fill,var(--tint))}
-.m.ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
-.m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) var(--tex-size,220px);mix-blend-mode:soft-light;opacity:calc(var(--ptex-foil,.2)*var(--ptexk,1))}
+.m.ink .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) auto;mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
+.m.foil .f-paper{background-image:var(--ptex);background-size:var(--tex-size,220px) auto;mix-blend-mode:soft-light;opacity:calc(var(--ptex-foil,.2)*var(--ptexk,1))}
 /* 亮箔：鏡面——色帶對比高、高光強、幾乎沒有紙紋與刷紋；霧箔：消光——色帶平、高光弱、細顆粒、略降飽和與對比 */
 .fx.gloss .m.foil .f-base{filter:brightness(var(--fb,1)) contrast(calc(var(--fc,1)*1.15))}
 .fx.gloss .m.foil .f-glare{opacity:calc(var(--gloss,.7) * (.45 + .55*var(--hov)))}
@@ -945,6 +945,7 @@ body.viewer .stage-tools{bottom:44px}
 <div class="modal" id="modal"><div class="box"><img id="modalImg" alt="匯出結果"><div class="mb"><span id="modalMsg"></span><button class="btn" id="modalCopy">複製到剪貼簿</button><button class="btn primary" id="modalDl">下載 PNG</button><button class="btn ghost" id="modalClose">關閉</button></div></div></div>
 
 <script type="application/json" id="swatchSvg">__SWATCH_SVG__</script>
+<script type="application/json" id="paperTex">__PAPER_TEX__</script>
 <script>
 (() => {
 'use strict';
@@ -1244,6 +1245,16 @@ const PAPERS = {
   matisse:  {label:'馬諦斯',                group:'紙樣', bf:'1.0', oct:2, relief:.7, grain:.2, gloss:.15, color:'#ecebe8', gsm:[100,300], strength:0.25, note:'德國 馬諦斯 F6150：極細的均勻紋理、平滑，冷白；100／300 gsm。'},
   scent:    {label:'香氛紙',                group:'紙樣', bf:'.28', oct:4, relief:2.6, grain:.4, gloss:.06, color:'#e9e4da', gsm:[100,130,190,250,300,350], strength:0.7, note:'香氛紙：米白、無塗佈、吸墨性強，毛氈般的粗起伏，手感溫柔；100–350 gsm。'},
   vanilla:  {label:'香草紙',                group:'紙樣', bf:'.4', oct:4, relief:2.0, grain:.45, gloss:.05, color:'#e2dfd9', gsm:[70,90,115,200,250,300], strength:0.6, note:'香草紙：輕量蓬鬆、偏灰白，纖維細緻無塗佈，手感溫柔氣質自然；70–300 gsm。'},
+  shinbaidai01:{label:'新百代 01',          group:'紙樣', bf:'.6', oct:3, relief:1.0, grain:.3, gloss:.1, color:'#e3e2e4', gsm:[120,250,300], strength:.45, note:'英國 新百代 01：共 40 種顏色、色澤飽滿；自然無壓紋塗佈，帶原始觸感。'},
+  shinbaidai03:{label:'新百代 03',          group:'紙樣', bf:'.6', oct:3, relief:1.0, grain:.3, gloss:.1, color:'#e9dccb', gsm:[120,250,300], strength:.45, note:'英國 新百代 03：奶油色，線影／古典圖案效果佳。'},
+  matisseF6149:{label:'馬諦斯 F6149',       group:'紙樣', bf:'1.0', oct:2, relief:1.0, grain:.2, gloss:.15, color:'#e6e4e4', gsm:[100,300], strength:.4, note:'德國 馬諦斯 F6149：極細均勻紋理。'},
+  matisseF6107:{label:'馬諦斯 F6107',       group:'紙樣', bf:'1.0', oct:2, relief:1.0, grain:.2, gloss:.15, color:'#e8e2da', gsm:[100,300], strength:.4, note:'德國 馬諦斯 F6107：馬諦斯系列共 48 色，紙張平滑溫潤；100gsm 也適用於一般雷射與噴墨印表機。'},
+  matisseF6146:{label:'馬諦斯 F6146',       group:'紙樣', bf:'1.0', oct:2, relief:1.0, grain:.2, gloss:.15, color:'#c9b7a3', gsm:[100,300], strength:.4, note:'德國 馬諦斯 F6146：褐色。'},
+  matisseF6172:{label:'馬諦斯 F6172',       group:'紙樣', bf:'1.0', oct:2, relief:1.0, grain:.2, gloss:.15, color:'#dad8d8', gsm:[120,300], strength:.4, note:'德國 馬諦斯 F6172：灰白，打凸效果佳。'},
+  beercardA:{label:'特A啤酒卡',             group:'紙樣', bf:'.7', oct:3, relief:1.0, grain:.3, gloss:.1, color:'#efece9', gsm:[285,450,550], strength:.4, note:'特 A 啤酒卡：正白、手感厚實紋路自然，印刷效果實橫，打凹效果明顯。'},
+  beerUS:   {label:'美國啤酒紙',            group:'紙樣', bf:'.6', oct:3, relief:1.0, grain:.35, gloss:.08, color:'#e6e3e0', gsm:[180,270,427], strength:.45, note:'美國 啤酒紙：紙身堅挺、超強吸水性，遇水不易破、乾燥可再用；用來做杯墊材料。'},
+  country:  {label:'鄉村紙',                group:'紙樣', bf:'.45', oct:3, relief:1.0, grain:.4, gloss:.06, color:'#cdc1b3', gsm:[100,115,180,250,300], strength:.5, note:'鄉村紙：輕量且具蓬鬆厚度，紙張顏色偏黃、表面無塗佈，帶有古樸年代感。'},
+  cotton622:{label:'查冠純棉紙 622',        group:'紙樣', bf:'.4', oct:4, relief:1.0, grain:.45, gloss:.05, color:'#dccdb9', gsm:[120,270,595], strength:.55, note:'高級查冠純棉紙 622：專為現代凸版印刷研製，100% 純棉、紙張柔軟且密度高，打凹效果非常明顯。'},
   chipboard:{label:'黃心模型紙板',          group:'紙樣', bf:'.3 .22', oct:4, relief:3.2, grain:.55, gloss:.03, color:'#c4b69c', gsm:[], strength:.7, note:'黃心模型紙板（1mm）：表面纖維感極明顯、厚而密度低，打凹效果明顯，人文手作風。'},
   beer:     {label:'啤酒紙',                group:'台灣常用', bf:'.55', oct:3, relief:1.3, grain:.45, gloss:.08, speck:true, note:'未漂白、帶褐色纖維斑點的手感紙。'},
   stardream:{label:'星幻紙',    group:'台灣常用', bf:'1.1', oct:2, relief:.5,  grain:.25, gloss:.85, note:'Stardream 金屬珠光表面，反光帶會隨角度流動。'},
@@ -1254,7 +1265,34 @@ const PAPERS = {
 };
 const TEX_MIGRATE={smooth:'matte',rough:'ivory'};
 /* 凹凸紋理：feTurbulence 當高度圖 → feDiffuseLighting 打光 → 重新置中到中灰，讓 overlay/soft-light 在平坦處不改變紙色 */
+/* 照片紙紋：build 時注入的實拍高度圖（swatch/paper-tex.json，tools/make_paper_tex.py 產生），與使用者上傳的紙樣（S.texLib） */
+const PAPER_TEX=(()=>{ try{ return JSON.parse(($('#paperTex')||{}).textContent||'{}'); }catch(e){ return {}; } })();
+Object.entries(PAPER_TEX).forEach(([k,t])=>{ if(PAPERS[k]){ PAPERS[k].img=true; PAPERS[k].mm=t.mm; if(t.color && !PAPERS[k].color) PAPERS[k].color=t.color; } }); // 紙色以手調的為準（照片偏暗）
+function texSource(P){ const k=P.texture||''; if(k.startsWith('u:')) return (S&&S.texLib&&S.texLib[k.slice(2)])||null; return PAPERS[k]&&PAPERS[k].img ? PAPER_TEX[k] : null; }
+function paperInfo(P){ const k=P.texture||''; if(k.startsWith('u:')){ const u=texSource(P); return u ? {label:u.label||'自訂紙樣', note:'上傳的紙樣照片', relief:1, grain:.3, gloss:.1, strength:.45, mm:u.mm||25} : PAPERS.ivory; } return PAPERS[k]||PAPERS.ivory; }
+/* SVG-as-image 不能載入 feImage 的 data: 圖，所以照片高度圖的打光改在 canvas 算（法線 = 高度差、Lambert，再對齊中灰），結果以 CSS 變數共用：每張卡只帶 var(--ptexi-N)，匯出時 <style> 一起帶進去 */
+const reliefBaked=new Map(); let reliefSeq=0, reliefPending=new Set();
+function reliefDefsEl(){ let st=$('#ptexDefs'); if(!st){ st=document.createElement('style'); st.id='ptexDefs'; document.head.appendChild(st); } return st; }
+function bakeRelief(src, key, surf, az, elev){
+  if(reliefPending.has(key)) return; reliefPending.add(key);
+  const img=new Image(); img.onload=()=>{ try{
+    const N=img.naturalWidth||512, M=img.naturalHeight||N; const cv=document.createElement('canvas'); cv.width=N; cv.height=M; const cx=cv.getContext('2d',{willReadFrequently:true}); cx.drawImage(img,0,0,N,M);
+    const d=cx.getImageData(0,0,N,M).data, h=new Float32Array(N*M); for(let i=0;i<N*M;i++) h[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;
+    const a=az*Math.PI/180, e=elev*Math.PI/180, Lx=Math.cos(e)*Math.cos(a), Ly=Math.cos(e)*Math.sin(a), Lz=Math.sin(e), flat=Math.sin(e), slope=1.15, icpt=0.5-flat*slope;
+    const out=cx.createImageData(N,M), o=out.data;
+    for(let y=0;y<M;y++){ const yu=(y+M-1)%M, yd=(y+1)%M; for(let x=0;x<N;x++){ const xl=(x+N-1)%N, xr=(x+1)%N;
+      const nx=-surf*(h[y*N+xr]-h[y*N+xl])*.5, ny=-surf*(h[yd*N+x]-h[yu*N+x])*.5; const il=1/Math.sqrt(nx*nx+ny*ny+1);
+      let v=Math.max(0,(nx*Lx+ny*Ly+Lz)*il); v=v*slope+icpt; const g=Math.max(0,Math.min(255,Math.round(v*255))); const i=(y*N+x)*4; o[i]=o[i+1]=o[i+2]=g; o[i+3]=255; } }
+    cx.putImageData(out,0,0); let uri=cv.toDataURL('image/webp',.8); if(!uri.startsWith('data:image/webp')) uri=cv.toDataURL('image/png');
+    const id='ptexi'+(++reliefSeq); reliefBaked.set(key,id); const st=reliefDefsEl(); st.textContent+=`:root{--${id}:url("${uri}")}\n`;
+    if(reliefBaked.size>24){ const first=reliefBaked.keys().next().value; reliefBaked.delete(first); } // 上限：太多就丟最舊的鍵（樣式規則留著沒關係）
+    reliefPending.delete(key); if(S){ applyPaper(); if(viewMode==='scene') sceneChanged(true); }
+  }catch(err){ console.warn('bakeRelief',err); reliefPending.delete(key); } };
+  img.onerror=()=>reliefPending.delete(key); img.src=src.uri;
+}
+const FLAT_GREY='url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg==")';
 function reliefURI(P){
+  const psrc=texSource(P); if(psrc){ const t=paperInfo(P), surf=(t.relief||1)*(P.relief??1)*3, key=`${P.texture}|${surf.toFixed(2)}|${P.az}`; const id=reliefBaked.get(key); if(id) return `var(--${id})`; bakeRelief(psrc,key,surf,P.az,55); return FLAT_GREY; }
   const t=PAPERS[P.texture]||PAPERS.ivory, size=256, elev=55;
   const surf=(t.relief*P.relief*2.2).toFixed(2), az=P.az;
   const flat=Math.sin(elev*Math.PI/180); const slope=1.15, intercept=(0.5-flat*slope).toFixed(3);
@@ -1948,15 +1986,18 @@ function styleFx(d,L,paper=S.paper){
     const op = L.uv==='frost' ? (L.uvOpacity ?? .35) : (L.uv==='matte' ? .07 : 0), gr = L.uv==='frost' ? (L.uvGrain ?? .6) : (L.uv==='matte' ? (L.uvGrain ?? .3)*.6 : 0);
     st.setProperty('--uvop', op.toFixed(3)); st.setProperty('--uvgr', gr.toFixed(3)); }
 }
+/* 紙紋 tile 的尺寸：程序紋理固定 220px×scale；照片紙紋以實際 mm 換算成卡寬百分比（卡片寬度預設 90mm，點陣圖／樣本卡文件另有 mmW），縮放與匯出時比例都對 */
+function cardMMW(){ const d=activeDoc&&activeDoc(); return (d&&d.mmW)||90; }
+function texSizeFor(P, cardPx){ const src=texSource(P); if(!src) return (220*P.scale).toFixed(0)+'px'; const mm=(src.mm||25)*P.scale, f=mm/cardMMW(); return cardPx ? (cardPx*f).toFixed(1)+'px' : (f*100).toFixed(3)+'%'; }
 function paperApply(cards, P){
-  if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture]) P.texture='ivory';
-  const t=PAPERS[P.texture], blend=paperBlend(P), sz=(220*P.scale).toFixed(0)+'px';
+  if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture] && !texSource(P)) P.texture='ivory';
+  const t=paperInfo(P), blend=paperBlend(P), sz=texSizeFor(P);
   const relief=reliefURI(P), grain=grainURI(P.grain*.9);
   // 背景圖層由上到下：顆粒 → 條紋 → 凹凸紋理；全部與紙色做 blend
   const imgs=[grain], sizes=['160px 160px'], blends=[blend], repeats=['repeat'];
   (t.lines||[]).forEach(l=>{ const per=(l.period*P.scale).toFixed(2); const a=(l.str*P.strength).toFixed(3);
     imgs.push(`repeating-linear-gradient(${l.dir}deg,rgba(255,255,255,${a}) 0 1px,rgba(0,0,0,${a}) 1px 2px,transparent 2px ${per}px)`); sizes.push('auto'); blends.push('overlay'); repeats.push('repeat'); });
-  imgs.push(relief); sizes.push(`${sz} ${sz}`); blends.push(blend); repeats.push('repeat');
+  imgs.push(relief); sizes.push(`${sz} auto`); blends.push(blend); repeats.push('repeat');
   cards.forEach(card=>{ const paper=card.querySelector('.paper'); if(!paper) return;
     paper.className='paper';
     paper.style.setProperty('--paper', P.color);
@@ -1982,7 +2023,7 @@ function applyPaper(){
   // paper tab controls
   $('#pColor').value=P.color; $('#pColorHex').textContent=P.color;
   if(!$('#pTex').options.length){ let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ $('#pTex').insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } $('#pTex').lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); }); }
-  $('#pTex').value=P.texture; $('#pTexNote').textContent=PAPERS[P.texture].note; $('#pBlend').value=P.blend;
+  $('#pTex').value=P.texture; $('#pTexNote').textContent=paperInfo(P).note; $('#pBlend').value=P.blend;
   setRange('#pStrength',P.strength,PCT); setRange('#pRelief',P.relief,v=>(+v).toFixed(2)+'×'); setRange('#pAz',P.az,v=>v+'°');
   setRange('#pThickMM',P.thickMM??.35,v=>(+v).toFixed(2)+'mm'); setRange('#pReliefK',P.reliefK??1,v=>(+v).toFixed(2)+'×'); setRange('#pBackBlur',P.backBlur??2.1,v=>(+v).toFixed(1)+'px'); setRange('#pBackK',P.backK??1,v=>(+v).toFixed(2)+'×');
   { const thr=thickThreshold(P); $('#thickNote').textContent=`約 ${Math.round((P.thickMM??.35)*860)} gsm · 凹凸深度超過 ${thr.toFixed(2)} 才會透到另一面`; }
@@ -3083,7 +3124,7 @@ function cropToSlots(d, slots, idxs){
 function buildMergedFx(host, pool, slotOwner, slots){
   host.innerHTML='';
   const groups=[]; pool.forEach((pe,pi)=>{ groups.push({pe, front:pe.back||null, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side!=='back')}); if(pe.back) groups.push({pe:pe.back, front:pe, idxs:slots.map((_,i)=>i).filter(i=>slotOwner[i]===pi && slots[i].side==='back')}); });
-  const decorate=(d,pe,idxs)=>{ d.style.setProperty('--vis', visibleRectsMask(slots, idxs)); const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3)); const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px'); };
+  const decorate=(d,pe,idxs)=>{ d.style.setProperty('--vis', visibleRectsMask(slots, idxs)); const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size', texSizeFor(P, idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length)); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3)); const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px'); };
   groups.forEach(({pe,idxs,front})=>{ if(!idxs.length) return;
    withDoc(pe.doc, ()=>{
     const layers=pe.layers, eff = pe.vk ? computeEffectiveFor(layers) : effLayer;
@@ -3098,7 +3139,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
       d.style.setProperty('--own', own); d.style.setProperty('--mask', ko?`${own}, ${ko}`:own); d.classList.toggle('ko', !!ko);
       d.style.setProperty('--vis', visibleRectsMask(slots, idxs)); // 整個效果層（含溢出的壓痕陰影）只在這些卡片沒被蓋住的區域顯示
       // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
-      const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size',(220*P.scale).toFixed(0)+'px'); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
+      const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size', texSizeFor(P, idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length)); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
       d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); cropToSlots(d, slots, idxs); host.appendChild(d); styleFx(d,L,pe.paper);
       // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
       const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');

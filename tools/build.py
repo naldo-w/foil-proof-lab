@@ -8,7 +8,8 @@ T=(ROOT/'foil-proof.template.html').read_text()
 LINK='原始碼：<a href="https://github.com/naldo-w/foil-proof-lab" target="_blank" rel="noopener">github.com/naldo-w/foil-proof-lab</a>'
 def build(svg,name,credit,out,wrap):
     sw=ROOT/'swatch'/'swatches.json'; swatch=sw.read_text() if sw.exists() else '{}'  # 每類一張的樣本卡（tools/make_swatch.py）
-    s=T.replace('__SWATCH_SVG__',swatch).replace('__SAMPLE_CREDIT__',credit).replace('__SOURCE_LINK__',LINK)
+    pt=ROOT/'swatch'/'paper-tex.json'; papertex=pt.read_text() if pt.exists() else '{}'  # 實拍紙紋高度圖（tools/make_paper_tex.py）
+    s=T.replace('__PAPER_TEX__',papertex).replace('__SWATCH_SVG__',swatch).replace('__SAMPLE_CREDIT__',credit).replace('__SOURCE_LINK__',LINK)
     if wrap: s='<!doctype html>\n<html lang="zh-Hant">\n'+s
     pathlib.Path(out).write_text(s); print('→',out)
 build(None,'','效果樣本卡（swatch/*.svg）為本工具自製的示範圖，隨程式碼一併以 MIT 授權釋出。',ROOT/'index.html',True)
