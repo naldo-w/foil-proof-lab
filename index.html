@@ -139,7 +139,7 @@ body.empty .panel{visibility:hidden}
 .card-wrap .m>.f-base.dyn{width:calc(var(--cwd,100%) * 2.8);height:calc(var(--cht,100%) * 2.8);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * -0.642857),calc(var(--py,50%) * -0.642857))}
 .card-wrap .m>.f-holo.dyn{width:calc(var(--cwd,100%) * 2.2);height:calc(var(--cht,100%) * 2.2);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * 0.545454 - 54.5454%),calc(var(--py,50%) * 0.545454 - 54.5454%))} /* 場景：色帶以卡片尺寸平鋪，位移限制在一個週期內 */
 .card-wrap .m>.f-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,var(--g1,rgba(255,255,255,.55)) 0%,var(--g2,rgba(255,255,255,.22)) 22%,rgba(60,60,60,.14) 60%,rgba(0,0,0,var(--gd,.35)) 100%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%)) scale(var(--gsz,1))}
-.card-wrap .m>.i-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
+.card-wrap .m.raster>.i-glare.dyn,.card-wrap .m>.i-glare.dyn{width:calc(var(--cwd,100%) * 2.4);height:calc(var(--cht,100%) * 2.4);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
 .card-wrap .m>.u-glare.dyn{width:calc(var(--cwd,100%) * .6);height:calc(var(--cht,100%) * .6);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.5) 0%,rgba(255,255,255,.12) 20%,rgba(255,255,255,0) 60%);transform:translate(calc(var(--px,50%) / .6 - 50%),calc(var(--py,50%) / .6 - 50%))} /* 上光的光點：小而集中，離光遠的地方看起來就是透明 */
 .card-wrap .card>.paper-glare.dyn{inset:auto;left:0;top:0;width:240%;height:240%;will-change:transform,opacity;background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.8) 0%,rgba(255,255,255,.18) 30%,rgba(0,0,0,.25) 80%);transform:translate(calc(var(--px,50%) / 2.4 - 50%),calc(var(--py,50%) / 2.4 - 50%))}
 /* （移動中暫停紋理的 LOD 已移除：紋理層現在不會每幀重畫，而且一動就消失、停下又出現看起來像「穿圖」） */
@@ -268,7 +268,12 @@ body.empty .panel{visibility:hidden}
 .fx.ftex-smooth .m.foil .f-brush,.fx.ftex-paper .m.foil .f-brush{display:none} /* 平滑／透出紙紋：完全沒有髮絲斜紋（之前留 10% 放大就看得到斜線） */
 .fx.ftex-brushed .m.foil .f-brush{opacity:calc(.6*var(--texk,1));mix-blend-mode:soft-light}
 .fx.ftex-grain .m.foil .f-brush{opacity:calc(.4*var(--texk,1));mix-blend-mode:overlay;background-image:var(--brushtex);background-size:120px 120px}
-.m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
+.m.raster{isolation:isolate;mix-blend-mode:var(--blend,multiply);opacity:var(--op,1)} /* 點陣印刷：油墨透明 → 色彩增值疊在紙上 */
+.m.raster .r-host{overflow:hidden}
+.m.raster .r-img{position:absolute;background-size:100% 100%;background-repeat:no-repeat}
+.m.raster .i-grain{background-image:var(--ptex);background-size:var(--tex-size,220px) auto;mix-blend-mode:var(--ptex-blend,overlay);opacity:var(--grain-ink,.5)}
+.m.raster.screen .i-grain{display:none}
+.m.raster .i-glare,.m.ink .i-glare{opacity:calc(var(--gloss,.08) * var(--hov));mix-blend-mode:overlay;
   background:radial-gradient(farthest-corner circle at var(--px) var(--py),rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 40%,transparent 80%)}
 /* 局部 UV：本體是透明的上光層——亮面靠「無色的高光帶＋光點」，霧面幾乎沒有高光只有一點消光顆粒，磨砂是半透明白＋顆粒（覆蓋率、顆粒可調）。
    注意：mask 會讓 .m 變成獨立群組，子層的 mix-blend-mode 只會跟透明底混（出來是灰塊），所以混合模式要掛在 .m 本身：uf（覆蓋／顆粒）、ub（高光帶 hard-light：亮部 screen、暗部 multiply）、ug（光點 screen）三組 */
@@ -336,7 +341,7 @@ body.empty .panel{visibility:hidden}
 .slot .slot-sh.dc{background:#000}
 .fxs.merged .m{will-change:transform} /* 場景：每個遮罩層自己一層（子層不各自升層：合併層很大，太多大層反而讓合成變慢；實測 .m 一層最快） */
 .slot .card>.paper-glare{will-change:transform}
-/* 線框：卡片外框＋內容的線條（同一份 SVG 用 <symbol> 共用，每張卡只是一個 <use>） */
+/* 線框：卡片外框＋內容的線條（同一份 SVG 用 symbol 共用，每張卡只是一個 use） */
 .slot .wirecard svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .slot .wirecard .wn{position:absolute;left:6px;top:4px;font:600 12px var(--mono);color:var(--accent);background:rgba(0,0,0,.45);padding:0 5px;border-radius:3px}
 .slot .wirecard .wn small{display:inline;font:10px var(--sans);color:rgba(255,255,255,.75);margin-left:4px}
@@ -613,7 +618,7 @@ body.viewer .stage-tools{bottom:44px}
           <button id="btnReset">重新偵測顏色與圖層</button>
           <button id="btnAbout">關於與版權</button>
         </div></div>
-      <label class="btn">上傳 SVG<input type="file" id="file" accept=".svg,image/svg+xml"></label>
+      <label class="btn">上傳 SVG／圖片<input type="file" id="file" accept=".svg,image/svg+xml,.png,.jpg,.jpeg,.webp,.tif,.tiff,image/png,image/jpeg,image/webp,image/tiff"></label>
       <button class="btn primary" id="btnExport">匯出 PNG</button>
       <a class="blogo top" href="https://www.instagram.com/naldo.design/" target="_blank" rel="noopener" title="NALDO.DESIGN on Instagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="200 200 1560 200" fill="currentColor"><path d="M263.644 245.786C254.719 261.592 235.894 279.223 235.894 296.736C235.894 302.818 237.929 307.285 242.488 307.285C248.461 307.285 247.679 301.724 249.638 301.724C250.387 301.724 251.085 302.12 251.085 304.854C251.085 310.784 245.971 314.376 240.402 314.376C233.715 314.376 226.354 309.203 226.354 296.711C226.354 273.696 249.277 259.918 261.213 243.203C261.348 243.338 262.433 244.473 263.644 245.786Z"/><path d="M271.004 222.905C271.004 225.303 270.702 227.885 270.054 230.636C269.347 229.963 268.632 229.29 267.917 228.634C267.917 228.466 268.38 226.615 268.38 223.604C268.38 212.281 262.021 206.612 253.054 206.612C249.235 206.612 244.936 207.638 240.453 209.699H240.444C240.36 209.749 235.33 212.063 231.931 214.78H231.906V214.796C216.302 226.144 209.539 244.852 209.539 264.527C209.539 311.541 236.836 328.163 250.799 356.014C249.302 359.371 248.082 361.701 246.526 364.393C231.629 333.075 200 318.876 200 264.981C200 225.252 230.081 203.18 251.085 203.18C262.349 203.18 271.004 209.531 271.004 222.897V222.905Z"/><path d="M405.998 267.026C405.998 223.208 373.949 203.213 355.047 203.213C342.858 203.213 335.128 210.919 335.128 222.948C335.128 229.829 337.651 238.123 343.321 247.199C343.666 245.794 344.044 244.415 344.44 243.06C339.897 236.524 337.593 229.357 337.593 223.116C337.593 213.35 343.245 205.846 354.845 206.57C371.257 207.596 396.459 227.137 396.459 264.351C396.459 327.254 346.156 337.769 347.098 390.604C339.763 385.422 322.291 367.673 307.899 340.587C311.625 333.673 315.091 326.279 318.111 318.506C317.202 317.076 314.645 313.139 311.516 308.412C309.034 316.243 306.115 323.654 302.944 330.594C293.136 309.304 286.078 283.446 286.078 255.754C286.078 237.265 288.636 206.915 302.995 206.915C315.562 206.915 319.844 229.719 319.844 253.129C319.844 265.629 318.624 278.289 316.79 287.752C318.599 290.503 321.593 295.096 324.302 299.487C327.969 285.532 329.408 273.158 329.408 262.374C329.408 237.029 318.758 205.047 303.003 204.467C292.404 204.509 276.413 225.084 276.581 261.684C276.691 285.599 283.454 313.686 298.032 340.596C284.06 367.169 267.084 385.22 258.841 390.68C258.841 383.681 258.101 377.095 256.326 370.432C254.988 373.259 253.398 376.186 251.691 378.836C253.777 387.265 253.642 391.975 253.979 394.44C254.105 395.323 254.29 395.92 254.66 396.299C255.03 396.677 255.594 396.82 256.46 396.82C264.435 396.82 285.506 378.129 302.969 349.209C320.752 378.449 342.295 396.837 349.832 396.837C350.404 396.837 350.883 396.61 351.253 396.24C351.699 395.794 351.977 395.13 352.01 394.44C354.997 338.56 405.989 331.738 405.989 267.017L405.998 267.026Z"/><path d="M379.669 297.3C379.669 309.732 372.426 314.754 365.755 314.754C360.069 314.754 354.795 311.104 354.795 305.291C354.795 302.145 355.695 301.817 356.317 301.817C357.529 301.817 357.899 303.928 359.413 305.442C360.263 306.292 361.768 306.965 363.383 306.965C366.529 306.965 370.104 304.408 370.104 295.575C370.104 281.872 359.001 269.213 349.319 255.956C349.529 255.207 350.572 251.851 350.841 251.043C361.718 263.198 379.669 278.482 379.669 297.3Z"/><path d="M234.018 204.971C230.569 206.511 226.91 208.732 224.007 210.919C221.131 209.943 218.489 209.548 216.21 209.548C210.893 209.548 207.503 211.718 207.503 213.871C207.503 217.413 211.962 217.614 211.962 219.272C211.962 220.306 210.506 220.971 208.614 220.971C205.081 220.971 200.017 218.666 200.017 212.222C200.017 204.475 207.344 200.008 216.613 200.008C222.106 200.008 228.289 201.581 234.018 204.971Z"/><path d="M266.344 300.69C266.344 323.292 263.552 346.896 256.654 364.275C246.509 390.259 228.6 399.924 215.629 399.924C206.629 399.924 200 395.273 200 388.19C200 381.965 205.653 379.105 208.942 379.105C210.296 379.105 211.264 379.593 211.264 380.527C211.264 381.805 207.512 383.471 207.512 386.364C207.512 388.779 210.406 390.495 214.897 390.495C224.63 390.495 241.824 382.419 253.138 355.939C260.422 339.14 263.787 317.404 263.787 296.694C263.787 282.184 262.138 268.17 259.026 256.721C259.968 255.392 260.893 254.046 261.794 252.692C264.611 265.722 266.344 282.89 266.344 300.69Z"/><path d="M405.989 212.222C405.989 218.666 400.925 220.954 397.392 220.954C395.5 220.954 394.044 220.298 394.044 219.271C394.044 217.614 398.494 217.412 398.494 213.871C398.494 211.827 395.188 209.531 389.779 209.531C387.491 209.531 384.825 209.943 381.881 210.961C378.752 208.664 375.126 206.578 371.795 205.081C378.255 201.211 384.615 200 389.695 200C395.769 200 405.989 202.725 405.989 212.222Z"/><path d="M405.955 388.055C405.955 393.725 401.001 400 389.746 400C388.333 400 370.55 399.798 356.586 378.44C357.276 375.723 358.395 372.275 359.791 368.893C370.634 385.363 383.084 390.427 390.865 390.427C395.508 390.427 398.494 388.627 398.494 386.364C398.494 383.471 394.734 381.805 394.734 380.527C394.734 379.492 395.575 379.155 396.652 379.155C402.608 379.155 405.955 383.395 405.955 388.055Z"/><path d="M276.548 239.99C276.548 240.225 275.168 245.702 274.621 255.013C266.108 244.995 260.742 239.645 256.998 235.902C257.73 237.87 258.605 240.486 259.169 242.438C258.235 243.716 256.99 245.306 255.77 246.736C251.32 235.136 243.876 223.133 233.723 216.058C234.463 215.318 238.863 212.651 242.496 211.062H242.505C261.053 223.402 276.077 239.502 276.548 239.99Z"/><path d="M341.925 296.728C341.925 318.397 345.903 339.881 352.81 355.829C352.751 355.922 350.538 360.389 349.049 364.653C326.388 326.952 308.656 298.763 289.081 273.04C288.198 264.939 288.08 257.865 288.139 252.793C308.992 277.221 325.942 304.862 338.997 328.979C339.948 330.745 340.873 332.487 341.782 334.203C341.521 332.352 341.285 330.451 341.075 328.491C340.84 328.491 339.712 317.396 339.712 301.893C339.712 284.556 341.117 261.701 346.745 242.699C351.253 227.54 357.478 217.539 364.098 211.062H364.107C366.916 212.239 370.003 214.107 372.401 215.932C350.9 231.208 341.925 264.174 341.925 296.728Z"/><path d="M503.087 240.008L567.496 339.872V274.225C567.496 268.444 567.342 262.664 567.032 256.884C566.825 251.104 566.051 245.427 564.709 239.853H584.992C583.65 245.427 582.824 251.104 582.515 256.884C582.308 262.664 582.205 268.444 582.205 274.225V325.473C582.205 331.253 582.308 337.085 582.515 342.969C582.824 348.749 583.65 354.426 584.992 360H562.697L498.752 260.909V325.628C498.752 331.408 498.855 337.189 499.062 342.969C499.372 348.749 500.197 354.426 501.539 360H481.257C482.598 354.426 483.373 348.749 483.579 342.969C483.889 337.189 484.044 331.408 484.044 325.628V274.38C484.044 268.599 483.889 262.819 483.579 257.039C483.373 251.258 482.598 245.581 481.257 240.008H503.087ZM650.263 240.008H666.056L704.453 332.905C706.518 337.447 708.634 341.833 710.801 346.065C713.072 350.194 715.808 354.839 719.007 360H697.176C696.557 356.697 695.68 353.084 694.544 349.162C693.409 345.136 691.499 339.717 688.816 332.905L685.255 324.389H631.064L627.503 332.905C624.923 339.717 623.013 345.136 621.775 349.162C620.639 353.084 619.762 356.697 619.143 360H597.312C600.512 355.149 603.144 350.762 605.208 346.84C607.376 342.814 609.388 338.685 611.246 334.453L650.263 240.008ZM636.174 312.003H680.145L658.16 258.742L636.174 312.003ZM729.83 360C731.171 354.426 731.946 348.749 732.152 342.969C732.462 337.189 732.617 331.408 732.617 325.628V274.38C732.617 268.599 732.462 262.819 732.152 257.039C731.946 251.258 731.171 245.581 729.83 240.008H750.886C749.545 245.581 748.719 251.258 748.409 257.039C748.203 262.819 748.099 268.599 748.099 274.38V347.614H769.776C775.453 347.614 780.252 347.459 784.175 347.149C788.097 346.736 791.555 346.117 794.548 345.291C797.645 344.362 800.586 343.175 803.373 341.73L799.657 360H729.83ZM859.607 240.008C870.135 240.008 879.218 241.866 886.856 245.581C894.598 249.194 900.997 253.994 906.055 259.98C911.113 265.864 914.829 272.315 917.203 279.334C919.68 286.353 920.919 293.217 920.919 299.926C920.919 306.636 919.68 313.5 917.203 320.519C914.829 327.538 911.113 334.04 906.055 340.027C900.997 346.014 894.598 350.865 886.856 354.581C879.218 358.194 870.135 360 859.607 360H818.887C820.228 354.426 821.003 348.749 821.209 342.969C821.519 337.189 821.673 331.408 821.673 325.628V274.38C821.673 268.599 821.519 262.819 821.209 257.039C821.003 251.258 820.228 245.581 818.887 240.008H859.607ZM837.156 347.614H854.962C864.768 347.614 872.819 346.117 879.115 343.124C885.515 340.13 890.521 336.26 894.133 331.511C897.849 326.66 900.43 321.499 901.875 316.029C903.423 310.455 904.197 305.087 904.197 299.926C904.197 294.765 903.423 289.45 901.875 283.979C900.43 278.405 897.849 273.244 894.133 268.496C890.521 263.645 885.515 259.774 879.115 256.884C872.819 253.891 864.768 252.394 854.962 252.394H837.156V347.614ZM992.554 362.168C983.677 362.168 975.523 360.619 968.091 357.523C960.659 354.323 954.208 349.885 948.737 344.207C943.37 338.53 939.189 331.924 936.196 324.389C933.203 316.854 931.706 308.7 931.706 299.926C931.706 291.153 933.203 282.998 936.196 275.463C939.189 267.928 943.37 261.374 948.737 255.8C954.208 250.123 960.659 245.736 968.091 242.64C975.523 239.44 983.677 237.84 992.554 237.84C1001.43 237.84 1009.58 239.388 1017.02 242.485C1024.45 245.581 1030.9 249.968 1036.37 255.645C1041.84 261.219 1046.07 267.774 1049.07 275.309C1052.06 282.844 1053.56 291.05 1053.56 299.926C1053.56 308.7 1052.06 316.854 1049.07 324.389C1046.07 331.924 1041.84 338.53 1036.37 344.207C1030.9 349.885 1024.45 354.323 1017.02 357.523C1009.58 360.619 1001.43 362.168 992.554 362.168ZM992.399 349.781C999.108 349.781 1005.2 348.439 1010.67 345.756C1016.14 343.072 1020.84 339.459 1024.76 334.918C1028.68 330.273 1031.67 324.957 1033.74 318.97C1035.8 312.88 1036.83 306.532 1036.83 299.926C1036.83 293.217 1035.8 286.869 1033.74 280.882C1031.67 274.896 1028.68 269.632 1024.76 265.09C1020.84 260.445 1016.14 256.832 1010.67 254.252C1005.2 251.568 999.108 250.226 992.399 250.226C985.69 250.226 979.6 251.568 974.129 254.252C968.762 256.832 964.169 260.445 960.349 265.09C956.53 269.735 953.589 275.051 951.524 281.037C949.46 286.921 948.428 293.217 948.428 299.926C948.428 306.532 949.46 312.88 951.524 318.97C953.589 324.957 956.53 330.273 960.349 334.918C964.169 339.459 968.762 343.072 974.129 345.756C979.6 348.439 985.69 349.781 992.399 349.781ZM1063.4 338.014L1075.48 350.091L1063.4 362.168L1051.32 350.091L1063.4 338.014ZM1125.57 240.008C1136.1 240.008 1145.18 241.866 1152.82 245.581C1160.56 249.194 1166.96 253.994 1172.02 259.98C1177.07 265.864 1180.79 272.315 1183.16 279.334C1185.64 286.353 1186.88 293.217 1186.88 299.926C1186.88 306.636 1185.64 313.5 1183.16 320.519C1180.79 327.538 1177.07 334.04 1172.02 340.027C1166.96 346.014 1160.56 350.865 1152.82 354.581C1145.18 358.194 1136.1 360 1125.57 360H1084.85C1086.19 354.426 1086.96 348.749 1087.17 342.969C1087.48 337.189 1087.63 331.408 1087.63 325.628V274.38C1087.63 268.599 1087.48 262.819 1087.17 257.039C1086.96 251.258 1086.19 245.581 1084.85 240.008H1125.57ZM1103.12 347.614H1120.92C1130.73 347.614 1138.78 346.117 1145.08 343.124C1151.48 340.13 1156.48 336.26 1160.09 331.511C1163.81 326.66 1166.39 321.499 1167.84 316.029C1169.38 310.455 1170.16 305.087 1170.16 299.926C1170.16 294.765 1169.38 289.45 1167.84 283.979C1166.39 278.405 1163.81 273.244 1160.09 268.496C1156.48 263.645 1151.48 259.774 1145.08 256.884C1138.78 253.891 1130.73 252.394 1120.92 252.394H1103.12V347.614ZM1272.91 240.008L1276.63 258.277C1273.84 256.832 1270.9 255.697 1267.8 254.871C1264.81 253.942 1261.35 253.323 1257.43 253.013C1253.51 252.6 1248.71 252.394 1243.03 252.394H1221.36V292.495H1234.52C1240.3 292.495 1246.08 292.391 1251.86 292.185C1257.64 291.875 1263.31 291.05 1268.89 289.708V307.668C1263.31 306.326 1257.64 305.552 1251.86 305.345C1246.08 305.036 1240.3 304.881 1234.52 304.881H1221.36V347.614H1244.27C1252.73 347.614 1260.11 347.201 1266.41 346.375C1272.81 345.446 1278.07 343.898 1282.2 341.73L1278.49 360H1203.09C1204.43 354.426 1205.2 348.749 1205.41 342.969C1205.72 337.189 1205.87 331.408 1205.87 325.628V274.38C1205.87 268.599 1205.72 262.819 1205.41 257.039C1205.2 251.258 1204.43 245.581 1203.09 240.008H1272.91ZM1371.05 252.239L1362.54 268.961H1362.07C1361.35 266.07 1359.91 263.18 1357.74 260.29C1355.67 257.4 1352.89 255.026 1349.38 253.168C1345.97 251.207 1341.74 250.226 1336.68 250.226C1330.18 250.226 1324.81 251.878 1320.58 255.181C1316.45 258.484 1314.39 262.871 1314.39 268.341C1314.39 272.573 1315.78 276.083 1318.57 278.87C1321.35 281.553 1324.97 283.979 1329.4 286.147C1333.84 288.211 1338.54 290.43 1343.49 292.804C1348.76 295.281 1353.76 298.172 1358.51 301.475C1363.26 304.674 1367.13 308.545 1370.12 313.087C1373.12 317.525 1374.61 322.893 1374.61 329.189C1374.61 335.692 1373.01 341.421 1369.82 346.375C1366.72 351.33 1362.23 355.2 1356.34 357.987C1350.56 360.774 1343.6 362.168 1335.44 362.168C1329.04 362.168 1323.47 361.445 1318.72 360C1313.97 358.555 1309.95 356.852 1306.64 354.891C1303.45 352.826 1300.92 350.865 1299.06 349.007C1297.2 347.149 1295.96 345.807 1295.34 344.982L1305.72 328.105H1306.18C1307.52 331.511 1309.43 334.866 1311.91 338.169C1314.49 341.472 1317.69 344.259 1321.51 346.53C1325.43 348.697 1330.08 349.781 1335.44 349.781C1342.15 349.781 1347.62 347.872 1351.85 344.053C1356.19 340.13 1358.36 335.176 1358.36 329.189C1358.36 323.099 1356.29 318.248 1352.16 314.635C1348.04 310.919 1342.98 307.616 1336.99 304.726C1332.66 302.558 1328.22 300.442 1323.68 298.378C1319.24 296.21 1315.11 293.785 1311.29 291.101C1307.47 288.314 1304.37 285.063 1302 281.347C1299.63 277.631 1298.39 273.141 1298.28 267.877C1298.18 262.096 1299.73 256.987 1302.93 252.549C1306.13 248.007 1310.67 244.446 1316.55 241.866C1322.44 239.182 1329.25 237.84 1336.99 237.84C1342.87 237.84 1347.88 238.511 1352.01 239.853C1356.24 241.091 1359.7 242.64 1362.38 244.498C1365.07 246.252 1367.08 247.904 1368.42 249.452C1369.87 250.897 1370.74 251.826 1371.05 252.239ZM1413.48 240.008C1412.14 245.581 1411.31 251.258 1411 257.039C1410.8 262.819 1410.69 268.599 1410.69 274.38V325.628C1410.69 331.408 1410.8 337.189 1411 342.969C1411.31 348.749 1412.14 354.426 1413.48 360H1392.42C1393.77 354.426 1394.54 348.749 1394.75 342.969C1395.06 337.189 1395.21 331.408 1395.21 325.628V274.38C1395.21 268.599 1395.06 262.819 1394.75 257.039C1394.54 251.258 1393.77 245.581 1392.42 240.008H1413.48ZM1538.41 349.162C1531.29 353.807 1524.07 357.161 1516.74 359.226C1509.41 361.187 1501.72 362.168 1493.67 362.168C1484.48 362.168 1476.07 360.619 1468.43 357.523C1460.79 354.323 1454.19 349.885 1448.61 344.207C1443.14 338.53 1438.86 331.924 1435.76 324.389C1432.77 316.854 1431.27 308.7 1431.27 299.926C1431.27 291.153 1432.72 282.998 1435.61 275.463C1438.6 267.928 1442.78 261.374 1448.15 255.8C1453.62 250.123 1460.02 245.736 1467.35 242.64C1474.78 239.44 1482.98 237.84 1491.96 237.84C1502.18 237.84 1510.49 238.821 1516.89 240.782C1523.29 242.743 1529.02 245.685 1534.08 249.607L1536.55 272.057H1536.09C1531.96 265.761 1526.39 260.548 1519.37 256.419C1512.45 252.291 1503.32 250.226 1491.96 250.226C1483.09 250.226 1475.35 252.497 1468.74 257.039C1462.13 261.58 1457.02 267.619 1453.41 275.154C1449.8 282.586 1447.99 290.843 1447.99 299.926C1447.99 306.739 1449.13 313.138 1451.4 319.125C1453.67 325.112 1456.92 330.428 1461.15 335.073C1465.39 339.614 1470.39 343.227 1476.17 345.911C1481.95 348.491 1488.35 349.781 1495.37 349.781C1500.84 349.781 1506 349.11 1510.85 347.769C1515.7 346.427 1519.73 344.724 1522.93 342.659V308.752C1518.29 308.855 1513.69 309.061 1509.15 309.371C1504.61 309.681 1500.07 310.403 1495.53 311.539V296.21H1538.41V349.162ZM1581.9 240.008L1646.31 339.872V274.225C1646.31 268.444 1646.15 262.664 1645.84 256.884C1645.64 251.104 1644.86 245.427 1643.52 239.853H1663.8C1662.46 245.427 1661.64 251.104 1661.33 256.884C1661.12 262.664 1661.02 268.444 1661.02 274.225V325.473C1661.02 331.253 1661.12 337.085 1661.33 342.969C1661.64 348.749 1662.46 354.426 1663.8 360H1641.51L1577.57 260.909V325.628C1577.57 331.408 1577.67 337.189 1577.87 342.969C1578.18 348.749 1579.01 354.426 1580.35 360H1560.07C1561.41 354.426 1562.19 348.749 1562.39 342.969C1562.7 337.189 1562.86 331.408 1562.86 325.628V274.38C1562.86 268.599 1562.7 262.819 1562.39 257.039C1562.19 251.258 1561.41 245.581 1560.07 240.008H1581.9Z"/><path d="M1721.42 240L1722.74 246.17C1721.42 245.509 1719.87 244.848 1718.33 244.627C1716.79 244.407 1714.37 244.187 1711.5 244.187V258.509C1711.5 260.492 1711.5 262.475 1711.5 264.238C1711.5 266.221 1711.94 267.984 1712.38 269.967H1705.33C1705.77 268.204 1705.99 266.221 1706.21 264.238C1706.43 262.255 1706.21 260.492 1706.21 258.509V244.187C1703.35 244.187 1701.15 244.187 1699.6 244.627C1698.06 244.848 1696.52 245.509 1694.98 246.17L1696.3 240H1721.86H1721.42ZM1730.89 240L1740.81 261.814L1750.72 240H1757.55C1757.11 241.763 1756.89 243.746 1756.67 245.729C1756.67 247.712 1756.67 249.695 1756.67 251.458V258.289C1756.67 260.272 1756.67 262.255 1756.67 264.018C1756.67 266.001 1757.11 267.763 1757.55 269.747H1750.5C1750.94 267.984 1751.16 266.001 1751.38 264.018C1751.38 262.034 1751.38 260.272 1751.38 258.289V250.356V250.797L1742.57 269.747H1739.26L1730.67 250.797V258.289C1730.67 260.272 1730.67 262.255 1730.67 264.018C1730.67 265.78 1730.89 267.763 1731.55 269.747H1724.5C1724.94 267.984 1725.16 266.001 1725.38 264.018C1725.38 262.034 1725.38 260.272 1725.38 258.289V251.458C1725.38 249.475 1725.38 247.492 1725.38 245.729C1725.38 243.746 1724.94 241.983 1724.5 240H1731.33H1730.89Z"/></svg></a>
     </div>
@@ -659,8 +664,8 @@ body.viewer .stage-tools{bottom:44px}
     <div id="emptyState" class="empty-state" hidden>
       <div class="es-card">
         <div class="es-title">燙印打樣室 <span>FOIL PROOF LAB</span></div>
-        <p class="es-p">把 SVG 拖到這裡，或</p>
-        <button class="btn primary" id="esUpload">上傳 SVG</button>
+        <p class="es-p">把 SVG 或圖片（PNG／JPG／TIFF）拖到這裡，或</p>
+        <button class="btn primary" id="esUpload">上傳 SVG／圖片</button>
         <div class="es-sub">效果樣本卡</div>
         <div class="es-swatches">
           <button data-swatch="swatch-foil-metal.svg">燙箔 · 金屬色</button><button data-swatch="swatch-foil-pigment.svg">燙箔 · 純色</button><button data-swatch="swatch-holo.svg">燙雷射</button><button data-swatch="swatch-ink.svg">油墨</button><button data-swatch="swatch-finish.svg">表面處理</button>
@@ -730,8 +735,9 @@ body.viewer .stage-tools{bottom:44px}
         <div class="row two"><label>閒置</label><label class="toggle"><input type="checkbox" id="pAuto"> 無滑鼠時自動掃光</label></div>
       </div>
       <div class="sec">
-        <div class="sec-h" data-help="sec-file">檔案 <label class="btn small ghost">＋ 加入 SVG<input type="file" id="fileAdd" accept=".svg,image/svg+xml" multiple hidden></label></div>
+        <div class="sec-h" data-help="sec-file">檔案 <label class="btn small ghost">＋ 加入 SVG<input type="file" id="fileAdd" accept=".svg,image/svg+xml,.png,.jpg,.jpeg,.webp,.tif,.tiff,image/png,image/jpeg,image/webp,image/tiff" multiple hidden></label></div>
         <div class="doclist" id="docListA"></div>
+        <div class="row two" id="dpiRow" hidden><label data-help="dpi">圖片 DPI</label><span style="display:flex;gap:6px;align-items:center"><input type="number" id="docDpi" min="36" max="1200" step="1" value="300" style="width:80px"><span class="note" id="dpiNote"></span></span></div>
         <p class="note" id="fileNote"></p>
       </div>
     </div>
@@ -809,7 +815,7 @@ body.viewer .stage-tools{bottom:44px}
         <div class="row"><label>自然微傾</label><input type="range" id="sTilt3" min="0" max="20" step="0.5"><span class="val"></span></div>
       </div>
       <div class="sec" data-sec="docs">
-        <div class="sec-h" data-help="sec-docs">檔案 <span><button class="btn small ghost" id="btnCompare" title="每個檔案各一張、並排一列">並排比較</button><label class="btn small">＋ 加入 SVG<input type="file" id="fileAdd2" accept=".svg,image/svg+xml" multiple hidden></label></span></div>
+        <div class="sec-h" data-help="sec-docs">檔案 <span><button class="btn small ghost" id="btnCompare" title="每個檔案各一張、並排一列">並排比較</button><label class="btn small">＋ 加入 SVG<input type="file" id="fileAdd2" accept=".svg,image/svg+xml,.png,.jpg,.jpeg,.webp,.tif,.tiff,image/png,image/jpeg,image/webp,image/tiff" multiple hidden></label></span></div>
         <div class="doclist" id="docListB"></div>
       </div>
       <div class="sec" data-sec="variants">
@@ -1191,6 +1197,7 @@ function removeDoc(id){
 }
 function renderDocList(){
   syncDocFromS();
+  { const d=activeDoc(); const row=$('#dpiRow'); if(row){ row.hidden=!(d&&d.isRaster); if(d&&d.isRaster){ $('#docDpi').value=d.dpi||300; $('#dpiNote').textContent=`→ 寬 ${(d.mmW||0).toFixed(1)} mm`; } } }
   { const host=$('#docChips'); host.innerHTML='';
     (S.docs||[]).forEach(d=>{ const b=document.createElement('button'); b.className='chip'+(d.id===S.docId?' on':''); b.innerHTML=esc(d.name||'SVG')+(d.backOf?'<span class="side">背</span>':(d.frontOf?'<span class="side">正</span>':'')); b.title=(d.vb?`${fmt(d.vb[0])}×${fmt(d.vb[1])} · `:'')+'點一下切換編輯'; b.addEventListener('click',()=>switchDoc(d.id)); host.appendChild(b); });
     const add=document.createElement('button'); add.className='chip add'; add.textContent='＋'; add.title='加入 SVG'; add.addEventListener('click',()=>$('#fileAdd').click()); host.appendChild(add); }
@@ -1470,8 +1477,10 @@ function parseLayerName(raw){
   else if(has(/凸版|letterpress/i)) r.proc='letterpress';
   else if(has(/網版|絹印|silk|screen/i)) r.proc='screen';
   else if(has(/燙箔|燙金|燙銀|燙紅|燙|foil/i)) r.proc='foil';
-  else if(has(/印刷|平版|數位|油墨|印墨|印紅|白墨|ink|offset/i)) r.proc='ink';
+  else if(has(/印刷|平版|數位|油墨|印墨|印紅|白墨|ink|offset|柯式/i)) r.proc='ink';
   else if(has(/加工|不上色/)) r.proc='none';
+  r.print = has(/柯式|offset|平版/i) ? 'offset' : has(/數位|digital/i) ? 'digital' : has(/網版|絹印|silk|screen/i) ? 'screen' : null; // 點陣圖的印刷方式（群組含 <image> 時生效）
+  { const mm=n.match(/(\d{2,3})\s*目/); if(mm) r.mesh=+mm[1]; }
   if(has(/打凸|浮凸|emboss/i)) r.relief='emboss'; else if(has(/打凹|壓凹|deboss/i)) r.relief='deboss';
   if(has(/磨砂/)) r.uv='frost'; else if(has(/立體\s*UV|厚版|水晶膠|raised/i)) r.uv='raised'; else if(has(/亮粉\s*uv/i) || (has(/亮粉/) && !has(/雷射|holo|全息|燙/i))) r.uv='glitter'; else if(has(/霧面|霧\s*UV|matte/i)) r.uv='matte'; else if(has(/亮面|上光|UV|gloss/i)) r.uv='gloss';
   // 雷射種類
@@ -1515,6 +1524,7 @@ function parseLayerName(raw){
 }
 function layerFromParsed(r, name){
   if(r.proc==='hide'){ return newLayer('hide', name); }
+  if(r.proc==='raster'){ const L=newLayer('ink-black'); L._prevProc='ink'; setProc(L,'raster'); L.print=r.print||'offset'; if(r.mesh) L.mesh=r.mesh; if(r.tint) L.tint=r.tint; L.srcName=r.srcName||'圖片'; if(r.relief!=='none') L.relief=r.relief; if(r.uv!=='none') L.uv=r.uv; normalizeLayer(L); L.name=autoName(L); L.named=false; return L; }
   if(r.proc==='none'){ const L=newLayer(r.relief==='deboss'?'deboss':(r.relief==='emboss'?'emboss':'uv')); L.relief=r.relief; L.uv=r.uv; normalizeLayer(L); L.name=autoName(L); L.named=false; return L; }
   const base = r.preset || PROCS[r.proc].base;
   const L=newLayer(base);
@@ -1544,12 +1554,14 @@ function autoLayers(){
       L = hideL || (hideL=newLayer('hide','不印 · 底色'));
     }
     else if(r.proc==='hide'){ L = hideL || (hideL=newLayer('hide', groupName(g))); }
-    else L=layerFromParsed(r, groupName(g));
+    else { const hasImg=[...g.querySelectorAll('image')].some(im=>!im.closest(NONRENDER)); if(hasImg && ['ink','screen','letterpress'].includes(r.proc)){ r.proc='raster'; r.print=r.print||(r.proc==='screen'?'screen':'offset'); r.srcName=groupName(g).replace(/^[^_\s·]+[_\s·]+/,'').replace(/\s*\d{2,3}\s*目/,'').replace(/\+.*$/,'').trim()||'圖片'; } L=layerFromParsed(r, groupName(g)); }
     const k=g.getAttribute('data-k'); S.assign[k]=L.id; parsedGroups.push(g);
   });
   const inParsed = k => parsedGroups.some(g=>g.contains(shapes[k].el));
   // 2) 其餘元素：相同顏色 → 相同效果
-  const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey && !inParsed(k))]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
+  // 1b) 沒歸類的點陣圖：集中成一個「點陣印刷」層（預設柯式）
+  { const imgs=Object.keys(shapes).filter(k=>shapes[k].tag==='image' && k!==bgKey && !inParsed(k) && !S.assign[k]); if(imgs.length){ const L=newLayer('ink-black'); L._prevProc='ink'; setProc(L,'raster'); L.srcName='圖片'; L.name=autoName(L); L.named=false; imgs.forEach(k=>{ S.assign[k]=L.id; }); } }
+  const cols = Object.entries(colorIndex).map(([c,keys])=>[c,keys.filter(k=>k!==bgKey && !inParsed(k) && !S.assign[k])]).filter(([,keys])=>keys.length).sort((a,b)=>b[1].length-a[1].length);
   for(const [c,keys] of cols){
     const p = guessPreset(c); const L=newLayer(p);
     if(PRESETS[p].type==='ink'){ L.tint=c; delete L.cname; } L.srcColor=c; L.name=autoName(L); L.named=false;
@@ -1565,6 +1577,7 @@ const PROCS = {
   ink:{label:'印刷（平版／數位）',colored:true,base:'ink-black'},
   letterpress:{label:'凸版印刷',colored:true,base:'ink-black'},
   screen:{label:'網版印刷',colored:true,base:'ink-white'},
+  raster:{label:'點陣印刷（照片／圖片）',colored:true,base:'ink-black'},
   none:{label:'不上色（只做加工）',colored:false},
   hide:{label:'不印',colored:false},
 };
@@ -1575,6 +1588,7 @@ const FIN_DEFAULTS={relief:'none',reliefDepth:1.5,uv:'none',uvGloss:.8,uvDepth:1
 /* 依 type 反推 proc（舊資料相容），並補齊欄位 */
 function normalizeLayer(L){
   if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
+  if(L.proc==='raster'){ const D={print:'offset',sat:1,regX:0,regY:0,lpi:175,dotGain:.12,colors:4,rOffX:0,rOffY:0,rScale:1,toner:.3,mesh:120,blend:'multiply',opacity:1,tint:'#161616',gloss:.08}; Object.entries(D).forEach(([k,v])=>{ if(L[k]==null) L[k]=v; }); }
   if(['foil','holo','letterpress'].includes(L.proc)){ if(L.edgeRough==null) L.edgeRough=.2; if(L.edgeDens==null) L.edgeDens=.5; if(L.bleed==null) L.bleed=.5; } // 邊緣不規則 0.2px、溢出 0.5px
   if(!L.proc){
     const t=L.type;
@@ -1596,12 +1610,15 @@ function syncType(L){
   else if(L.proc==='none') L.type = L.uv!=='none' ? 'uv' : 'relief';
   else if(L.proc==='foil') L.type='foil'; else if(L.proc==='holo') L.type='holo'; else L.type='ink';
   L.noKnock = (L.proc==='holo' && L.sub==='clear') || L.proc==='none';
+  if(L.proc==='raster') L.type='ink';
   if(L.type==='relief') L.dir = L.relief==='deboss' ? -1 : 1;
 }
 /* 命名規律：工法_色碼[+加工+加工…]（分隔也接受空白與 ·）
    燙箔 · 金 ／ 燙雷射 · 線條雷射 · 銀 ／ 印刷 · 專色紅 185C ／ 凸版 · 印墨 ／ 網版 · 白墨 + 發泡 ／ 印刷 · #a06a4f（金屬墨）／ 加工 · 打凸 ／ 不印
    顏色用色票名（去掉「燙」「雷射」前綴），自訂色用色碼；螢光墨、金屬墨以括號註記；使用者自己改過的名稱不會被覆寫。 */
-const PROC_SHORT={foil:'燙箔',holo:'燙雷射',ink:'印刷',letterpress:'凸版',screen:'網版',none:'加工',hide:'不印'};
+const PROC_SHORT={foil:'燙箔',holo:'燙雷射',ink:'印刷',letterpress:'凸版',screen:'網版',raster:'點陣',none:'加工',hide:'不印'};
+const PRINT_MODES={digital:'數位印刷',screen:'網版印刷',offset:'柯式（平版）印刷'}; const PRINT_SHORT={digital:'數位',screen:'網版',offset:'柯式'};
+const RASTER_KEYS=['print','sat','regX','regY','lpi','dotGain','colors','rOffX','rOffY','rScale','toner','mesh'];
 function colorName(L){
   const base = L.cname ? L.cname.replace(/^燙/,'').replace(/^雷射/,'').replace(/（線條）$/,'').replace(/^專色/,'') : L.tint;
   const tags=[]; if(L.fluo && !/螢光/.test(base)) tags.push('螢光墨'); if(L.metallic && !/金屬/.test(base)) tags.push('金屬墨');
@@ -1609,6 +1626,7 @@ function colorName(L){
 }
 function autoName(L){
   if(L.proc==='hide') return '不印';
+  if(L.proc==='raster'){ let n=(PRINT_SHORT[L.print]||'柯式')+'_'+(L.srcName||'圖片'); if(L.print==='screen') n+=` ${L.mesh||120}目`; const fin=[]; if(L.relief!=='none') fin.push(RELIEFS[L.relief]); if(L.uv!=='none') fin.push(UV_SUBS[L.uv].replace('／水晶膠','')); return fin.length ? n+'+'+fin.join('+') : n; }
   const parts=[PROC_SHORT[L.proc]||L.proc];
   if(L.proc==='holo') parts.push(HOLO_SUBS[L.sub]||'');
   if(PROCS[L.proc].colored){ const c=colorName(L); const sub=(HOLO_SUBS[L.sub]||'').replace(/雷射|膜/g,''); if(!(L.proc==='holo' && c && (c.includes(sub)||sub.includes(c)||/^銀$/.test(c)))) parts.push(c); } // 雷射：顏色若只是重複種類名（珍珠箔 · 珍珠箔）或預設銀就省略
@@ -1633,7 +1651,8 @@ function setProc(L, proc){
   else { const wasColored=['foil','holo','ink','letterpress','screen'].includes(L._prevProc); const base=PROCS[proc].base;
     const keepTint = wasColored; // 換工法保留顏色（紅箔 → 紅墨），只重設該工法的參數
     const tint=L.tint, cname=L.cname; applyColorPreset(L, base); if(keepTint){ L.tint=tint; L.cname=cname; }
-    if(proc==='letterpress'||proc==='screen'||proc==='ink') L.blend='normal'; // 換工法後一律不透明覆蓋，深色紙上才看得到；要透明油墨再自己選色彩增值
+    if(proc==='letterpress'||proc==='screen'||proc==='ink') L.blend='normal';
+    if(proc==='raster') L.blend = paperIsDark() ? 'normal' : 'multiply'; // 點陣印刷：淺色紙用透明油墨（色彩增值）；深色紙預設白墨底（覆蓋） // 換工法後一律不透明覆蓋，深色紙上才看得到；要透明油墨再自己選色彩增值
   }
   if(proc==='none' && L.relief==='none' && L.uv==='none') L.relief='emboss';
   normalizeLayer(L); if(!L.named) L.name=autoName(L);
@@ -1748,6 +1767,22 @@ async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {
       bump.style.filter='none'; bump.innerHTML=''; bump.style.backgroundImage=`url("${du}")`; bump.style.backgroundSize=fx.style.getPropertyValue('--msz')||'100% 100%'; bump.style.backgroundPosition=fx.style.getPropertyValue('--mpos')||'0 0'; bump.style.backgroundRepeat='no-repeat';
     }catch(e){ console.warn('bump bake failed',e); } }
   }
+  // 點陣印刷層：依匯出尺寸重新印一次（顯示用的版本解析度較低）
+  // 整份合成是一個 data: URL（Chrome 上限約 2M 字元），先算目前已用掉多少，剩下的平均分給每張圖；超過就降畫質／縮小
+  const rimgs=[...rootClone.querySelectorAll('.r-img[data-src]')];
+  const cssLen=[...document.querySelectorAll('style')].reduce((a,s)=>a+s.textContent.length,0);
+  let baseLen=0; if(rimgs.length){ rimgs.forEach(dv=>{ dv.dataset.bg=dv.style.backgroundImage; dv.style.backgroundImage='none'; }); baseLen=rootClone.innerHTML.length+cssLen; }
+  const budget=Math.max(150e3, (1.75e6-baseLen*1.05)/Math.max(1,rimgs.length));
+  for(let i=0;i<rimgs.length;i++){ const dv=rimgs[i]; try{
+    toast(`合成 2/4：點陣印刷 ${i+1}/${rimgs.length}…`, true); await new Promise(r=>setTimeout(r,0));
+    const L=findLayerById(dv.dataset.rk); const im=await loadRasterImage(dv.dataset.src); if(!L||!im) continue;
+    const rect=dv.dataset.rect.split(',').map(Number), rw=rect[2]-rect[0], rh=rect[3]-rect[1], ar=+dv.dataset.ar||.7, mm=+dv.dataset.mm||50;
+    const fx=dv.closest('.fx'), slot=fx&&fx.closest('.slot'), rs=dv.closest('.r-slot'); let cardPx;
+    if(slot) cardPx=parseFloat(slot.style.width)*k; else if(rs){ const hostEl=fx.closest('.fxs.merged'); const Ew=crop?crop.dst.w:parseFloat(hostEl.style.width); cardPx=parseFloat(rs.style.width)/100*Ew*k; } else cardPx=singleW;
+    const W=rw*cardPx, H=rh*cardPx*ar; let du=null;
+    for(const [mx,q] of [[2048,.9],[2048,.75],[1400,.7],[1000,.6],[700,.5],[500,.4]]){ du=await renderRaster(L, im, W, H, W/mm, mx, q); if(du.length<=budget) break; }
+    dv.style.backgroundImage=`url("${du}")`;
+  }catch(e){ console.warn('raster export failed',e); dv.style.backgroundImage=dv.dataset.bg||'none'; } }
   // 底圖 SVG：已指派（隱藏）的圖形不用帶進匯出檔，省掉每張卡一份完整 SVG
   rootClone.querySelectorAll('.base svg .is-assigned').forEach(n=>n.remove());
   let changed=true; while(changed){ changed=false; rootClone.querySelectorAll('.base svg g').forEach(g=>{ if(!g.children.length){ g.remove(); changed=true; } }); }
@@ -1835,7 +1870,7 @@ function renderFxInto(host, layers, eff, vk, paper){
     const own=buildMask(L, eff, vk), ko=buildKnockout(L, layers, eff, vk);
     d.style.setProperty('--own', own); d.style.setProperty('--mask', ko ? `${own}, ${ko}` : own); d.classList.toggle('ko', !!ko);
     d.innerHTML=fxDOM(L); applyCrop(d,L,eff);
-    host.appendChild(d); styleFx(d,L,paper);
+    host.appendChild(d); styleFx(d,L,paper); if(L.proc==='raster') fillRaster(d,L,eff);
     const R = L.proc==='none' ? null : (L.relief!=='none' ? reliefCompanion(L) : pressCompanion(L));
     if(R){ const d2=document.createElement('div'); d2.className='fx fx-relief relief-only'+(R.id.endsWith('~p')?' press':''); d2.dataset.layer=R.id; d2.style.setProperty('--own',own); d2.style.setProperty('--mask',own); d2.innerHTML=fxDOM(R); applyCrop(d2,R,eff); host.appendChild(d2); styleFx(d2,R,paper); }
   });
@@ -1870,6 +1905,7 @@ function fxDOM(L, fast=false){
   if(L.fluo && PROCS[L.proc].colored && L.proc!=='foil' && L.proc!=='holo') h+='<div class="f-rim glow"><div class="m rim"></div></div>';
   if(L.proc==='foil') h+=`<div class="m foil"><div class="f-base dyn"></div><div class="f-paper"></div><div class="f-brush"></div><div class="f-holo dyn"></div><div class="f-glare dyn"></div>${dome}${inner(innerParts)}</div>`;
   else if(L.proc==='holo') h+=`<div class="m foil holo-${L.sub}"><div class="f-base dyn"></div><div class="f-paper"></div><div class="f-brush"></div><div class="h-rain dyn"></div><div class="h-rain b dyn"></div><div class="f-glare dyn"></div>${dome}${inner(innerParts)}</div>`;
+  else if(L.proc==='raster'){ h+=`<div class="m raster ${L.print||'offset'}"><div class="r-host"></div><div class="i-grain"></div><div class="i-glare dyn"></div></div>`; }
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.metallic?' metal':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div>${fast?'':'<div class="i-mottle"></div>'}${L.proc==='screen'&&!fast?'<div class="i-mesh"></div>':''}<div class="i-grain"></div>${L.metallic?'<div class="i-metal dyn"></div><div class="i-spark dyn"></div>':''}${dome}${inner(innerParts)}<div class="i-glare dyn"></div></div>`;
   }
@@ -1877,7 +1913,7 @@ function fxDOM(L, fast=false){
   return h;
 }
 function renderFx(){
-  sceneRev++; computeEffective();
+  sceneRev++; computeEffective(); applyRasterXforms();
   renderFxInto($('#fxs'), S.layers, effLayer, '', S.paper);
   { const a=activeDoc(); const otherId = a && (a.backOf||a.frontOf); if(otherId){ // 另一面（連結的正面或背面）的壓痕以相反、鏡射的效果印在這一面
       const o=S.docs.find(x=>x.id===otherId); const myPaper=S.paper; if(o) withDoc(o.id, ()=>{ const oeff=computeEffectiveFor(S.layers); appendBackRelief($('#fxs'), S.layers, oeff, myPaper, B=>buildMask(B, oeff, o.id+':cur:', true)); }); } }
@@ -1956,6 +1992,9 @@ function styleFx(d,L,paper=S.paper){
     { const ft=L.ftex||'smooth', tk=L.texK??1; /* 預設平滑，霧箔也一樣 */ ['ftex-smooth','ftex-paper','ftex-brushed','ftex-grain'].forEach(c=>d.classList.remove(c)); d.classList.add('ftex-'+ft);
       st.setProperty('--texk', tk.toFixed(2)); st.setProperty('--ptexk', (({smooth:0,paper:1.3,brushed:.3,grain:.4})[ft]*tk).toFixed(3)); } // 平滑＝完全沒有紙紋（新百代這種十字斜壓紋之前會從箔面透出來）
     st.setProperty('--brushtex', noiseURI({bf:'0.02 0.9',oct:2,op:.9,size:160}));
+  } else if(L.proc==='raster'){
+    st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', L.blend==='normal'?'normal':'multiply'); st.setProperty('--gloss', L.print==='digital' ? Math.max(L.gloss,.15) : L.gloss);
+    const show=(L.print==='screen'?0:(L.print==='digital'?.5:1))*paper.strength; st.setProperty('--grain-ink', Math.min(1,show).toFixed(3)); st.setProperty('--ptexg', grainURI(.8));
   } else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     const opaque = L.fluo || L.proc==='screen';
     st.setProperty('--tint', L.tint); st.setProperty('--op', L.opacity); st.setProperty('--blend', opaque?'normal':L.blend); st.setProperty('--gloss', L.gloss);
@@ -1991,11 +2030,128 @@ function styleFx(d,L,paper=S.paper){
     st.setProperty('--uvop', op.toFixed(3)); st.setProperty('--uvgr', gr.toFixed(3)); }
 }
 /* 紙紋 tile 的尺寸：程序紋理固定 220px×scale；照片紙紋以實際 mm 換算成卡寬百分比（卡片寬度預設 90mm，點陣圖／樣本卡文件另有 mmW），縮放與匯出時比例都對 */
-function cardMMW(){ const d=activeDoc&&activeDoc(); return (d&&d.mmW)||90; }
+function cardMMW(){ const d=(withDocId && (S.docs||[]).find(x=>x.id===withDocId)) || (activeDoc&&activeDoc()); return (d&&d.mmW)||90; }
 function texSizeFor(P, cardPx){ const src=texSource(P); if(!src) return (220*P.scale).toFixed(0)+'px'; const mm=(src.mm||25)*P.scale, f=mm/cardMMW(); return cardPx ? (cardPx*f).toFixed(1)+'px' : (f*100).toFixed(3)+'%'; }
 function refreshTexOptions(){ const sel=$('#pTex'); const key=JSON.stringify(Object.keys(S.texLib||{})); if(sel.dataset.key===key && sel.options.length) return; sel.dataset.key=key; sel.innerHTML='';
   let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ sel.insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } sel.lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); });
   const lib=Object.entries(S.texLib||{}); if(lib.length){ sel.insertAdjacentHTML('beforeend','<optgroup label="自訂紙樣"></optgroup>'); lib.forEach(([id,t])=>sel.lastElementChild.insertAdjacentHTML('beforeend',`<option value="u:${id}">${esc(t.label||'紙樣')}</option>`)); } }
+/* 直接上傳 PNG／JPG／TIFF：包成一份只有一張 <image> 的 SVG 文件（群組名 柯式_檔名 → 自動成為點陣印刷層） */
+async function rasterToSVGDoc(file, dpi=300){
+  let cv; try{ cv=await decodeImageFile(file); }catch(e){ console.warn(e); return null; } if(!cv) return null;
+  const MAX=2400; const sc=Math.min(1, MAX/Math.max(cv.width,cv.height)); if(sc<1){ const c2=document.createElement('canvas'); c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc); c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height); cv=c2; }
+  const ctx=cv.getContext('2d',{willReadFrequently:true}); const d=ctx.getImageData(0,0,cv.width,cv.height).data; let alpha=false; for(let i=3;i<d.length;i+=Math.max(4,Math.floor(d.length/4/5000)*4)){ if(d[i]<250){ alpha=true; break; } }
+  const uri = alpha ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg',.9);
+  const w=cv.width, h=cv.height, name=esc(file.name.replace(/\.[^.]+$/,''));
+  return {svg:`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><g id="柯式_${name}"><image href="${uri}" x="0" y="0" width="${w}" height="${h}"/></g></svg>`, w, h, dpi};
+}
+/* ---------- 點陣圖印刷層（數位／網版／柯式）：把 <image> 重新「印」成網點／碳粉圖，貼回同一個位置 ---------- */
+/* 核心：純函式（也丟進 Worker 跑）。src = RGBA，o = {print,sat,toner,period(px),dotGain,colors,regX,regY(px),tint[3],seed}
+   柯式／網版：RGB→CMYK 分色 → 每版依網角（C15° M75° Y0° K45°）算網點（Euclidean：<50% 圓點、>50% 反白洞在格角）→ 依套印偏移移版 → 各版油墨色彩增值疊起來
+   數位：連續調＋碳粉顆粒（中間調最明顯） */
+function rasterKernel(src,w,h,o){
+  const n=w*h, out=new Uint8ClampedArray(n*4);
+  const R=new Float32Array(n),G=new Float32Array(n),B=new Float32Array(n),A=new Float32Array(n); const sat=o.sat;
+  for(let i=0,j=0;i<n;i++,j+=4){ let r=src[j]/255,g=src[j+1]/255,b=src[j+2]/255; const l=.299*r+.587*g+.114*b; r=l+(r-l)*sat; g=l+(g-l)*sat; b=l+(b-l)*sat; R[i]=r<0?0:r>1?1:r; G[i]=g<0?0:g>1?1:g; B[i]=b<0?0:b>1?1:b; A[i]=src[j+3]/255; }
+  const hash=(x,y)=>{ let hh=(Math.imul(x,374761393)+Math.imul(y,668265263)+o.seed)|0; hh=Math.imul(hh^(hh>>>13),1274126177); hh^=hh>>>16; return (hh&0xffff)/65535-.5; };
+  if(o.print==='digital'){
+    const tn=o.toner*.6;
+    for(let y=0,i=0,j=0;y<h;y++) for(let x=0;x<w;x++,i++,j+=4){ const a=A[i]; let r=R[i],g=G[i],b=B[i]; const t=1-(.299*r+.587*g+.114*b); const s=tn*(4*t*(1-t)+.12); const nz=hash(x,y)*s; r+=nz; g+=nz; b+=nz;
+      out[j]=(1-a*(1-r))*255; out[j+1]=(1-a*(1-g))*255; out[j+2]=(1-a*(1-b))*255; out[j+3]=255; }
+    return out;
+  }
+  const single = o.print==='screen' && o.colors<=1;
+  const plates = single ? [{col:o.tint,ang:45,rx:0,ry:0}] : [{col:[0,174/255,239/255],ang:15,rx:1,ry:1},{col:[236/255,0,140/255],ang:75,rx:-1,ry:-1},{col:[1,241/255,0],ang:0,rx:.5,ry:-.5},{col:[35/255,31/255,32/255],ang:45,rx:0,ry:0}];
+  const OR=new Float32Array(n).fill(1),OG=new Float32Array(n).fill(1),OB=new Float32Array(n).fill(1), cov=new Float32Array(n);
+  const p=o.period, halftone=p>=2.5, gain=o.dotGain, q=(o.print==='screen'&&o.colors>=2)?o.colors:0;
+  const W1=w+1; const satT = halftone ? new Float64Array(W1*(h+1)) : null;
+  plates.forEach((P,pi)=>{
+    for(let i=0;i<n;i++){ let c; if(single){ c=1-(.299*R[i]+.587*G[i]+.114*B[i]); } else { const r=R[i],g=G[i],b=B[i]; const k=1-Math.max(r,g,b); if(pi===3) c=k; else { const d=1-k; c=d<1e-4?0:((1-(pi===0?r:pi===1?g:b))-k)/d; } } c*=A[i]; if(q) c=Math.round(c*q)/q; cov[i]=c<0?0:c>1?1:c; }
+    const c0=P.col[0],c1=P.col[1],c2=P.col[2];
+    if(!halftone){ for(let i=0;i<n;i++){ let c=cov[i]; c+=gain*4*c*(1-c); OR[i]*=1-c*(1-c0); OG[i]*=1-c*(1-c1); OB[i]*=1-c*(1-c2); } return; }
+    for(let y=1;y<=h;y++){ let row=0; for(let x=1;x<=w;x++){ row+=cov[(y-1)*w+x-1]; satT[y*W1+x]=satT[(y-1)*W1+x]+row; } }
+    const boxAvg=(cx,cy,r)=>{ const x0=Math.max(0,Math.floor(cx-r)),y0=Math.max(0,Math.floor(cy-r)),x1=Math.min(w,Math.ceil(cx+r)),y1=Math.min(h,Math.ceil(cy+r)); if(x1<=x0||y1<=y0) return 0; return (satT[y1*W1+x1]-satT[y0*W1+x1]-satT[y1*W1+x0]+satT[y0*W1+x0])/((x1-x0)*(y1-y0)); };
+    const th=P.ang*Math.PI/180, ca=Math.cos(th), sa=Math.sin(th), dx=o.regX*P.rx, dy=o.regY*P.ry;
+    let umin=Infinity,umax=-Infinity,vmin=Infinity,vmax=-Infinity; [[0,0],[w,0],[0,h],[w,h]].forEach(([x,y])=>{ const u=x*ca+y*sa, v=-x*sa+y*ca; umin=Math.min(umin,u); umax=Math.max(umax,u); vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); });
+    const ci0=Math.floor(umin/p)-1, cj0=Math.floor(vmin/p)-1, nci=Math.floor(umax/p)-ci0+3, ncj=Math.floor(vmax/p)-cj0+3;
+    const grid=new Float32Array(nci*ncj);
+    for(let cj=0;cj<ncj;cj++) for(let ci=0;ci<nci;ci++){ const cu=(ci0+ci+.5)*p, cv=(cj0+cj+.5)*p; const px=cu*ca-cv*sa-dx, py=cu*sa+cv*ca-dy; let c=boxAvg(px,py,p*.5); c+=gain*4*c*(1-c); grid[cj*nci+ci]=c; }
+    const rt=Math.sqrt(1/Math.PI);
+    for(let y=0,i=0;y<h;y++) for(let x=0;x<w;x++,i++){
+      const X=x+.5, Y=y+.5, u=X*ca+Y*sa, v=-X*sa+Y*ca; const fi=Math.floor(u/p), fj=Math.floor(v/p); const c=grid[(fj-cj0)*nci+(fi-ci0)]; if(!(c>0)) continue;
+      let ink;
+      if(c<.5){ const cu=(fi+.5)*p, cv=(fj+.5)*p, d=Math.hypot(u-cu,v-cv); ink=p*rt*Math.sqrt(c)-d+.5; }
+      else { const cu=Math.round(u/p)*p, cv=Math.round(v/p)*p, d=Math.hypot(u-cu,v-cv); ink=d-p*rt*Math.sqrt(1-c)+.5; }
+      if(ink<=0) continue; if(ink>1) ink=1;
+      OR[i]*=1-ink*(1-c0); OG[i]*=1-ink*(1-c1); OB[i]*=1-ink*(1-c2);
+    }
+  });
+  for(let i=0,j=0;i<n;i++,j+=4){ out[j]=OR[i]*255; out[j+1]=OG[i]*255; out[j+2]=OB[i]*255; out[j+3]=255; }
+  return out;
+}
+let rasterWorker=null, rasterJobs=new Map(), rasterJobId=0;
+function getRasterWorker(){ if(rasterWorker!==null) return rasterWorker; try{ const src='const kernel='+rasterKernel.toString()+';onmessage=e=>{const {id,buf,w,h,o}=e.data; const out=kernel(new Uint8ClampedArray(buf),w,h,o); postMessage({id,buf:out.buffer},[out.buffer]);};'; rasterWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'}))); rasterWorker.onmessage=e=>{ const j=rasterJobs.get(e.data.id); if(j){ rasterJobs.delete(e.data.id); j(new Uint8ClampedArray(e.data.buf)); } }; rasterWorker.onerror=()=>{ rasterWorker=false; rasterJobs.forEach(j=>j(null)); rasterJobs.clear(); }; }catch(e){ rasterWorker=false; } return rasterWorker; }
+function runRasterKernel(data,w,h,o){ const wk=getRasterWorker(); if(!wk) return Promise.resolve(rasterKernel(data,w,h,o)); return new Promise(res=>{ const id=++rasterJobId; rasterJobs.set(id,out=>res(out||rasterKernel(data,w,h,o))); const buf=data.buffer.slice(0); wk.postMessage({id,buf,w,h,o},[buf]); }); }
+const imgCache=new Map(); // href → Promise<HTMLImageElement|null>
+function loadRasterImage(href){ if(!imgCache.has(href)){ imgCache.set(href, new Promise(res=>{ const im=new Image(); if(!/^data:/.test(href)) im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=()=>res(null); im.src=href; })); } return imgCache.get(href); }
+function imageHref(el){ return el.getAttribute('href')||el.getAttributeNS('http://www.w3.org/1999/xlink','href')||''; }
+/* <image> 在卡片上的外框（0–1）＋依 preserveAspectRatio 算出實際畫到的區域。用 viewBox 座標算（不靠版面，場景模式下單張卡是隱藏的） */
+function imgBBox(el){ let bb=null; try{ bb=el.getBBox(); }catch(e){} if(!bb || !(bb.width>0&&bb.height>0)){ try{ bb={x:el.x.baseVal.value,y:el.y.baseVal.value,width:el.width.baseVal.value,height:el.height.baseVal.value}; }catch(e){ return null; } } return (bb.width>0&&bb.height>0)?bb:null; } // 隱藏時 getBBox 是 0，退回屬性
+function localToRoot(el){ let m=new DOMMatrix(); for(let e=el; e && e!==svgRoot && e.nodeType===1; e=e.parentNode){ const t=e.transform && e.transform.baseVal && e.transform.baseVal.consolidate(); if(t) m=new DOMMatrix([t.matrix.a,t.matrix.b,t.matrix.c,t.matrix.d,t.matrix.e,t.matrix.f]).multiply(m); if(e.tagName==='svg') return null; } return m; }
+function imageRect(el, im){
+  if(!svgRoot || !el.isConnected) return null; const bb=imgBBox(el); if(!bb) return null; const m=localToRoot(el); if(!m) return null;
+  const vb=(S.vb||[1000,700]); const vbb=svgRoot.viewBox&&svgRoot.viewBox.baseVal; const VX=vbb?vbb.x:0, VY=vbb?vbb.y:0, W=vb[0], H=vb[1]; if(!(W>0&&H>0)) return null;
+  const q0=new DOMPoint(bb.x,bb.y).matrixTransform(m), q1=new DOMPoint(bb.x+bb.width,bb.y+bb.height).matrixTransform(m);
+  let x0=(Math.min(q0.x,q1.x)-VX)/W, y0=(Math.min(q0.y,q1.y)-VY)/H, x1=(Math.max(q0.x,q1.x)-VX)/W, y1=(Math.max(q0.y,q1.y)-VY)/H;
+  const par=(el.getAttribute('preserveAspectRatio')||'xMidYMid meet').trim();
+  if(im && im.naturalWidth && !/^none/.test(par)){ const rw=(x1-x0)*W, rh=(y1-y0)*H; const slice=/slice/.test(par); const sc=slice?Math.max(rw/im.naturalWidth,rh/im.naturalHeight):Math.min(rw/im.naturalWidth,rh/im.naturalHeight); const fw=im.naturalWidth*sc, fh=im.naturalHeight*sc;
+    const ax=/xMin/i.test(par)?0:/xMax/i.test(par)?1:.5, ay=/YMin/.test(par)?0:/YMax/.test(par)?1:.5; const fx=x0+((rw-fw)*ax)/W, fy=y0+((rh-fh)*ay)/H; return {x0:fx,y0:fy,x1:fx+fw/W,y1:fy+fh/H,slice}; }
+  return {x0,y0,x1,y1};
+}
+/* 位置／縮放：直接套在 SVG 的 <image> transform 上（遮罩、外框、線框、匯出都跟著走） */
+function applyRasterXforms(){
+  if(!svgRoot) return; const byId=new Map(S.layers.filter(L=>L.proc==='raster').map(L=>[L.id,L]));
+  for(const [k,s] of Object.entries(shapes)){ if(s.tag!=='image') continue; const el=s.el; const L=byId.get(effLayer[k]);
+    if(el.dataset.rt==null && (!L || (!L.rOffX && !L.rOffY && (L.rScale||1)===1))) continue;
+    if(el.dataset.rt==null) el.dataset.rt=el.getAttribute('transform')||'';
+    let t=el.dataset.rt; if(L && (L.rOffX || L.rOffY || (L.rScale||1)!==1)){ const bb=imgBBox(el); if(!bb) continue; const vw=(S.vb||[1000,700])[0], vh=(S.vb||[1000,700])[1]; const cx=bb.x+bb.width/2, cy=bb.y+bb.height/2; const m=localToRoot(el); const sc=m?Math.hypot(m.a,m.b)||1:1; t=(t?t+' ':'')+`translate(${(L.rOffX/100*vw/sc).toFixed(3)} ${(L.rOffY/100*vh/sc).toFixed(3)}) translate(${cx.toFixed(3)} ${cy.toFixed(3)}) scale(${L.rScale||1}) translate(${(-cx).toFixed(3)} ${(-cy).toFixed(3)})`; }
+    if((el.getAttribute('transform')||'')!==t){ if(t) el.setAttribute('transform',t); else el.removeAttribute('transform'); } }
+}
+function invalidateLayerMasks(L){ const id=L.id; Object.keys(maskCache).forEach(k=>{ if(k.includes(id)) delete maskCache[k]; }); Object.keys(bboxCache).forEach(k=>{ if(k.includes(id)) delete bboxCache[k]; }); }
+const rasterCache=new Map(); const RASTER_MAX=1400;
+function rasterOpts(L, pxPerMM){ const lpi = L.print==='screen' ? (L.mesh||120)/4 : (L.lpi||175); return {print:L.print||'offset', sat:+L.sat, toner:+L.toner, period: pxPerMM*25.4/lpi, dotGain:+L.dotGain, colors:+L.colors, regX:(+L.regX)*pxPerMM, regY:(+L.regY)*pxPerMM, tint:hexToRGB01(L.tint), seed:7}; }
+function paperIsDark(P=S&&S.paper){ if(!P||!P.color) return false; const [r,g,b]=hexToRGB01(P.color); return (.299*r+.587*g+.114*b)<.45; }
+function hexToRGB01(h){ const c=(h||'#161616').replace('#',''); const v=parseInt(c.length===3?c.replace(/./g,'$&$&'):c,16); return [((v>>16)&255)/255,((v>>8)&255)/255,(v&255)/255]; }
+/* 依目標尺寸（px）算一張印好的圖；回傳 data URL（webp） */
+async function renderRaster(L, im, w, h, pxPerMM, maxPx=RASTER_MAX, quality=.85){
+  const sc=Math.min(1, maxPx/Math.max(w,h)); w=Math.max(2,Math.round(w*sc)); h=Math.max(2,Math.round(h*sc)); pxPerMM*=sc;
+  const o=rasterOpts(L, pxPerMM); const key=[im.src.length, im.src.slice(-40), w, h, JSON.stringify(o), L.opacity].join('|');
+  if(rasterCache.has(key)){ const v=rasterCache.get(key); rasterCache.delete(key); rasterCache.set(key,v); return v; }
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const ctx=cv.getContext('2d',{willReadFrequently:true}); ctx.imageSmoothingQuality='high'; if(o.print==='digital') ctx.filter='blur(.35px)'; ctx.drawImage(im,0,0,w,h); ctx.filter='none';
+  const data=ctx.getImageData(0,0,w,h); const out=await runRasterKernel(data.data,w,h,o); data.data.set(out); ctx.putImageData(data,0,0);
+  let du=cv.toDataURL('image/webp',quality); if(!du.startsWith('data:image/webp')) du=cv.toDataURL('image/png');
+  rasterCache.set(key,du); while(rasterCache.size>24) rasterCache.delete(rasterCache.keys().next().value); return du;
+}
+/* 把圖層裡每張 <image> 放進 .r-host（先用原圖佔位，算完換成印好的圖）；slots：場景用（每張卡一個 .r-slot） */
+function fillRaster(d, L, eff, geo=null){
+  const host=d.querySelector('.r-host'); if(!host) return; const id=L.srcLayer||L.id;
+  const items=[]; for(const [k,s] of Object.entries(shapes)){ if(eff[k]!==id||s.tag!=='image') continue; const href=imageHref(s.el); if(!href) continue; items.push({el:s.el,href}); }
+  host.innerHTML=''; if(!items.length) return;
+  const targets=[]; if(geo){ const E=geo.E; geo.idxs.forEach(i=>{ const sl=geo.slots[i], m=slotMatrix(sl); const sd=document.createElement('div'); sd.className='r-slot'; sd.style.cssText=`position:absolute;left:${((m.e-E.minX)/E.w*100).toFixed(4)}%;top:${((m.f-E.minY)/E.h*100).toFixed(4)}%;width:${(sl.w/E.w*100).toFixed(4)}%;height:${(sl.h/E.h*100).toFixed(4)}%;transform-origin:0 0;transform:matrix(${m.a.toFixed(5)},${m.b.toFixed(5)},${m.c.toFixed(5)},${m.d.toFixed(5)},0,0) translate(-50%,-50%)`; host.appendChild(sd); targets.push({el:sd,w:sl.w*(geo.k||1)}); }); }
+  else targets.push({el:host, w:$('#card').offsetWidth||850});
+  const cardMM=cardMMW(); const docId=withDocId; const gen=(host._gen=(host._gen||0)+1);
+  items.forEach(async it=>{
+    const place=(r)=>targets.map(t=>{ const div=document.createElement('div'); div.className='r-img'; div.dataset.rk=L.id; div.style.cssText=`left:${(r.x0*100).toFixed(3)}%;top:${(r.y0*100).toFixed(3)}%;width:${((r.x1-r.x0)*100).toFixed(3)}%;height:${((r.y1-r.y0)*100).toFixed(3)}%;background-image:url("${it.href}")`; t.el.appendChild(div); return div; });
+    const r0=withDoc(docId,()=>imageRect(it.el,null)); if(!r0) return; let divs=place(r0); divs.forEach(dv=>{ dv.style.backgroundSize='contain'; dv.style.backgroundPosition='center'; });
+    const im=await loadRasterImage(it.href); if(!im || host._gen!==gen) return;
+    const r=withDoc(docId,()=>imageRect(it.el,im))||r0; const rw=r.x1-r.x0, rh=r.y1-r.y0; const cw=Math.max(...targets.map(t=>t.w)); const ar=(S.vb?S.vb[1]/S.vb[0]:.7);
+    const W=rw*cw*(window.devicePixelRatio||1), H=rh*cw*ar*(window.devicePixelRatio||1); const pxPerMM=W/(rw*cardMM);
+    let du; try{ du=await renderRaster(L, im, W, H, pxPerMM); }catch(e){ console.warn('raster failed',e); return; }
+    if(host._gen!==gen) return; divs.forEach(dv=>dv.remove()); divs=place(r); divs.forEach(dv=>{ dv.style.backgroundImage=`url("${du}")`; dv.dataset.src=it.href; dv.dataset.rect=[r.x0,r.y0,r.x1,r.y1].join(','); dv.dataset.mm=(rw*cardMM).toFixed(3); dv.dataset.ar=ar.toFixed(5); });
+  });
+}
+function findLayerById(id){ return S.layers.find(L=>L.id===id) || (S.docs||[]).flatMap(d=>d.layers||[]).find(L=>L.id===id) || null; }
+let rasterT=null;
+function rasterRefresh(L){ clearTimeout(rasterT); rasterT=setTimeout(()=>{ document.querySelectorAll(`#fxs .fx[data-layer="${L.id}"]`).forEach(d=>fillRaster(d,L,effLayer)); if(viewMode==='scene') sceneChanged(true); }, 120); }
 /* 紙樣照片 → 無縫高度圖（與 tools/make_paper_tex.py 同一套：取中央區域、去低頻光影、正規化、十字交叉淡入） */
 let utifP=null; function loadUTIF(){ if(window.UTIF) return Promise.resolve(window.UTIF); return utifP ||= new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/utif/3.1.0/UTIF.min.js'; sc.onload=()=>res(window.UTIF); sc.onerror=()=>rej(new Error('TIFF 解碼程式庫載入失敗')); document.head.appendChild(sc); }); }
 async function decodeImageFile(file){ // → canvas（TIFF 走 UTIF，其餘用 createImageBitmap 並依 EXIF 轉正）
@@ -2139,7 +2295,7 @@ function renderLayerList(){
       <button class="ib del" title="刪除圖層">✕</button>
     </div>
     <div class="layer-b">
-      <div class="row two" style="margin-top:8px;align-items:start"><label style="padding-top:6px">工法</label><div class="tiles">${Object.entries(PROCS).map(([k,p])=>tileHTML({attr:'data-proc',key:k,label:p.label.replace(/（.*）/,''),cls:procTileClass(k,L),on:k===L.proc,c:L.tint})).join('')}</div></div>
+      <div class="row two" style="margin-top:8px;align-items:start"><label style="padding-top:6px">工法</label><div class="tiles">${Object.entries(PROCS).filter(([k])=>k!=='raster' || L.proc==='raster' || layerHasImage(L)).map(([k,p])=>tileHTML({attr:'data-proc',key:k,label:p.label.replace(/（.*）/,''),cls:procTileClass(k,L),on:k===L.proc,c:L.tint})).join('')}</div></div>
       ${L.proc==='holo'?`<div class="row two" style="align-items:start"><label style="padding-top:6px">雷射種類</label><div class="tiles">${Object.entries(HOLO_SUBS).map(([k,v])=>tileHTML({attr:'data-sub',key:k,label:v,cls:'holo '+k,on:k===L.sub,c:k==='pearl'?'#f1eff0':(L.tint||'#cfd0d6')})).join('')}</div></div>`:''}
       ${colorChipsHTML(L)}
       ${paramRows(L)}
@@ -2167,6 +2323,7 @@ function renderLayerList(){
         const p=inp.dataset.p; L[p] = inp.type==='range'?+inp.value:(inp.type==='checkbox'?inp.checked:inp.value);
         if(p==='tint'){ delete L.cname; }
         if(p==='mesh'){ L.mesh=+inp.value; L.thick=+(72/L.mesh).toFixed(2); }
+        if(L.proc==='raster' && (RASTER_KEYS.includes(p) || p==='tint')){ if(p==='print'||p==='colors'||p==='rOffX'||p==='rOffY'||p==='rScale'){ syncType(L); if(!L.named) L.name=autoName(L); if(p!=='print'&&p!=='colors'){ applyRasterXforms(); invalidateLayerMasks(L); if(inp.type==='range') inp.parentElement.querySelector('.val').textContent=fmtParam(p,L[p]); } renderFx(); save(); return; } if(inp.type==='range') inp.parentElement.querySelector('.val').textContent=fmtParam(p,L[p]); if(inp.type==='color') inp.parentElement.querySelector('.hex').textContent=L[p]; styleFx(null,L); rasterRefresh(L); save(); return; }
         const structural = inp.type==='checkbox' || inp.tagName==='SELECT' && ['sub','relief','uv','grad','mesh'].includes(p) || p==='spread' || ['edgeRough','edgeDens','bleed'].includes(p);
         syncType(L); if(!L.named) L.name=autoName(L);
         if(structural){ clearMasks(); renderFx(); save(); return; }
@@ -2179,6 +2336,7 @@ function renderLayerList(){
 }
 function colorChipsHTML(L){
   if(!PROCS[L.proc].colored) return '';
+  if(L.proc==='raster'){ if(L.print==='screen' && +L.colors===1) return `<div class="row two"><label>墨色</label><div class="colorwrap"><input type="color" data-p="tint" value="${L.tint}"><span class="hex">${L.tint}</span></div></div>`; return ''; }
   const inkLike = ['ink','letterpress','screen'].includes(L.proc);
   const groups = L.proc==='foil' ? ['燙箔 · 金屬','燙箔 · 純色'] : L.proc==='holo' ? ['燙雷射'] : ['油墨','專色','金屬色','螢光色'];
   let h='';
@@ -2195,8 +2353,9 @@ function colorChipsHTML(L){
   return h;
 }
 function tileHTML({attr,key,label,cls,on,c}){ return `<button class="tile${on?' on':''}" ${attr}="${key}" title="${esc(label)}" style="--c:${c||'#999'};--grad:${(cls||'').includes('foil')?foilGradient(c||'#c9cacf',.45):'none'}"><span class="sh ${cls||''}"></span><span class="lb">${esc(label)}</span></button>`; }
-function procTileClass(k,L){ return ({foil:'foil',holo:'holo lines',ink:'ink',letterpress:'ink press',screen:'ink screen',none:'none',hide:'hide'})[k]||''; }
-function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='texK') return (+v).toFixed(2)+'×'; if(p==='edgeRough'||p==='bleed') return (+v).toFixed(2)+'px'; if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+function procTileClass(k,L){ return ({foil:'foil',holo:'holo lines',ink:'ink',letterpress:'ink press',screen:'ink screen',raster:'ink raster',none:'none',hide:'hide'})[k]||''; }
+function layerHasImage(L){ return Object.entries(effLayer).some(([k,id])=>id===L.id && shapes[k] && shapes[k].tag==='image'); }
+function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='lpi') return v+' lpi'; if(p==='regX'||p==='regY') return (+v).toFixed(2)+'mm'; if(p==='rOffX'||p==='rOffY') return (+v).toFixed(1)+'%'; if(p==='rScale') return (+v).toFixed(2)+'×'; if(p==='colors') return v+' 色'; if(p==='texK') return (+v).toFixed(2)+'×'; if(p==='edgeRough'||p==='bleed') return (+v).toFixed(2)+'px'; if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 const edgeRows=r=>r('邊緣不規則','edgeRough',0,2,.05)+r('不規則密度','edgeDens',0,1,.05)+r('溢出','bleed',0,3,.05); // 燙箔壓力／凸版油墨沿邊緣微溢、邊緣不完全平滑
 function paramRows(L){
@@ -2206,6 +2365,14 @@ function paramRows(L){
       `<div class="row two"><label>箔面紋理</label><select data-p="ftex">${Object.entries(FT).map(([k,v])=>`<option value="${k}"${ft===k?' selected':''}>${v}</option>`).join('')}</select></div>`+r('紋理強度','texK',0,2,.05); }
   if(L.proc==='holo') return r('亮度','bright',0,1,.01)+r('色帶對比','band',0,1,.01)+r('高光強度','spec',0,1,.01)+r('雷射強度','holo',0,1,.01)+r('紋路尺寸','hscale',.3,3,.05)+r('光澤','gloss',0,1,.01)+r('壓痕深度','depth',0,3,.05)+edgeRows(r);
   const inkX = r('溢出','spread',0,6,.1)+r('不平均','mottle',0,1,.01);
+  if(L.proc==='raster'){
+    const sel=(label,p,map)=>`<div class="row two"><label>${label}</label><select data-p="${p}">${Object.entries(map).map(([k,v])=>`<option value="${k}"${String(L[p])===String(k)?' selected':''}>${v}</option>`).join('')}</select></div>`;
+    let h=sel('印刷方式','print',PRINT_MODES)+r('飽和度','sat',0,2,.01);
+    if(L.print==='offset') h+=r('線數','lpi',65,200,5)+r('網點增益','dotGain',0,.3,.01)+r('套印偏移 X','regX',-.5,.5,.01)+r('套印偏移 Y','regY',-.5,.5,.01);
+    else if(L.print==='screen') h+=`<div class="row two"><label>目數</label><select data-p="mesh">${[80,100,120,150,200,300].map(m=>`<option value="${m}"${(L.mesh||120)===m?' selected':''}>${m} 目${m<=100?'（粗）':m>=200?'（細）':''}</option>`).join('')}</select></div>`+r('分色數','colors',1,6,1)+r('網點增益','dotGain',0,.3,.01)+r('套印偏移 X','regX',-.5,.5,.01)+r('套印偏移 Y','regY',-.5,.5,.01);
+    else h+=r('碳粉顆粒','toner',0,1,.01);
+    h+=r('位置 X','rOffX',-50,50,.5)+r('位置 Y','rOffY',-50,50,.5)+r('縮放','rScale',.2,3,.01)+sel('混合','blend',{multiply:'透明油墨（色彩增值）',normal:'白墨底（覆蓋）'})+r('濃度','opacity',0,1,.01)+r('光澤','gloss',0,.5,.01);
+    return h; }
   if(L.proc==='ink') return r('濃度','opacity',0,1,.01)+inkX+(L.fluo?'':`<div class="row two"><label>混合</label><select data-p="blend"><option value="normal"${L.blend==='normal'?' selected':''}>正常（覆蓋）</option><option value="multiply"${L.blend==='multiply'?' selected':''}>色彩增值（透明油墨）</option><option value="screen"${L.blend==='screen'?' selected':''}>濾色</option></select></div>`)+r('光澤','gloss',0,.5,.01);
   if(L.proc==='letterpress') return r('濃度','opacity',0,1,.01)+r('壓印深度','press',0,3,.05)+inkX+edgeRows(r)+r('光澤','gloss',0,.5,.01);
   if(L.proc==='screen') return r('濃度','opacity',0,1,.01)+`<div class="row two"><label>目數</label><select data-p="mesh">${[80,100,120,150,200,300].map(m=>`<option value="${m}"${(L.mesh||120)===m?' selected':''}>${m} 目${m<=100?'（粗）':m>=200?'（細）':''}</option>`).join('')}</select></div>`+r('墨層厚度','thick',0,2,.05)+inkX+r('光澤','gloss',0,.5,.01);
@@ -2497,6 +2664,15 @@ const HELP = {
   edgeRough:'邊緣不規則：燙箔壓力與凸版油墨會讓邊緣不完全平滑，數值＝邊緣抖動幅度（px，以卡寬 850px 為基準）。',
   edgeDens:'不規則密度：抖動有多細碎，越高越像細鋸齒，越低越像大波浪。',
   bleed:'溢出：箔／墨沿邊緣往外擴多少（px）。',
+  dpi:'上傳的圖片以這個解析度換算實際尺寸（寬 mm），紙紋與網點大小都依它計算；300 dpi 是一般印刷稿的解析度。',
+  print:'點陣圖的印刷方式：數位＝連續調＋碳粉顆粒；網版＝依目數的粗網點、可設分色數（1 色時用墨色）；柯式（平版）＝CMYK 四色分色網點（15°/45°/75°/0°）＋網點增益＋套印偏移，油墨透明會透出紙紋。',
+  sat:'飽和度：1 = 原圖；印刷通常略低。',
+  lpi:'線數（每吋網線）：柯式常用 150–175 lpi；低於 100 才看得到網點。',
+  dotGain:'網點增益：油墨在紙上擴散，中間調變深。',
+  regX:'套印偏移 X：各色版對不準（mm），C 往正、M 往負、Y 一半。',
+  regY:'套印偏移 Y。',
+  colors:'網版分色數：1 = 單色（用墨色），2–6 = 量化成幾階。',
+  rOffX:'圖片在卡片上的位置（卡寬百分比）。', rOffY:'圖片在卡片上的位置（卡高百分比）。', rScale:'圖片縮放。', toner:'數位印刷的碳粉顆粒感。',
   pTexFile:'上傳一張紙面近照（順光、避開文字與陰影），會取中央區域做成無縫高度圖當紙紋；再用「紋理尺寸」對回實際比例。支援 PNG／JPG／WebP／TIFF。',
   ftex:'箔面紋理：平滑＝鏡面箔，幾乎不透紙紋；透出紙紋＝箔貼合粗紋紙時紙紋會透上來；髮絲拉絲＝拉絲金／拉絲銀的細直紋；消光顆粒＝霧箔的微顆粒。',
   texK:'紋理強度：上面選的紋理有多明顯（同時影響紙紋透出量）。',
@@ -2690,6 +2866,7 @@ $('#btnNaming').addEventListener('click', openNaming); $('#esNaming').addEventLi
 $('#esUpload').addEventListener('click', ()=>$('#file').click());
 $('#pTexFile').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; try{ toast('處理紙樣照片…', true); const cv=await decodeImageFile(f); const t=makePaperTex(cv); const id='T'+Date.now().toString(36); S.texLib=S.texLib||{}; S.texLib[id]={label:f.name.replace(/\.[^.]+$/,''), uri:t.uri, mm:t.mm, color:t.color};
   const P=S.paper; P.texture='u:'+id; P.color=t.color; P.strength=.45; P.grain=.3; P.gloss=.1; P.relief=1; applyPaper(); save(); toastOff(); toast('已加入自訂紙樣：'+S.texLib[id].label+'（用「紋理尺寸」對回實際比例）'); }catch(err){ toast('紙樣照片處理失敗：'+(err.message||err)); } });
+$('#docDpi').addEventListener('change', e=>{ const d=activeDoc(); if(!d||!d.isRaster) return; const v=Math.max(36,Math.min(1200,+e.target.value||300)); d.dpi=v; d.mmW=+((S.vb?S.vb[0]:d.vb[0])/v*25.4).toFixed(2); $('#dpiNote').textContent=`→ 寬 ${d.mmW.toFixed(1)} mm`; applyPaper(); renderFx(); save(); });
 $('#pTexDel').addEventListener('click', ()=>{ const k=S.paper.texture; if(!k.startsWith('u:')) return; const id=k.slice(2); delete S.texLib[id]; (S.docs||[]).forEach(d=>{ if(d.paper&&d.paper.texture===k) d.paper.texture='ivory'; }); S.paper.texture='ivory'; applyPaper(); save(); toast('已移除自訂紙樣'); });
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-swatch]'); if(!b) return; let all={}; try{ all=JSON.parse($('#swatchSvg').textContent||'{}'); }catch(x){} const t=all[b.dataset.swatch]; if(!t) return toast('這個版本沒有內建這張樣本卡');
   const nm='樣本卡 · '+b.textContent.replace(/\s*·\s*\d+\s*格\s*$/,''); const ex=(S.docs||[]).find(d=>d.name===nm||d.name===b.dataset.swatch); if(ex){ switchDoc(ex.id); } else { addDoc(t, nm); const d=activeDoc(); if(d){ d.use=false; d.mmW=+(S.vb[0]/96*25.4).toFixed(1); sceneChanged(true,true); } } /* 樣本卡預設不進場景 */ if(viewMode!=='single') setViewMode('single'); toast('效果樣本卡：點任一格可複製該效果，切到你的檔案後在效果圖層按「貼上效果」'); }); // 每類一張，比一張 44 格省效能；已載入過就直接切換
@@ -2698,7 +2875,8 @@ $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) read
 $('#btnCompare').addEventListener('click',()=>{ const C=S.scene; const n=Math.max(1,(S.docs||[]).filter(d=>d.use!==false && !d.backOf).length+(S.docs||[]).filter(d=>d.frontOf).length); C.layout='grid'; C.cols=n; C.rows=1; C.mix='cycle'; C.includeCurrent=true; C.size=Math.min(60, Math.floor(90/n)); sceneChanged(true); if(viewMode!=='scene') setViewMode('scene'); });
 function readFile(f, add=false){
   if(/\.json$/i.test(f.name) || f.type==='application/json'){ const r=new FileReader(); r.onload=async()=>{ try{ await importParams(JSON.parse(r.result), {paper:true,layers:true,layout:true,light:true,variants:true,docs:true,shots:true}); }catch(x){ toast('JSON 解析失敗：'+x.message); } }; r.readAsText(f); return; }
-  if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg 或 .json 檔'); const r=new FileReader(); r.onload=()=>{ if(add) addDoc(r.result,f.name); else { const d=activeDoc(); if(d) delete docStore[d.id]; start(r.result,f.name,true); } }; r.readAsText(f); }
+  if(/^image\/(png|jpeg|webp|tiff)$/i.test(f.type) || /\.(png|jpe?g|webp|tiff?)$/i.test(f.name)){ toast('讀取圖片…',true); rasterToSVGDoc(f).then(r=>{ toastOff(); if(!r) return toast('圖片讀取失敗（TIFF 請先轉成 PNG／JPG）'); if(add) addDoc(r.svg,f.name); else { const d=activeDoc(); if(d) delete docStore[d.id]; start(r.svg,f.name,true); } const d=activeDoc(); if(d){ d.dpi=r.dpi; d.mmW=+(r.w/r.dpi*25.4).toFixed(2); d.isRaster=true; } S.paper.color='#f3f1ea'; S.layers.forEach(L=>{ if(L.proc==='raster') L.blend='multiply'; }); applyPaper(); renderFx(); renderDocList&&renderDocList(); save(); }); return; }
+  if(!/svg/i.test(f.type) && !/\.svg$/i.test(f.name)) return toast('請上傳 .svg、圖片或 .json 檔'); const r=new FileReader(); r.onload=()=>{ if(add) addDoc(r.result,f.name); else { const d=activeDoc(); if(d) delete docStore[d.id]; start(r.result,f.name,true); } }; r.readAsText(f); }
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); stage.classList.add('dragging'); }));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{ e.preventDefault(); if(ev==='drop'||e.target===stage) stage.classList.remove('dragging'); }));
 stage.addEventListener('drop', e=>{ const fs=[...e.dataTransfer.files]; fs.forEach((f,i)=>readFile(f, i>0)); }); // 拖多個：第一個取代目前這份，其餘加入
@@ -2717,7 +2895,7 @@ function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStora
 let dlCap=null; try{ window.claude?.use?.('downloads').then(d=>{ dlCap=d; }).catch(()=>{}); }catch(e){}
 /* HTML 片段 → foreignObject → <img>（data: URI；blob: 會讓 canvas 被標記為 tainted） */
 async function renderHTMLImage(inner,w,h){
-  const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n').replace(/\/\*[\s\S]*?\*\//g,''); // 去掉註解：foreignObject 裡的 <style> 是 XML，註解裡的「<」會讓整份合成失敗
   const html=inlineBlobs(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${w}px;height:${h}px;background:transparent;overflow:hidden"><style>${css}</style>${inner}</div></foreignObject></svg>`);
   const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(html);
   const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('瀏覽器拒絕合成（Safari 對 foreignObject + mask 支援不完整，請改用 Chrome 或直接截圖）')); img.src=url; });
@@ -2775,6 +2953,7 @@ async function exportScene3D(k){
   if(hostEl){ const src={minX:parseFloat(hostEl.style.left)||0, minY:parseFloat(hostEl.style.top)||0, w:parseFloat(hostEl.style.width)||C.W, h:parseFloat(hostEl.style.height)||C.H};
     crop={src, dst:{minX:E.minX,minY:E.minY,w:E.w,h:E.h}}; Object.assign(hostEl.style,{left:E.minX+'px',top:E.minY+'px',width:E.w+'px',height:E.h+'px'});
     // 高光位置以 % 表示，裁切後要換算到新的參考框
+    hostEl.querySelectorAll('.r-slot').forEach(rs=>{ const st=rs.style; const l=parseFloat(st.left)/100*src.w+src.minX, t=parseFloat(st.top)/100*src.h+src.minY, w=parseFloat(st.width)/100*src.w, h=parseFloat(st.height)/100*src.h; st.left=((l-E.minX)/E.w*100).toFixed(4)+'%'; st.top=((t-E.minY)/E.h*100).toFixed(4)+'%'; st.width=(w/E.w*100).toFixed(4)+'%'; st.height=(h/E.h*100).toFixed(4)+'%'; }); // 點陣印刷的每張卡位置也是 % → 換算到新框
     hostEl.querySelectorAll('.fx').forEach(d=>{ uncrop(d); [d,...d.querySelectorAll('.dyn')].forEach(el=>{ const s0=el.style.getPropertyValue('--px'); if(!s0) return; const px=parseFloat(s0)/100*src.w+src.minX, py=parseFloat(el.style.getPropertyValue('--py'))/100*src.h+src.minY; el.style.setProperty('--px',((px-E.minX)/E.w*100).toFixed(2)+'%'); el.style.setProperty('--py',((py-E.minY)/E.h*100).toFixed(2)+'%'); const g=parseFloat(el.style.getPropertyValue('--gsz'))||1; el.style.setProperty('--gsz',(g*src.w/E.w).toFixed(3)); }); }); }
   await rasterizeMasks(clone, sA, undefined, undefined, crop);
   toast('合成 3/4：平視渲染桌面…', true); await new Promise(r=>setTimeout(r,20));
@@ -2838,7 +3017,7 @@ function prefixIds(str, pre){
             .replace(/(xlink:)?href="#([^"]+)"/g, (m,x,id)=>`${x||''}href="#${pre}${id}"`);
 }
 function innerXML(el){ return [...el.childNodes].map(n=>new XMLSerializer().serializeToString(n)).join(''); }
-window.foilProof = { get state(){ return S; }, parseLayerName, addDoc, switchDoc, exportParams, importParams }; // 供外部腳本／除錯使用
+window.foilProof = { get state(){ return S; }, parseLayerName, addDoc, switchDoc, exportParams, importParams, readFile, renderFx, findLayerById }; // 供外部腳本／除錯使用
 $('#modalClose').addEventListener('click', ()=>$('#modal').classList.remove('on'));
 $('#btnAbout').addEventListener('click', ()=>$('#about').classList.add('on'));
 /* ---------- 鏡頭清單：排列＋相機（可含燈光桌面）快照，批次匯出 ZIP ---------- */
@@ -2992,6 +3171,7 @@ function openNaming(){
       ['燙雷射',cs(['燙雷射','雷射','全息','鐳射','holo'])+'　後接雷射種類'],
       ['印刷',cs(['印刷','平版','數位','油墨','印墨','白墨','ink','offset'])],
       ['凸版',cs(['凸版','letterpress'])], ['網版',cs(['網版','絹印','silk','screen'])+'　可加目數：'+c('網版_白墨 150目')],
+      ['點陣印刷',cs(['柯式','平版','數位','網版'])+'　群組裡放 '+c('<image>')+'（或直接上傳 PNG／JPG／TIFF）就會模擬網點／碳粉：'+cs(['柯式_照片','數位_插圖','網版_圖片 120目'])],
       ['純加工',cs(['加工','不上色'])+'　只做打凹打凸／UV，不上色'],
       ['不印',cs(['不印','隱藏','底色','背景','bg','hide'])],
       ['紙',cs(['紙','紙張','紙色','底紙','卡紙','paper'])+'　或直接寫紙名；可加 '+c('#色碼')+' 與 '+c('300gsm')],
@@ -3174,7 +3354,7 @@ function buildMergedFx(host, pool, slotOwner, slots){
       d.style.setProperty('--vis', visibleRectsMask(slots, idxs)); // 整個效果層（含溢出的壓痕陰影）只在這些卡片沒被蓋住的區域顯示
       // 紙紋相關變數原本掛在卡片上；合併層不在卡片裡，直接依該版本的紙補上
       const P=pe.paper; d.style.setProperty('--ptex', reliefURI(P)); d.style.setProperty('--tex-size', texSizeFor(P, idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length)); d.style.setProperty('--ptex-blend', paperBlend(P)); d.style.setProperty('--ptex-foil',(P.strength*.4).toFixed(3));
-      d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); cropToSlots(d, slots, idxs); host.appendChild(d); styleFx(d,L,pe.paper);
+      d.innerHTML=fxDOM(L, fast); if(fast) d.classList.add('fast'); cropToSlots(d, slots, idxs); host.appendChild(d); styleFx(d,L,pe.paper); if(L.proc==='raster') fillRaster(d,L,eff,{slots,idxs,E:slotsExtent(slots),k:1});
       // 合併層橫跨整個版面：箔面色帶若以整張桌面為單位就看不出反光，改用卡片尺寸平鋪（漸層頭尾同色，無接縫）
       const cwAvg=idxs.reduce((a,i)=>a+slots[i].w,0)/idxs.length; d.style.setProperty('--fbs',(cwAvg*2.8).toFixed(0)+'px');
 
