@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>燙印打樣室</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
   /* Monochrome：純中性灰階 + 單一主題色 #ff5511，只用在「目前選取／主要動作／光源」 */
@@ -10,7 +10,7 @@
   --text:#f2f2f2; --muted:#8c8c8c; --faint:#5a5a5a;
   --accent:#ff5511; --accent-ink:#ffffff; --accent-dim:#7a2f11; --accent-soft:rgba(255,85,17,.14);
   --danger:#ff5511;
-  --sans:'IBM Plex Sans','Noto Sans TC',-apple-system,BlinkMacSystemFont,'PingFang TC','Microsoft JhengHei',sans-serif;
+  --sans:'IBM Plex Sans TC','IBM Plex Sans',-apple-system,BlinkMacSystemFont,'PingFang TC','Microsoft JhengHei',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --panel-w:340px;
   color-scheme:dark;
@@ -925,7 +925,7 @@ body.viewer .stage-tools{bottom:44px}
   <dl>
     <dt>版權</dt><dd>© 2026 n_do（naldo-w）。程式碼以 <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT License</a> 釋出：可自由使用、修改、再散布，但須保留本版權聲明與授權條款。</dd>
     <dt>樣本卡</dt><dd>__SAMPLE_CREDIT__</dd>
-    <dt>致謝</dt><dd>卡片傾斜、反光與全息效果的手法參考 <a href="https://github.com/simeydotme/pokemon-cards-css" target="_blank" rel="noopener">pokemon-cards-css</a>（© simeydotme，MIT License）。介面字型 IBM Plex 與 Noto Sans TC（SIL Open Font License）。</dd>
+    <dt>致謝</dt><dd>卡片傾斜、反光與全息效果的手法參考 <a href="https://github.com/simeydotme/pokemon-cards-css" target="_blank" rel="noopener">pokemon-cards-css</a>（© simeydotme，MIT License）。介面字型 IBM Plex Sans TC（SIL Open Font License）。</dd>
     <dt>隱私</dt><dd>你上傳的 SVG 只在本機瀏覽器處理與暫存（localStorage），不會傳送到任何伺服器。</dd>
     <dt>免責</dt><dd>畫面效果為視覺近似，實際燙印成品的色澤、反光與紙質仍以印刷廠打樣為準。</dd>
   </dl>
@@ -2466,7 +2466,7 @@ function setLightDir(el, dx, dy){ // 光→圖形 的單位向量與角度（給
   // 打凸／打凹濾鏡的光源方位：feDistantLight 的 azimuth 是「光在哪個方向」（從圖形指向光），= −(光→圖形)
   const az=(Math.atan2(-uy,-ux)*180/Math.PI).toFixed(1);
   const fxs = el.classList.contains('fx') ? [el] : el.querySelectorAll('.fx.relief-only');
-  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((lightDrag && performance.now()-pressT<40) || (pointerMoving && frameDt>20 && performance.now()-pressT<33)){ pressStale=true; el.dataset.la=''; return; } // bump（壓痕、打凹打凸）：卡片模式每幀即時重算；只有當上一幀已經超過 20ms（圖層很多）才退到每 33ms 一次；場景拖燈 40ms（清掉量化快取，下次才會補算）最後一次
+  fxs.forEach(f=>{ const id=f.dataset.rf; if(!id) return; if((pointerMoving || lightDrag) && performance.now()-pressT<40){ pressStale=true; el.dataset.la=''; return; } // bump（壓痕、打凹打凸）：移動中／場景拖燈統一每 40ms 重算一次（清掉量化快取，下次才會補算），停下再補最後一次最後一次
     const flt=document.getElementById(id); if(!flt) return; pressT=performance.now(); pressStale=false; flt.querySelector('feDistantLight').setAttribute('azimuth',az);
     flt.dataset.az=az; const off=flt.querySelector('feOffset.cast'); if(off){ const c=+off.dataset.d||0; off.setAttribute('dx',(ux*c).toFixed(2)); off.setAttribute('dy',(uy*c).toFixed(2)); } });
 }
@@ -2491,7 +2491,7 @@ function setPointer(px,py,hov){ applyPointer(card,px,py,hov,false); applyPointer
     let ppx=px, ppy=py; if(hovering && lastPt){ const r=c3.getBoundingClientRect(); if(r.width>0){ ppx=Math.min(1,Math.max(0,(lastPt.x-r.left)/r.width)); ppy=Math.min(1,Math.max(0,(lastPt.y-r.top)/r.height)); } }
     const c=c3._c||(c3._c={px:ppx,py:ppy}); c.px+=(ppx-c.px)*.4; c.py+=(ppy-c.py)*.4;
     c3.querySelectorAll('.card.face').forEach(f=>applyPointer(f,c.px,c.py,hov)); }); }
-let lastPt=null, movT=0, pointerMoving=false, pressStale=false, pressT=0, frameDt=0, lastFrameT=0;
+let lastPt=null, movT=0, pointerMoving=false, pressStale=false, pressT=0;
 function applyPointer(card,px,py,hov,mirror=false){
   // 背面：外層 card-3d 轉 180°、背面自己再轉 180°，兩者抵消 → 背面在畫面上是「正常朝前」的元素，座標不鏡射；直接用畫面上的 px
   const P=S.paper, lx=px; if(card.style.visibility==='hidden') return; // 翻到背面看不到的那一面不用更新
@@ -2598,9 +2598,8 @@ function loop(){
   requestAnimationFrame(loop); if(!S) return;
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(viewMode==='scene') return; // 版面：燈固定，沒有任何自動移動；只在使用者操作時重算
-  { const now=performance.now(); frameDt=lastFrameT?now-lastFrameT:0; lastFrameT=now; }
   frameNo++; if(!hovering && (frameNo % ($('#stage').classList.contains('lod')?3:2))) return; // 效能：沒有滑鼠時的自動光只跑 30fps（圖層多：20fps）
-  // 移動中：每一幀都更新（色帶、高光、紙面反光、壓痕一起即時跟著滑鼠）
+  if(hovering){ const now=performance.now(); if(now-lastLightT<40) return; lastLightT=now; } // 移動中：光影統一每 40ms 更新一次（色帶、高光、紙面反光、壓痕一起）
   if(!hovering){
     if(S.paper.auto && !reduce && performance.now()-lastMove>1800){ autoT+=0.006; target.px=.5+.38*Math.cos(autoT); target.py=.5+.3*Math.sin(autoT*.8); target.hov=.8; }
     else { target.px=.5; target.py=.5; target.hov=0; }

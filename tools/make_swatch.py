@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """產生效果樣本卡（每一類一張）：swatch/swatch-foil-metal.svg、swatch-foil-pigment.svg、swatch-holo.svg、swatch-ink.svg、swatch-finish.svg 與 swatches.json。
 版面（單位 px，1px = 1/96 in）：
-  上：左 logo、右 樣本卡標題（字高＝logo 高）
-  中：樣本 80×80（形狀取自 swatch/sample-shape.svg），一行 4 個、間距 16，名稱 16px 置中在樣本下方
+  上：左 logo、右 樣本卡標題（8px，中文一行、英文一行，齊右；與 logo、頁尾小字同為燙霧銀）
+  中：樣本 80×80（形狀取自 swatch/sample-shape.svg），一行 4 個、間距 16，名稱 12px 置中在樣本下方（IBM Plex Sans TC）
   下：FOIL PROOF LAB 8px 置中
   上中下間距 40；四邊留白 40；圓角 40；卡片依內容決定大小；紙：黑色銅版紙 0.5mm
 每格是一個依「工法_色碼+加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。"""
 import pathlib, re, json
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 OUT=ROOT/'swatch'; OUT.mkdir(exist_ok=True)
-PAD=40; GAP=40; CELL=80; CGAP=16; COLS=4; NAME=16; NAME2=11; NAME_GAP=8; FOOT=8; LOGO_H=24; RADIUS=40
+PAD=40; GAP=40; CELL=80; CGAP=16; COLS=4; NAME=12; NAME2=9; NAME_GAP=8; FOOT=8; TITLE=8; LOGO_H=24; RADIUS=40
+FONT="'IBM Plex Sans TC', 'IBM Plex Sans', Helvetica, Arial, sans-serif"
 def tw(t,fs): return sum((fs if ord(c)>0x2e7f else fs*0.58) for c in t)  # 估字寬：CJK 1em、拉丁 0.58em
 PAPER='#121212'
 W=PAD*2+COLS*CELL+(COLS-1)*CGAP   # 448
@@ -66,27 +67,27 @@ def make(fname, title, items, kind):
         elif kind=='ink': gid=f'印刷_{name}'; fill=val; lab=name
         else: gid=f'加工_{name}'; fill=PAPER; lab=val
         out.append(cell(gid,fill,x,yy))
-        # 名稱：有編號就拆兩行（名稱 16px、編號 11px），超寬的名稱自動縮字
+        # 名稱：有編號就拆兩行（名稱 12px、編號 9px），超寬的名稱自動縮字
         m=re.match(r'^(.*?)\s+([A-Z]{1,3}-?\d+|\d{4})$', lab)
         name, code = (m.group(1), m.group(2)) if m else (lab, '')
         fs=NAME; maxw=CELL+CGAP-4
         while tw(name,fs)>maxw and fs>9: fs-=1
         ty=yy+CELL+NAME_GAP+fs*0.85
-        labels.append(f'    <text x="{x+CELL/2}" y="{ty:.1f}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="{fs}" fill="#f3f1ec">{esc(name)}</text>')
-        if code: labels.append(f'    <text x="{x+CELL/2}" y="{ty+NAME2+2:.1f}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="{NAME2}" letter-spacing=".5" fill="#c9c7c2">{esc(code)}</text>')
+        labels.append(f'    <text x="{x+CELL/2}" y="{ty:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{fs}" fill="#f3f1ec">{esc(name)}</text>')
+        if code: labels.append(f'    <text x="{x+CELL/2}" y="{ty+NAME2+2:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{NAME2}" letter-spacing=".5" fill="#c9c7c2">{esc(code)}</text>')
     logo=''
     if logo_inner:
         inner,vx,vy,vw,vh=logo_inner; k=LOGO_H/vh
         logo=f'    <g id="logo" transform="translate({PAD} {PAD}) scale({k:.5f}) translate({-vx} {-vy})" fill="#b9bbc2">{inner}</g>'
-    logo_w = LOGO_H*(logo_inner[3]/logo_inner[4]) if logo_inner else 0
-    tfs=LOGO_H; avail=W-PAD*2-logo_w-16
-    while tw(title,tfs)>avail and tfs>10: tfs-=1
-    out.append(f'''  <g id="燙箔_霧銀 MS-03">
-{logo}
-    <text x="{W-PAD}" y="{PAD+LOGO_H*0.86:.1f}" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="{tfs}" letter-spacing=".5" fill="#b9bbc2">{esc(title)}</text>
-  </g>''')
+    # 標題：中文一行、英文一行，各 8px，齊右，整塊垂直置中對齊 logo
+    zh, en = (title.split('  ',1)+[''])[:2] if '  ' in title else (title,'')
+    lh=TITLE+3; top=PAD+(LOGO_H-(TITLE*2+3))/2
+    tt=[f'    <text x="{W-PAD}" y="{top+TITLE*0.85:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" letter-spacing=".5" fill="#b9bbc2">{esc(zh.strip())}</text>']
+    if en: tt.append(f'    <text x="{W-PAD}" y="{top+lh+TITLE*0.85:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" letter-spacing="1" fill="#b9bbc2">{esc(en.strip())}</text>')
+    out.append('  <g id="燙箔_霧銀 MS-03">'); out.append(logo); out+=tt
+    out.append(f'    <text x="{W/2}" y="{H-PAD:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{FOOT}" letter-spacing="2" fill="#b9bbc2">FOIL PROOF LAB</text>')
+    out.append('  </g>')
     out.append('  <g id="印刷_白墨 標籤">'); out+=labels
-    out.append(f'    <text x="{W/2}" y="{H-PAD:.1f}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="{FOOT}" letter-spacing="2" fill="#f3f1ec">FOIL PROOF LAB</text>')
     out.append('  </g>'); out.append('</svg>')
     s='\n'.join(out)+'\n'; (OUT/fname).write_text(s); print('→',OUT/fname, f'{W}×{H}px', len(items),'cells'); return s
 
