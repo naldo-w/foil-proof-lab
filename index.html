@@ -290,8 +290,8 @@ body.empty .panel{visibility:hidden}
 .m.uv .u-spark{display:none}
 .m.uv.ugl{mix-blend-mode:normal} /* 閃粉本身是不透明的粒子（金／銀／自訂色），白紙上也看得到 */
 .m.uv .u-flake{display:none}
-.m.uv.uv-glitter .u-flake{display:block;opacity:calc(.6+var(--uvg,.6)*.35);background-image:var(--glit);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:calc(var(--px)*.25) calc(var(--py)*.2)}
-.m.uv.uv-glitter .u-spark{display:block;opacity:calc(.25+var(--uvg,.6)*.75);background-image:var(--glit2);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:calc(var(--px)*1.6) calc(var(--py)*1.1)} /* 白色亮點：跟閃粉不同視差，移動時像在閃 */
+.m.uv.uv-glitter .u-flake{display:block;opacity:calc(.6+var(--uvg,.6)*.35);background-image:var(--glit);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:0 0} /* 閃粉固定在表面，不隨滑鼠位移 */
+.m.uv.uv-glitter .u-spark{display:block;opacity:calc(.25+var(--uvg,.6)*.75);background-image:var(--glit2);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:0 0} /* 白色亮點也固定在表面；亮暗變化交給 .u-glare 的反光 */
 /* 霧面／磨砂：本體透明，差別只在反光——鏡面高光帶幾乎消失，換成一大片柔和的散射光（光點放大、變淡） */
 .m.uv.uv-matte .u-band{opacity:calc(var(--uvg,.8)*.1)}
 .m.uv.uv-matte .u-glare{opacity:calc(var(--uvg,.8)*.4)}
@@ -1910,7 +1910,7 @@ function fxDOM(L, fast=false){
   let h='';
   // 打凸／打凹（含另一面效果）：以 SVG feDiffuseLighting 對「模糊過的圖形 alpha」打光 = 真正的斜面光影，整層以 hard-light 疊在紙上
   if(L.proc==='none' || L.bump){ let b = (L.bump || L.relief!=='none' || L.uv==='raised') ? `<div class="bump"><div class="m bumpsrc"></div></div>` : '';
-    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake dyn"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark dyn"></div></div>`; // 純加工層也可以只有局部 UV
+    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`; // 純加工層也可以只有局部 UV
     return b; }
   const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress';
   const raised = L.puff || L.uv==='raised' || L.proc==='screen';
@@ -1925,7 +1925,7 @@ function fxDOM(L, fast=false){
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.metallic?' metal':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div>${fast?'':'<div class="i-mottle"></div>'}${L.proc==='screen'&&!fast?'<div class="i-mesh"></div>':''}<div class="i-grain"></div>${L.metallic?'<div class="i-metal dyn"></div><div class="i-spark dyn"></div>':''}${dome}${inner(innerParts)}<div class="i-glare dyn"></div></div>`;
   }
-  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake dyn"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark dyn"></div></div>`;
+  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`;
   return h;
 }
 function renderFx(){
@@ -2705,7 +2705,7 @@ const HELP = {
   uvGloss:'上光層本身是透明的：光澤決定無色高光帶與光點有多強（亮面像鏡面；霧面幾乎沒有高光，只剩很淡的方向性明暗）。',
   uvOpacity:'磨砂 UV 的覆蓋率：半透明白的濃度（預設 15%），0 = 全透明；霧面 UV 本身是全透明的，只有反光變柔。',
   uvGrain:'磨砂／霧面 UV 的顆粒感。',
-  glitColor:'亮粉 UV 的閃粉：金、銀或自訂色；閃粉本身是不透明粒子，白色亮點隨滑鼠位置閃動。',
+  glitColor:'亮粉 UV 的閃粉：金、銀或自訂色；閃粉是固定在表面的不透明粒子，亮暗只隨反光位置變。',
   glitSize:'閃粉顆粒大小。', glitDens:'閃粉密度：越高粒子越密。',
   uvDepth:'立體 UV／水晶膠的厚度（預設 0.3px）：越厚邊緣的高光與陰影越明顯。',
   puffDepth:'發泡厚度：發泡油墨加熱後隆起的高度，越厚圓頂越明顯。',
