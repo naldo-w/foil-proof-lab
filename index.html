@@ -280,9 +280,12 @@ body.empty .panel{visibility:hidden}
 .m.uv.ub{mix-blend-mode:hard-light}
 .m.uv.ug{mix-blend-mode:screen}
 .m.uv.uf{mix-blend-mode:normal}
-.m.uv.ugn{mix-blend-mode:soft-light} /* 霧面／磨砂的消光顆粒：只改表面明暗，不蓋顏色（顆粒放在自己的群組才能跟底下混合，放在 uf 裡只會混到透明底變成灰塊） */
-.m.uv .u-fill{background:#fff;opacity:var(--uvop,0)}
-.m.uv .u-grain{background-image:var(--ptexg);background-size:110px 110px;opacity:var(--uvgr,0)}
+.m.uv.ugn{mix-blend-mode:soft-light} /* 霧面的消光微粒：只改表面明暗，不蓋顏色（顆粒放在自己的群組才能跟底下混合，放在 uf 裡只會混到透明底變成灰塊） */
+.m.uv.uv-frost.ugn{mix-blend-mode:hard-light} /* 磨砂：砂粒亮的地方提亮、暗的地方壓暗，黑紙白紙都看得到粗糙感 */
+.m.uv .u-fill{background:var(--uvfill,#fff);opacity:var(--uvop,0)}
+.m.uv.uv-frost .u-fill{-webkit-backdrop-filter:blur(var(--uvblur,1px));backdrop-filter:blur(var(--uvblur,1px))} /* 磨砂玻璃：把底下的印刷／紙紋暈開 */
+.m.uv .u-grain{background-image:var(--ptexg);background-size:60px 60px;opacity:var(--uvgr,0)}
+.m.uv.uv-frost .u-grain{background-image:var(--frost);background-size:calc(140px*var(--uvgs,1)) calc(140px*var(--uvgs,1));-webkit-mask-image:radial-gradient(circle farthest-corner at var(--px,50%) var(--py,50%),#000 0%,rgba(0,0,0,.55) 35%,rgba(0,0,0,.3) 100%);mask-image:radial-gradient(circle farthest-corner at var(--px,50%) var(--py,50%),#000 0%,rgba(0,0,0,.55) 35%,rgba(0,0,0,.3) 100%)} /* 砂粒靠光的地方最亮 */
 .m.uv .u-band{opacity:calc(var(--uvg,.8)*var(--uvbk,1));background-image:linear-gradient(112deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,0) 11%,rgba(255,255,255,0) 13%,rgba(255,255,255,.7) 15%,rgba(255,255,255,0) 17.5%,rgba(0,0,0,0) 22%,rgba(0,0,0,.28) 33.3%,rgba(0,0,0,0) 44%,rgba(255,255,255,0) 46%,rgba(255,255,255,.7) 48.3%,rgba(255,255,255,0) 51%,rgba(0,0,0,0) 55%,rgba(0,0,0,.28) 66.6%,rgba(0,0,0,0) 77%,rgba(255,255,255,0) 79%,rgba(255,255,255,.7) 81.6%,rgba(255,255,255,0) 84%,rgba(0,0,0,0) 89%,rgba(0,0,0,.28) 100%);background-size:280% 280%;background-position:var(--px) var(--py)}
 .card-wrap .m>.u-band.dyn{width:calc(var(--cwd,100%) * 2.8);height:calc(var(--cht,100%) * 2.8);background-size:100% 100%;background-position:0 0;transform:translate(calc(var(--px,50%) * -0.642857),calc(var(--py,50%) * -0.642857))}
 .m.uv .u-glare{opacity:calc(var(--uvg,.8)*var(--uvbk,1));
@@ -292,11 +295,12 @@ body.empty .panel{visibility:hidden}
 .m.uv .u-flake{display:none}
 .m.uv.uv-glitter .u-flake{display:block;opacity:calc(.6+var(--uvg,.6)*.35);background-image:var(--glit);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:0 0} /* 閃粉固定在表面，不隨滑鼠位移 */
 .m.uv.uv-glitter .u-spark{display:block;opacity:calc(.25+var(--uvg,.6)*.75);background-image:var(--glit2);background-size:calc(110px*var(--glsz,1)) calc(110px*var(--glsz,1));background-position:0 0} /* 白色亮點也固定在表面；亮暗變化交給 .u-glare 的反光 */
-/* 霧面／磨砂：本體透明，差別只在反光——鏡面高光帶幾乎消失，換成一大片柔和的散射光（光點放大、變淡） */
-.m.uv.uv-matte .u-band{opacity:calc(var(--uvg,.8)*.1)}
-.m.uv.uv-matte .u-glare{opacity:calc(var(--uvg,.8)*.4)}
-.m.uv.uv-frost .u-band{opacity:calc(var(--uvg,.8)*.25)}
-.m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.8)*.6)}
+/* 霧面：消光——鏡面高光帶與光點幾乎消失，只剩一點緞面般的寬散射；表面被塗層填平、略微壓暗（黑紙上更深更平，像絨面）
+   磨砂：半透明白＋砂粒（粗糙感、靠光發亮）＋把底下暈開，反光是霧的大片散射 */
+.m.uv.uv-matte .u-band{opacity:calc(var(--uvg,.8)*.04)}
+.m.uv.uv-matte .u-glare{opacity:calc(var(--uvg,.8)*.08)} /* 霧面幾乎沒有會動的反光：只剩極淡的緞面散射 */
+.m.uv.uv-frost .u-band{opacity:calc(var(--uvg,.8)*.12)}
+.m.uv.uv-frost .u-glare{opacity:calc(var(--uvg,.8)*.55)}
 .card-wrap .m.uv-matte>.u-glare.dyn,.card-wrap .m.uv-frost>.u-glare.dyn{width:calc(var(--cwd,100%) * 1.6);height:calc(var(--cht,100%) * 1.6);background:radial-gradient(circle farthest-side at 50% 50%,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 28%,rgba(255,255,255,.015) 60%,rgba(255,255,255,0) 100%);transform:translate(calc(var(--px,50%) / 1.6 - 50%),calc(var(--py,50%) / 1.6 - 50%))}
 /* deboss / emboss: mask lives on the children */
 .m.r-dark{background:rgba(0,0,0,.6);transform:translate(var(--dx),var(--dy))}
@@ -1317,6 +1321,8 @@ function reliefURI(P){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><filter id="f" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="${t.type||'fractalNoise'}" baseFrequency="${t.bf}" numOctaves="${t.oct}" seed="5" stitchTiles="stitch" result="n"/>${speck}<feDiffuseLighting in="${src}" surfaceScale="${surf}" diffuseConstant="1" lighting-color="#fff" result="l"><feDistantLight azimuth="${az}" elevation="${elev}"/></feDiffuseLighting><feComponentTransfer in="l"><feFuncR type="linear" slope="${slope}" intercept="${intercept}"/><feFuncG type="linear" slope="${slope}" intercept="${intercept}"/><feFuncB type="linear" slope="${slope}" intercept="${intercept}"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#f)"/></svg>`;
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 }
+/* 磨砂 UV 的砂粒：高對比的細砂（白色、有透明度），像磨砂玻璃表面一粒粒的粗糙感；配合隨光源移動的遮罩，靠光的地方砂粒發亮 */
+const FROST = (()=>{ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="g" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="17" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .33 .33 .34 0 0"/><feComponentTransfer><feFuncA type="linear" slope="6" intercept="-3.2"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>`; return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`; })();
 function grainURI(op){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="2.2" intercept="-0.6"/><feFuncG type="linear" slope="2.2" intercept="-0.6"/><feFuncB type="linear" slope="2.2" intercept="-0.6"/><feFuncA type="table" tableValues="1 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)" opacity="${op.toFixed(3)}"/></svg>`;
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
@@ -1589,7 +1595,7 @@ const PROCS = {
 const HOLO_SUBS={lines:'線條雷射',reverse:'直條反轉',radiant:'放射交叉',rainbow:'彩虹雷射',amazing:'幻彩流動',glitter:'碎片亮粉',secret:'金蔥亮粉',cosmos:'星空宇宙',trainer:'星塵線條',shiny:'閃鑽 V',cracked:'碎冰',shards:'碎鑽',sand:'砂點',crumple:'皺紋',starburst:'星芒',pearl:'珍珠箔',clear:'透明雷射膜'};
 const UV_SUBS={none:'無',gloss:'亮面 UV',matte:'霧面 UV',frost:'磨砂 UV',raised:'立體 UV／水晶膠',glitter:'亮粉 UV'};
 const RELIEFS={none:'無',emboss:'打凸',deboss:'打凹'};
-const FIN_DEFAULTS={relief:'none',reliefDepth:.5,uv:'none',uvGloss:.8,uvDepth:.3,uvOpacity:.15,uvGrain:.6,glitColor:'gold',glitHex:'#e9c25a',glitSize:1,glitDens:.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
+const FIN_DEFAULTS={relief:'none',reliefDepth:.5,uv:'none',uvGloss:.8,uvDepth:.3,uvOpacity:.15,uvGrain:.7,uvGrainSize:1.3,uvBlur:1,glitColor:'gold',glitHex:'#e9c25a',glitSize:1,glitDens:.5,puff:false,puffDepth:2,flock:false,press:.6,thick:.6,spread:0,mottle:.25,mesh:120,grad:'none'};
 /* 依 type 反推 proc（舊資料相容），並補齊欄位 */
 function normalizeLayer(L){
   if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
@@ -1654,7 +1660,7 @@ function glitterURI(color, dens, seed=11){
 function glitterColor(L){ return L.glitColor==='custom' ? (L.glitHex||'#e9c25a') : (GLIT_COLORS[L.glitColor||'gold']||GLIT_COLORS.gold); }
 function applyColorPreset(L, key){
   const p=PRESETS[key]; if(!p) return;
-  const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,uvOpacity:L.uvOpacity,uvGrain:L.uvGrain,glitColor:L.glitColor,glitHex:L.glitHex,glitSize:L.glitSize,glitDens:L.glitDens,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
+  const keep={id:L.id,name:L.name,named:L.named,visible:L.visible,knockout:L.knockout,proc:L.proc,relief:L.relief,reliefDepth:L.reliefDepth,uv:L.uv,uvGloss:L.uvGloss,uvDepth:L.uvDepth,uvOpacity:L.uvOpacity,uvGrain:L.uvGrain,uvGrainSize:L.uvGrainSize,uvBlur:L.uvBlur,glitColor:L.glitColor,glitHex:L.glitHex,glitSize:L.glitSize,glitDens:L.glitDens,puff:L.puff,puffDepth:L.puffDepth,flock:L.flock,press:L.press,thick:L.thick};
   const {label,group,type,sub,puff,flock,dir,...params}=p;
   Object.assign(L, params, keep, {preset:key, cname:label});
   L.fluo = !!p.fluo; L.metallic = !!p.metallic;
@@ -1910,7 +1916,7 @@ function fxDOM(L, fast=false){
   let h='';
   // 打凸／打凹（含另一面效果）：以 SVG feDiffuseLighting 對「模糊過的圖形 alpha」打光 = 真正的斜面光影，整層以 hard-light 疊在紙上
   if(L.proc==='none' || L.bump){ let b = (L.bump || L.relief!=='none' || L.uv==='raised') ? `<div class="bump"><div class="m bumpsrc"></div></div>` : '';
-    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`; // 純加工層也可以只有局部 UV
+    if(!L.bump && L.uv && L.uv!=='none') b+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain${L.uv==='frost'?' dyn':''}"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`; // 純加工層也可以只有局部 UV
     return b; }
   const pressed = L.proc==='foil' || L.proc==='holo' || L.proc==='letterpress';
   const raised = L.puff || L.uv==='raised' || L.proc==='screen';
@@ -1925,7 +1931,7 @@ function fxDOM(L, fast=false){
   else if(L.proc==='ink'||L.proc==='letterpress'||L.proc==='screen'){
     h+=`<div class="m ink${L.fluo?' fluo':''}${L.puff?' puff':''}${L.flock?' flock':''}${L.metallic?' metal':''}${L.proc==='letterpress'?' press':''}${L.proc==='screen'?' screen':''}"><div class="i-fill"></div>${fast?'':'<div class="i-mottle"></div>'}${L.proc==='screen'&&!fast?'<div class="i-mesh"></div>':''}<div class="i-grain"></div>${L.metallic?'<div class="i-metal dyn"></div><div class="i-spark dyn"></div>':''}${dome}${inner(innerParts)}<div class="i-glare dyn"></div></div>`;
   }
-  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`;
+  if(L.uv!=='none') h+=`<div class="m uv uv-${L.uv} uf"><div class="u-fill"></div></div><div class="m uv uv-${L.uv} ugn"><div class="u-grain${L.uv==='frost'?' dyn':''}"></div></div>${L.uv==='glitter'?`<div class="m uv uv-glitter ugl"><div class="u-flake"></div></div>`:''}<div class="m uv uv-${L.uv} ub"><div class="u-band dyn"></div></div><div class="m uv uv-${L.uv} ug"><div class="u-glare dyn"></div><div class="u-spark"></div></div>`;
   return h;
 }
 function renderFx(){
@@ -2042,7 +2048,8 @@ function styleFx(d,L,paper=S.paper){
   }
   if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.7));
     // 磨砂：覆蓋率（半透明白，預設 15%）與顆粒可調；霧面：透明＋消光顆粒；其他：全透明
-    const op = L.uv==='frost' ? (L.uvOpacity ?? .15) : 0, gr = L.uv==='frost' ? (L.uvGrain ?? .6)*.7 : (L.uv==='matte' ? (L.uvGrain ?? .6)*.35 : 0); // 霧面全透明、磨砂只有一點半透明白；顆粒走 soft-light 只影響明暗
+    const op = L.uv==='frost' ? (L.uvOpacity ?? .15) : (L.uv==='matte' ? .1 : 0), gr = L.uv==='frost' ? (L.uvGrain ?? .7) : (L.uv==='matte' ? (L.uvGrain ?? .6)*.3 : 0); // 磨砂：半透明白＋砂粒；霧面：塗層略壓暗（黑色 10%）＋極細消光微粒
+    st.setProperty('--uvfill', L.uv==='matte' ? '#000' : '#fff'); if(L.uv==='frost'){ st.setProperty('--frost', FROST); st.setProperty('--uvgs', (L.uvGrainSize ?? 1.3).toFixed(2)); st.setProperty('--uvblur', ((L.uvBlur ?? 1)).toFixed(2)+'px'); }
     st.setProperty('--uvop', op.toFixed(3)); st.setProperty('--uvgr', gr.toFixed(3));
     if(L.uv==='glitter'){ const gc=glitterColor(L), gd=L.glitDens??.5; st.setProperty('--glit', glitterURI(gc, gd, 11)); st.setProperty('--glit2', glitterURI('#ffffff', Math.min(1,gd*.45), 23)); st.setProperty('--glsz', (L.glitSize??1).toFixed(2)); } }
 }
@@ -2372,7 +2379,7 @@ function colorChipsHTML(L){
 function tileHTML({attr,key,label,cls,on,c}){ return `<button class="tile${on?' on':''}" ${attr}="${key}" title="${esc(label)}" style="--c:${c||'#999'};--grad:${(cls||'').includes('foil')?foilGradient(c||'#c9cacf',.45):'none'}"><span class="sh ${cls||''}"></span><span class="lb">${esc(label)}</span></button>`; }
 function procTileClass(k,L){ return ({foil:'foil',holo:'holo lines',ink:'ink',letterpress:'ink press',screen:'ink screen',raster:'ink raster',none:'none',hide:'hide'})[k]||''; }
 function layerHasImage(L){ return Object.entries(effLayer).some(([k,id])=>id===L.id && shapes[k] && shapes[k].tag==='image'); }
-function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='lpi') return v+' lpi'; if(p==='regX'||p==='regY') return (+v).toFixed(2)+'mm'; if(p==='rOffX'||p==='rOffY') return (+v).toFixed(1)+'%'; if(p==='rScale') return (+v).toFixed(2)+'×'; if(p==='colors') return v+' 色'; if(p==='texK') return (+v).toFixed(2)+'×'; if(p==='edgeRough'||p==='bleed') return (+v).toFixed(2)+'px'; if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
+function fmtParam(p,v){ if(p==='spread') return (+v).toFixed(1); if(p==='uvBlur') return (+v).toFixed(1)+'px'; if(p==='uvGrainSize'||p==='glitSize') return (+v).toFixed(2)+'×'; if(p==='lpi') return v+' lpi'; if(p==='regX'||p==='regY') return (+v).toFixed(2)+'mm'; if(p==='rOffX'||p==='rOffY') return (+v).toFixed(1)+'%'; if(p==='rScale') return (+v).toFixed(2)+'×'; if(p==='colors') return v+' 色'; if(p==='texK') return (+v).toFixed(2)+'×'; if(p==='edgeRough'||p==='bleed') return (+v).toFixed(2)+'px'; if(['depth','press','thick','puffDepth','reliefDepth','uvDepth'].includes(p)) return (+v).toFixed(2)+'px'; if(p==='sat'||p==='hscale') return (+v).toFixed(2)+'×'; return Math.round(v*100)+'%'; }
 const rowR=(L,label,p,min,max,step)=>`<div class="row"><label>${label}</label><input type="range" data-p="${p}" min="${min}" max="${max}" step="${step}" value="${L[p]}"><span class="val">${fmtParam(p,L[p])}</span></div>`;
 const edgeRows=r=>r('邊緣不規則','edgeRough',0,2,.05)+r('不規則密度','edgeDens',0,1,.05)+r('溢出','bleed',0,3,.05); // 燙箔壓力／凸版油墨沿邊緣微溢、邊緣不完全平滑
 function paramRows(L){
@@ -2405,7 +2412,7 @@ function finishRows(L){
   const tilesRow=(label,items)=>`<div class="row two" style="align-items:start"><label style="padding-top:6px">${label}</label><div class="tiles">${items.join('')}</div></div>`;
   h+=tilesRow('壓凸／壓凹',[tileHTML({attr:'data-relief',key:'none',label:'無',cls:'off',on:L.relief==='none',c}),tileHTML({attr:'data-relief',key:'emboss',label:'打凸',cls:'emboss',on:L.relief==='emboss',c}),tileHTML({attr:'data-relief',key:'deboss',label:'打凹',cls:'deboss',on:L.relief==='deboss',c})])+(L.relief!=='none'?r('深度','reliefDepth',.1,4,.05):'');
   const uvCls={none:'off',gloss:'uvg',matte:'uvm',frost:'uvf',raised:'uvr',glitter:'uvgl'};
-  h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):'')+(L.uv==='frost'?r('覆蓋率','uvOpacity',0,1,.01):'')+(L.uv==='frost'||L.uv==='matte'?r('顆粒','uvGrain',0,1,.01):'')+(L.uv==='glitter'?`<div class="row two"><label data-help="glitColor">閃粉</label><select data-p="glitColor">${[['gold','金'],['silver','銀'],['custom','自訂']].map(([k,v])=>`<option value="${k}"${(L.glitColor||'gold')===k?' selected':''}>${v}</option>`).join('')}</select></div>`+((L.glitColor||'gold')==='custom'?`<div class="row two"><label>閃粉色</label><div class="colorwrap"><input type="color" data-p="glitHex" value="${L.glitHex||'#e9c25a'}"><span class="hex">${L.glitHex||'#e9c25a'}</span></div></div>`:'')+r('閃粉大小','glitSize',.4,2.5,.05)+r('閃粉密度','glitDens',0,1,.01):''):'');
+  h+=tilesRow('表面處理',Object.entries(UV_SUBS).map(([k,v])=>tileHTML({attr:'data-uv',key:k,label:v.replace('／水晶膠',''),cls:uvCls[k],on:L.uv===k,c})))+(L.uv!=='none'?r('光澤','uvGloss',0,1,.01)+(L.uv==='raised'?r('厚度','uvDepth',0,3,.05):'')+(L.uv==='frost'?r('覆蓋率','uvOpacity',0,1,.01):'')+(L.uv==='frost'||L.uv==='matte'?r('顆粒','uvGrain',0,1,.01):'')+(L.uv==='frost'?r('砂粒大小','uvGrainSize',.5,2.5,.05)+r('暈開','uvBlur',0,4,.1):'')+(L.uv==='glitter'?`<div class="row two"><label data-help="glitColor">閃粉</label><select data-p="glitColor">${[['gold','金'],['silver','銀'],['custom','自訂']].map(([k,v])=>`<option value="${k}"${(L.glitColor||'gold')===k?' selected':''}>${v}</option>`).join('')}</select></div>`+((L.glitColor||'gold')==='custom'?`<div class="row two"><label>閃粉色</label><div class="colorwrap"><input type="color" data-p="glitHex" value="${L.glitHex||'#e9c25a'}"><span class="hex">${L.glitHex||'#e9c25a'}</span></div></div>`:'')+r('閃粉大小','glitSize',.4,2.5,.05)+r('閃粉密度','glitDens',0,1,.01):''):'');
   if(['ink','letterpress','screen'].includes(L.proc)){
     h+=tilesRow('特殊',[tileHTML({attr:'data-tog',key:'puff',label:'發泡',cls:'puff',on:!!L.puff,c}),tileHTML({attr:'data-tog',key:'flock',label:'植絨',cls:'flock',on:!!L.flock,c})]);
     if(L.puff) h+=r('發泡厚度','puffDepth',0,4,.05);
@@ -2703,8 +2710,9 @@ const HELP = {
   thick:'網版墨層厚度：網版油墨堆在紙面上的厚度，邊緣會有微微隆起與投影。',
   reliefDepth:'打凸／打凹深度：紙張被模具壓出的高度，預設 0.5px；做大面積可拉到 2–3px。',
   uvGloss:'上光層本身是透明的：光澤決定無色高光帶與光點有多強（亮面像鏡面；霧面幾乎沒有高光，只剩很淡的方向性明暗）。',
-  uvOpacity:'磨砂 UV 的覆蓋率：半透明白的濃度（預設 15%），0 = 全透明；霧面 UV 本身是全透明的，只有反光變柔。',
-  uvGrain:'磨砂／霧面 UV 的顆粒感。',
+  uvOpacity:'磨砂 UV 的覆蓋率：半透明白的濃度（預設 15%），0 = 全透明。霧面 UV 是消光塗層：沒有鏡面高光、表面被填平、略微壓暗。',
+  uvGrain:'磨砂：砂粒的明顯程度；霧面：消光微粒（很細）。',
+  uvGrainSize:'磨砂砂粒的大小。', uvBlur:'磨砂玻璃把底下的印刷／紙紋暈開的程度。',
   glitColor:'亮粉 UV 的閃粉：金、銀或自訂色；閃粉是固定在表面的不透明粒子，亮暗只隨反光位置變。',
   glitSize:'閃粉顆粒大小。', glitDens:'閃粉密度：越高粒子越密。',
   uvDepth:'立體 UV／水晶膠的厚度（預設 0.3px）：越厚邊緣的高光與陰影越明顯。',
