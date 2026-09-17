@@ -90,6 +90,7 @@ body[data-mode="scene"] [data-mode="single"]{display:none!important}
 #esNaming{margin-top:14px}
 .es-note{color:var(--faint);font-size:11.5px;line-height:1.6;margin:18px 0 0}
 .es-note b{color:var(--muted);font-weight:500}
+.texprev{display:inline-block;width:40px;height:40px;border-radius:5px;border:1px solid var(--line-2);background-size:100% 100%;vertical-align:middle}
 body.empty #cardwrap,body.empty #scenewrap,body.empty .stage-tools,body.empty .stage-hint,body.empty #lightSvg{display:none!important}
 body.empty .panel{visibility:hidden}
 
@@ -698,6 +699,7 @@ body.viewer .stage-tools{bottom:44px}
         <div class="row two"><label>質地</label>
           <select id="pTex"></select></div>
         <p class="note" id="pTexNote"></p>
+        <div class="row two"><label>紙樣照片</label><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><label class="btn small ghost" data-help="pTexFile">上傳紙樣照片<input type="file" id="pTexFile" accept=".png,.jpg,.jpeg,.webp,.tif,.tiff,image/png,image/jpeg,image/webp,image/tiff" hidden></label><button class="btn small ghost" id="pTexDel" hidden>移除</button><span class="texprev" id="pTexPrev" hidden></span></span></div>
         <div class="row"><label>紋理強度</label><input type="range" id="pStrength" min="0" max="1" step="0.01"><span class="val"></span></div>
         <div class="row"><label>凹凸深度</label><input type="range" id="pRelief" min="0" max="3" step="0.05"><span class="val"></span></div>
         <div class="row"><label>顆粒</label><input type="range" id="pGrain" min="0" max="1" step="0.01"><span class="val"></span></div>
@@ -1991,6 +1993,31 @@ function styleFx(d,L,paper=S.paper){
 /* 紙紋 tile 的尺寸：程序紋理固定 220px×scale；照片紙紋以實際 mm 換算成卡寬百分比（卡片寬度預設 90mm，點陣圖／樣本卡文件另有 mmW），縮放與匯出時比例都對 */
 function cardMMW(){ const d=activeDoc&&activeDoc(); return (d&&d.mmW)||90; }
 function texSizeFor(P, cardPx){ const src=texSource(P); if(!src) return (220*P.scale).toFixed(0)+'px'; const mm=(src.mm||25)*P.scale, f=mm/cardMMW(); return cardPx ? (cardPx*f).toFixed(1)+'px' : (f*100).toFixed(3)+'%'; }
+function refreshTexOptions(){ const sel=$('#pTex'); const key=JSON.stringify(Object.keys(S.texLib||{})); if(sel.dataset.key===key && sel.options.length) return; sel.dataset.key=key; sel.innerHTML='';
+  let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ sel.insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } sel.lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); });
+  const lib=Object.entries(S.texLib||{}); if(lib.length){ sel.insertAdjacentHTML('beforeend','<optgroup label="自訂紙樣"></optgroup>'); lib.forEach(([id,t])=>sel.lastElementChild.insertAdjacentHTML('beforeend',`<option value="u:${id}">${esc(t.label||'紙樣')}</option>`)); } }
+/* 紙樣照片 → 無縫高度圖（與 tools/make_paper_tex.py 同一套：取中央區域、去低頻光影、正規化、十字交叉淡入） */
+let utifP=null; function loadUTIF(){ if(window.UTIF) return Promise.resolve(window.UTIF); return utifP ||= new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/utif/3.1.0/UTIF.min.js'; sc.onload=()=>res(window.UTIF); sc.onerror=()=>rej(new Error('TIFF 解碼程式庫載入失敗')); document.head.appendChild(sc); }); }
+async function decodeImageFile(file){ // → canvas（TIFF 走 UTIF，其餘用 createImageBitmap 並依 EXIF 轉正）
+  if(/tiff?$/i.test(file.name) || file.type==='image/tiff'){ const U=await loadUTIF(); const buf=await file.arrayBuffer(); const ifds=U.decode(buf); if(!ifds.length) throw new Error('TIFF 沒有影像'); U.decodeImage(buf, ifds[0]); const rgba=U.toRGBA8(ifds[0]); const cv=document.createElement('canvas'); cv.width=ifds[0].width; cv.height=ifds[0].height; const cx=cv.getContext('2d'); const idata=cx.createImageData(cv.width,cv.height); idata.data.set(rgba); cx.putImageData(idata,0,0); return cv; }
+  const bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); const cv=document.createElement('canvas'); cv.width=bmp.width; cv.height=bmp.height; cv.getContext('2d').drawImage(bmp,0,0); bmp.close&&bmp.close(); return cv;
+}
+function makePaperTex(srcCanvas, size=512){
+  const W=srcCanvas.width, H=srcCanvas.height, sq=Math.floor(Math.min(W,H)*.6), sx=Math.floor((W-sq)/2), sy=Math.floor((H-sq)/2);
+  const c=document.createElement('canvas'); c.width=size; c.height=size; const cx=c.getContext('2d',{willReadFrequently:true}); cx.drawImage(srcCanvas,sx,sy,sq,sq,0,0,size,size);
+  const d=cx.getImageData(0,0,size,size).data; const g=new Float32Array(size*size); let rs=0,gs=0,bs=0;
+  for(let i=0;i<size*size;i++){ g[i]=d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114; rs+=d[i*4]; gs+=d[i*4+1]; bs+=d[i*4+2]; }
+  const n=size*size; const color='#'+[rs/n,gs/n,bs/n].map(v=>Math.round(Math.min(255,v*1.15)).toString(16).padStart(2,'0')).join(''); // 照片偏暗，稍微提亮當紙色
+  // 低頻光影：縮到 16px 再平滑放大
+  const lo=document.createElement('canvas'); lo.width=lo.height=16; const lx=lo.getContext('2d'); lx.drawImage(c,0,0,16,16); const up=document.createElement('canvas'); up.width=up.height=size; const ux=up.getContext('2d'); ux.imageSmoothingEnabled=true; ux.imageSmoothingQuality='high'; ux.drawImage(lo,0,0,size,size); const ld=ux.getImageData(0,0,size,size).data;
+  const hi=new Float32Array(n); let mean=0; for(let i=0;i<n;i++){ hi[i]=g[i]-(ld[i*4]*.299+ld[i*4+1]*.587+ld[i*4+2]*.114); mean+=hi[i]; } mean/=n; let v=0; for(let i=0;i<n;i++) v+=(hi[i]-mean)**2; const sigma=Math.sqrt(v/n)||1, k=40/sigma;
+  const hm=new Uint8ClampedArray(n); for(let i=0;i<n;i++) hm[i]=Math.max(0,Math.min(255,128+(hi[i]-mean)*k));
+  // 無縫：位移一半，中線 ±48px 交叉淡入回原圖
+  const half=size>>1, band=48, out=cx.createImageData(size,size), o=out.data; const ss=t=>{ t=Math.max(0,Math.min(1,t)); return t*t*(3-2*t); };
+  for(let y=0;y<size;y++){ const dy=Math.abs(y-half); for(let x=0;x<size;x++){ const dx=Math.abs(x-half); const w=1-ss(Math.min(dx,dy)/band); const shifted=hm[((y+half)%size)*size+((x+half)%size)]; const val=Math.round(hm[y*size+x]*w+shifted*(1-w)); const i=(y*size+x)*4; o[i]=o[i+1]=o[i+2]=val; o[i+3]=255; } }
+  cx.putImageData(out,0,0); let uri=c.toDataURL('image/webp',.8); if(!uri.startsWith('data:image/webp')) uri=c.toDataURL('image/png');
+  return {uri, color, mm:25};
+}
 function paperApply(cards, P){
   if(TEX_MIGRATE[P.texture]) P.texture=TEX_MIGRATE[P.texture]; if(!PAPERS[P.texture] && !texSource(P)) P.texture='ivory';
   const t=paperInfo(P), blend=paperBlend(P), sz=texSizeFor(P);
@@ -2024,8 +2051,9 @@ function applyPaper(){
   S.layers.forEach(L=>{ if(L.type==='ink'||L.type==='relief') styleFx(null,L); });
   // paper tab controls
   $('#pColor').value=P.color; $('#pColorHex').textContent=P.color;
-  if(!$('#pTex').options.length){ let g=''; Object.entries(PAPERS).forEach(([k,v])=>{ if(v.group!==g){ $('#pTex').insertAdjacentHTML('beforeend',`<optgroup label="${v.group}"></optgroup>`); g=v.group; } $('#pTex').lastElementChild.insertAdjacentHTML('beforeend',`<option value="${k}">${v.label}</option>`); }); }
-  $('#pTex').value=P.texture; $('#pTexNote').textContent=paperInfo(P).note; $('#pBlend').value=P.blend;
+  refreshTexOptions();
+  $('#pTex').value=P.texture; $('#pTexNote').textContent=paperInfo(P).note;
+  { const u=P.texture.startsWith('u:') ? texSource(P) : null; $('#pTexDel').hidden=!u; const pv=$('#pTexPrev'); pv.hidden=!u; if(u) pv.style.backgroundImage=`url("${u.uri}")`; } $('#pBlend').value=P.blend;
   setRange('#pStrength',P.strength,PCT); setRange('#pRelief',P.relief,v=>(+v).toFixed(2)+'×'); setRange('#pAz',P.az,v=>v+'°');
   setRange('#pThickMM',P.thickMM??.35,v=>(+v).toFixed(2)+'mm'); setRange('#pReliefK',P.reliefK??1,v=>(+v).toFixed(2)+'×'); setRange('#pBackBlur',P.backBlur??2.1,v=>(+v).toFixed(1)+'px'); setRange('#pBackK',P.backK??1,v=>(+v).toFixed(2)+'×');
   { const thr=thickThreshold(P); $('#thickNote').textContent=`約 ${Math.round((P.thickMM??.35)*860)} gsm · 凹凸深度超過 ${thr.toFixed(2)} 才會透到另一面`; }
@@ -2421,7 +2449,7 @@ new ResizeObserver(()=>{ if(S){ fitCard(); fitScene(); } }).observe(stage);
 
 /* ---------- paper controls ---------- */
 $('#pColor').addEventListener('input', e=>{ S.paper.color=e.target.value; applyPaper(); save(); });
-$('#pTex').addEventListener('change', e=>{ const P=S.paper, t=PAPERS[e.target.value]; P.texture=e.target.value; P.grain=t.grain; P.gloss=t.gloss; P.relief=1; if(t.color) P.color=t.color; if(t.strength!=null) P.strength=t.strength; if(t.gsm&&t.gsm.length){ const g=t.gsm.includes(300)?300:t.gsm[Math.min(t.gsm.length-1,Math.floor(t.gsm.length/2))]; P.thickMM=+(g/860).toFixed(2); if(!P.backBlurManual) P.backBlur=+(P.thickMM*6).toFixed(1); } applyPaper(); save(); }); // 紙樣：帶預設紙色與常用克重（有 300 就用 300）
+$('#pTex').addEventListener('change', e=>{ const P=S.paper; P.texture=e.target.value; const t=paperInfo(P); if(e.target.value.startsWith('u:')){ const u=texSource(P); if(u&&u.color) P.color=u.color; P.strength=.45; P.grain=.3; P.gloss=.1; P.relief=1; applyPaper(); save(); return; } P.grain=t.grain; P.gloss=t.gloss; P.relief=1; if(t.color) P.color=t.color; if(t.strength!=null) P.strength=t.strength; if(t.gsm&&t.gsm.length){ const g=t.gsm.includes(300)?300:t.gsm[Math.min(t.gsm.length-1,Math.floor(t.gsm.length/2))]; P.thickMM=+(g/860).toFixed(2); if(!P.backBlurManual) P.backBlur=+(P.thickMM*6).toFixed(1); } applyPaper(); save(); }); // 紙樣：帶預設紙色與常用克重（有 300 就用 300）
 $('#pBlend').addEventListener('change', e=>{ S.paper.blend=e.target.value; applyPaper(); save(); });
 [['#pStrength','strength'],['#pRelief','relief'],['#pAz','az'],['#pGrain','grain'],['#pScale','scale'],['#pGloss','gloss'],['#pTilt','tilt'],['#pRadius','radius']].forEach(([sel,p])=>{
   $(sel).addEventListener('input', e=>{ S.paper[p]=+e.target.value; applyPaper(); save(); });
@@ -2469,6 +2497,7 @@ const HELP = {
   edgeRough:'邊緣不規則：燙箔壓力與凸版油墨會讓邊緣不完全平滑，數值＝邊緣抖動幅度（px，以卡寬 850px 為基準）。',
   edgeDens:'不規則密度：抖動有多細碎，越高越像細鋸齒，越低越像大波浪。',
   bleed:'溢出：箔／墨沿邊緣往外擴多少（px）。',
+  pTexFile:'上傳一張紙面近照（順光、避開文字與陰影），會取中央區域做成無縫高度圖當紙紋；再用「紋理尺寸」對回實際比例。支援 PNG／JPG／WebP／TIFF。',
   ftex:'箔面紋理：平滑＝鏡面箔，幾乎不透紙紋；透出紙紋＝箔貼合粗紋紙時紙紋會透上來；髮絲拉絲＝拉絲金／拉絲銀的細直紋；消光顆粒＝霧箔的微顆粒。',
   texK:'紋理強度：上面選的紋理有多明顯（同時影響紙紋透出量）。',
   gloss:'光澤：光源移動時的反光範圍與強度。燙箔 60–90%，油墨 5–10%，霧面幾乎 0。',
@@ -2659,6 +2688,9 @@ $('#btnCollapse').addEventListener('click', ()=>{ treeOpen.clear(); svgRoot.quer
 $('#btnReset').addEventListener('click', ()=>{ S.paper=defaultPaper(); autoLayers(); applyDiecut(); clearMasks(); applyPaper(); renderFx(); save(); toast('已重新偵測顏色並建立圖層'); });
 $('#btnNaming').addEventListener('click', openNaming); $('#esNaming').addEventListener('click', openNaming);
 $('#esUpload').addEventListener('click', ()=>$('#file').click());
+$('#pTexFile').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; try{ toast('處理紙樣照片…', true); const cv=await decodeImageFile(f); const t=makePaperTex(cv); const id='T'+Date.now().toString(36); S.texLib=S.texLib||{}; S.texLib[id]={label:f.name.replace(/\.[^.]+$/,''), uri:t.uri, mm:t.mm, color:t.color};
+  const P=S.paper; P.texture='u:'+id; P.color=t.color; P.strength=.45; P.grain=.3; P.gloss=.1; P.relief=1; applyPaper(); save(); toastOff(); toast('已加入自訂紙樣：'+S.texLib[id].label+'（用「紋理尺寸」對回實際比例）'); }catch(err){ toast('紙樣照片處理失敗：'+(err.message||err)); } });
+$('#pTexDel').addEventListener('click', ()=>{ const k=S.paper.texture; if(!k.startsWith('u:')) return; const id=k.slice(2); delete S.texLib[id]; (S.docs||[]).forEach(d=>{ if(d.paper&&d.paper.texture===k) d.paper.texture='ivory'; }); S.paper.texture='ivory'; applyPaper(); save(); toast('已移除自訂紙樣'); });
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-swatch]'); if(!b) return; let all={}; try{ all=JSON.parse($('#swatchSvg').textContent||'{}'); }catch(x){} const t=all[b.dataset.swatch]; if(!t) return toast('這個版本沒有內建這張樣本卡');
   const nm='樣本卡 · '+b.textContent.replace(/\s*·\s*\d+\s*格\s*$/,''); const ex=(S.docs||[]).find(d=>d.name===nm||d.name===b.dataset.swatch); if(ex){ switchDoc(ex.id); } else { addDoc(t, nm); const d=activeDoc(); if(d){ d.use=false; d.mmW=+(S.vb[0]/96*25.4).toFixed(1); sceneChanged(true,true); } } /* 樣本卡預設不進場景 */ if(viewMode!=='single') setViewMode('single'); toast('效果樣本卡：點任一格可複製該效果，切到你的檔案後在效果圖層按「貼上效果」'); }); // 每類一張，比一張 44 格省效能；已載入過就直接切換
 $('#file').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=''; });
@@ -2678,8 +2710,8 @@ function fmt(n){ return Number.isInteger(n)?n:n.toFixed(1); }
 
 /* ---------- persistence ---------- */
 let saveWarned=false;
-function save(){ pushHistory(); try{ syncDocFromS(); const {svgText,docs,...rest}=S; rest.docs=(docs||[]).map(({svgText,...d})=>d); localStorage.setItem(LS_KEY, JSON.stringify(rest)); localStorage.setItem(LS_KEY+':svg', svgText); (docs||[]).forEach(d=>{ if(d.svgText) localStorage.setItem(LS_KEY+':svg:'+d.id, d.svgText); }); }catch(e){ if(!saveWarned){ saveWarned=true; toast('設定太大，瀏覽器存不下（超過 localStorage 上限）；本次操作不會保留到下次開啟'); } } }
-function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStorage.getItem(LS_KEY+':svg'); if(j&&svg){ const o=JSON.parse(j); o.svgText=svg; (o.docs||[]).forEach(d=>{ d.svgText=localStorage.getItem(LS_KEY+':svg:'+d.id)||(d.id===o.docId?svg:''); }); o.docs=(o.docs||[]).filter(d=>d.svgText); return o; } }catch(e){} return null; }
+function save(){ pushHistory(); try{ syncDocFromS(); const {svgText,docs,...rest}=S; rest.docs=(docs||[]).map(({svgText,...d})=>d); const {texLib,...rest2}=rest; localStorage.setItem(LS_KEY, JSON.stringify(rest2)); localStorage.setItem(LS_KEY+':tex', JSON.stringify(texLib||{})); localStorage.setItem(LS_KEY+':svg', svgText); (docs||[]).forEach(d=>{ if(d.svgText) localStorage.setItem(LS_KEY+':svg:'+d.id, d.svgText); }); }catch(e){ if(!saveWarned){ saveWarned=true; toast('設定太大，瀏覽器存不下（超過 localStorage 上限）；本次操作不會保留到下次開啟'); } } }
+function load(){ try{ const j=localStorage.getItem(LS_KEY); const svg=localStorage.getItem(LS_KEY+':svg'); if(j&&svg){ const o=JSON.parse(j); o.svgText=svg; try{ o.texLib=JSON.parse(localStorage.getItem(LS_KEY+':tex')||'{}'); }catch(e){ o.texLib={}; } (o.docs||[]).forEach(d=>{ d.svgText=localStorage.getItem(LS_KEY+':svg:'+d.id)||(d.id===o.docId?svg:''); }); o.docs=(o.docs||[]).filter(d=>d.svgText); return o; } }catch(e){} return null; }
 
 /* ---------- export ---------- */
 let dlCap=null; try{ window.claude?.use?.('downloads').then(d=>{ dlCap=d; }).catch(()=>{}); }catch(e){}
@@ -2900,7 +2932,7 @@ function paramSel(){ const o={}; $('#paramSel').querySelectorAll('input').forEac
 function exportParams(selOverride){
   const sel=selOverride||paramSel(), C=S.scene, pick=(keys)=>Object.fromEntries(keys.filter(k=>C[k]!==undefined).map(k=>[k,C[k]]));
   const out={app:'foil-proof',ver:1,name:S.name,exported:new Date().toISOString()};
-  if(sel.paper) out.paper=deep(S.paper);
+  if(sel.paper){ out.paper=deep(S.paper); const k=S.paper.texture||''; if(k.startsWith('u:') && S.texLib && S.texLib[k.slice(2)]) out.texLib={[k.slice(2)]:S.texLib[k.slice(2)]}; }
   if(sel.layers){ out.layers=deep(S.layers.map(({_count,...l})=>l)); out.assign=deep(S.assign); out.koGap=S.koGap; }
   if(sel.layout) out.layout=pick(LAYOUT_KEYS.concat(VIEW_KEYS));
   if(sel.light) out.light=pick(LIGHT_KEYS);
@@ -2924,7 +2956,7 @@ async function importParams(obj, selOverride){
     Object.values(docStore).forEach(st=>st.root.remove()); for(const k in docStore) delete docStore[k];
     S.docs=deep(obj.docs); S.docId=null; const id=obj.docId && S.docs.find(d=>d.id===obj.docId) ? obj.docId : S.docs[0].id; switchDoc(id,false); applied.push('檔案');
   }
-  if(sel.paper && obj.paper){ S.paper=Object.assign(defaultPaper(),obj.paper); applied.push('紙張'); }
+  if(sel.paper && obj.paper){ if(obj.texLib){ S.texLib=Object.assign(S.texLib||{}, obj.texLib); } S.paper=Object.assign(defaultPaper(),obj.paper); applied.push('紙張'); }
   if(sel.layers && obj.layers){ S.layers=deep(obj.layers); S.layers.forEach(normalizeLayer); const ok=new Set(Object.keys(shapes).concat(Object.keys(shapes).map(k=>k))); const ids=new Set(S.layers.map(l=>l.id));
     S.assign={}; Object.entries(obj.assign||{}).forEach(([k,v])=>{ if(ids.has(v) && (shapes[k] || svgRoot.querySelector(`[data-k="${k}"]`))) S.assign[k]=v; });
     if(obj.koGap!=null) S.koGap=obj.koGap; S.active=S.layers.find(l=>l.type!=='hide')?.id||S.layers[0]?.id; uid=Math.max(uid,...S.layers.map(l=>+String(l.id).slice(1)+1)); applied.push('效果圖層'); }
