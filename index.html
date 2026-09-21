@@ -1600,7 +1600,7 @@ const FIN_DEFAULTS={relief:'none',reliefDepth:.5,uv:'none',uvGloss:.8,uvDepth:.3
 function normalizeLayer(L){
   if(L.proc==='foil' || L.type==='foil'){ if(L.texK==null) L.texK=1; }
   if(L.proc==='raster'){ const D={print:'offset',sat:1,regX:0,regY:0,lpi:175,dotGain:.12,colors:4,rOffX:0,rOffY:0,rScale:1,toner:.3,mesh:120,blend:'multiply',opacity:1,tint:'#161616',gloss:.08}; Object.entries(D).forEach(([k,v])=>{ if(L[k]==null) L[k]=v; }); }
-  if(['foil','holo','letterpress'].includes(L.proc)){ if(L.edgeRough==null) L.edgeRough=.2; if(L.edgeDens==null) L.edgeDens=.5; if(L.bleed==null) L.bleed = L.proc==='letterpress' ? .5 : .25; } // 邊緣不規則 0.2px；溢出：燙箔／燙雷射 0.25px、凸版 0.5px
+  if(['foil','holo','letterpress'].includes(L.proc)){ if(L.edgeRough==null) L.edgeRough=.2; if(L.edgeDens==null) L.edgeDens=.5; if(L.bleed==null) L.bleed = .1; } // 邊緣不規則 0.2px；溢出：預設 0.1px
   if(!L.proc){
     const t=L.type;
     if(t==='foil') L.proc='foil'; else if(t==='holo') L.proc='holo';
@@ -1811,7 +1811,7 @@ async function rasterizeMasks(rootClone, k, singleW, singleH, crop){ // crop = {
 }
 function inkSpread(L){ return ['ink','letterpress','screen'].includes(L.proc) ? (L.spread||0) : 0; }
 function maskBlurVB(L){ return 0; } // 另一面輪廓模糊改加在光影模糊半徑上（遮罩維持銳利，否則邊緣會留一圈半透明黑邊）
-function edgeOf(L){ if(!L || !['foil','holo','letterpress'].includes(L.proc)) return null; const e={rough:L.edgeRough??.2, dens:L.edgeDens??.5, bleed:L.bleed??(L.proc==='letterpress'?.5:.25)}; return (e.rough>0||e.bleed>0)?e:null; }
+function edgeOf(L){ if(!L || !['foil','holo','letterpress'].includes(L.proc)) return null; const e={rough:L.edgeRough??.2, dens:L.edgeDens??.5, bleed:L.bleed??.1}; return (e.rough>0||e.bleed>0)?e:null; }
 function buildMask(L, eff=effLayer, vk='', mirror=false){
   const sp=inkSpread(L), id=L.srcLayer||L.id, bl=sp*.5+maskBlurVB(L), e=edgeOf(L);
   const ek=e?`:e${e.rough.toFixed(2)},${e.dens.toFixed(2)},${e.bleed.toFixed(2)}`:'';
@@ -2043,8 +2043,8 @@ function styleFx(d,L,paper=S.paper){
   } else {
     st.setProperty('--sha',(0.35+0.55*dk).toFixed(2)); st.setProperty('--hla',(0.5*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--shi',(0.5+0.45*dk).toFixed(2)); st.setProperty('--hli',(0.3*(0.2+0.8*pl)).toFixed(2));
     st.setProperty('--rsha',(0.5+0.4*dk).toFixed(2)); st.setProperty('--rhla',(0.45*(0.2+0.8*pl)).toFixed(2)); st.setProperty('--rshi',(0.42+0.4*dk).toFixed(2)); st.setProperty('--rhli',(0.6*(0.2+0.8*pl)).toFixed(2));
-    st.setProperty('--dd', (pd*0.9*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd).toFixed(2));
-    st.setProperty('--rd', (rd*0.9).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd).toFixed(2));
+    st.setProperty('--dd', (pd*1.6*pk).toFixed(2)+'px'); st.setProperty('--db', (pd*0.7*pk+0.2).toFixed(2)+'px'); st.setProperty('--dop', Math.min(1,pd*1.4).toFixed(2));
+    st.setProperty('--rd', (rd*1.6).toFixed(2)+'px'); st.setProperty('--rb', (rd*0.8+0.2).toFixed(2)+'px'); st.setProperty('--ro', Math.min(1,rd*1.4).toFixed(2));
   }
   if(L.uv!=='none'){ st.setProperty('--uvg', L.uvGloss ?? .8); st.setProperty('--glit', GLITTER); st.setProperty('--ptexg', grainURI(.7));
     // 磨砂：覆蓋率（半透明白，預設 15%）與顆粒可調；霧面：透明＋消光顆粒；其他：全透明
