@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """產生效果樣本卡（每一類一張）：swatch/swatch-foil-metal.svg、swatch-foil-pigment.svg、swatch-holo.svg、swatch-ink.svg、swatch-finish.svg 與 swatches.json。
 版面（單位 px，1px = 1/96 in）：
-  上：左 logo、右 樣本卡標題（8px，中文一行、英文一行，齊右；與 logo、頁尾小字同為燙霧銀）
-  中：樣本 80×80（形狀取自 swatch/sample-shape.svg），一行 4 個、間距 16，名稱 12px 置中在樣本下方（IBM Plex Sans TC）
-  下：FOIL PROOF LAB 8px 置中
-  上中下間距 40；四邊留白 40；圓角 40；卡片依內容決定大小；紙：黑色銅版紙 0.5mm
+  上：左 logo、右 樣本卡標題（16px 粗體一行，齊右，與 logo 同為燙霧銀）
+  下：樣本 80×80（形狀取自 swatch/sample-shape.svg），一行 4 個、欄距 16、列距 24，名稱 12px、色號 10px 置中在樣本下方（IBM Plex Sans TC）
+  不放副標、英文標題與頁尾字，讓版面自己說明
+  上下間距 40；四邊留白 40；圓角 40；卡片依內容決定大小；紙：黑色銅版紙 0.5mm
 每格是一個依「工法_色碼+加工」命名的 <g>，載入燙印打樣室會自動建立對應效果。"""
 import pathlib, re, json
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 OUT=ROOT/'swatch'; OUT.mkdir(exist_ok=True)
-PAD=40; GAP=40; CELL=80; CGAP=16; COLS=4; NAME=12; NAME2=9; NAME_GAP=8; FOOT=8; TITLE=8; LOGO_H=24; RADIUS=40
+PAD=40; GAP=40; CELL=80; CGAP=16; RGAP=24; COLS=4; NAME=12; NAME2=10; NAME_GAP=10; TITLE=16; LOGO_H=24; RADIUS=40
 FONT="'IBM Plex Sans TC', 'IBM Plex Sans', Helvetica, Arial, sans-serif"
 def tw(t,fs): return sum((fs if ord(c)>0x2e7f else fs*0.58) for c in t)  # 估字寬：CJK 1em、拉丁 0.58em
 PAPER='#121212'
@@ -26,11 +26,11 @@ inks=[('白墨','#f3f1ec'),('黑墨','#161616'),('銀墨','#a9abae'),('金墨','
 fins=[('亮面UV','亮面 UV'),('霧面UV','霧面 UV'),('磨砂UV','磨砂 UV'),('立體UV','立體 UV'),('亮粉UV','亮粉 UV'),('打凸','打凸'),('打凹','打凹')]
 
 CARDS=[ # (檔名, 標題, 項目, 類型)
-  ('swatch-foil-metal.svg',   '燙箔 · 金屬色  METALLIC FOIL',  metals,   'foil'),
-  ('swatch-foil-pigment.svg', '燙箔 · 純色  PIGMENT FOIL',     pigments, 'foil'),
-  ('swatch-holo.svg',         '燙雷射  HOLOGRAPHIC FOIL',      holos,    'holo'),
-  ('swatch-ink.svg',          '油墨  INK · METALLIC · SPOT · FLUO', inks, 'ink'),
-  ('swatch-finish.svg',       '表面處理  FINISHES',            fins,     'fin'),
+  ('swatch-foil-metal.svg',   '燙箔金屬色',  metals,   'foil'),
+  ('swatch-foil-pigment.svg', '燙箔純色',     pigments, 'foil'),
+  ('swatch-holo.svg',         '燙雷射',      holos,    'holo'),
+  ('swatch-ink.svg',          '油墨', inks, 'ink'),
+  ('swatch-finish.svg',       '表面處理',            fins,     'fin'),
 ]
 
 def esc(s): return s.replace('&','&amp;').replace('<','&lt;')
@@ -53,15 +53,15 @@ def cell(gid, fill, x, y):
 def make(fname, title, items, kind):
     rows=(len(items)+COLS-1)//COLS
     row_h=CELL+NAME_GAP+NAME+NAME2+2
-    grid_h=rows*row_h+(rows-1)*CGAP
-    H=PAD+LOGO_H+GAP+grid_h+GAP+FOOT+PAD
+    grid_h=rows*row_h+(rows-1)*RGAP
+    H=PAD+LOGO_H+GAP+grid_h+PAD
     out=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
          f'  <g id="刀模"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="none" stroke="#ff5511" stroke-width="1"/></g>',
          f'  <g id="紙_銅版紙 {PAPER} 0.5mm"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="{PAPER}"/></g>']
     labels=[]
     y0=PAD+LOGO_H+GAP
     for i,(name,val) in enumerate(items):
-        col=i%COLS; row=i//COLS; x=PAD+col*(CELL+CGAP); yy=y0+row*(row_h+CGAP)
+        col=i%COLS; row=i//COLS; x=PAD+col*(CELL+CGAP); yy=y0+row*(row_h+RGAP)
         if kind=='foil': gid=f'燙箔_{name}'; fill=val; lab=name
         elif kind=='holo': gid=f'燙雷射_{name}'; fill=val; lab=name
         elif kind=='ink': gid=f'印刷_{name}'; fill=val; lab=name
@@ -74,18 +74,14 @@ def make(fname, title, items, kind):
         while tw(name,fs)>maxw and fs>9: fs-=1
         ty=yy+CELL+NAME_GAP+fs*0.85
         labels.append(f'    <text x="{x+CELL/2}" y="{ty:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{fs}" fill="#f3f1ec">{esc(name)}</text>')
-        if code: labels.append(f'    <text x="{x+CELL/2}" y="{ty+NAME2+2:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{NAME2}" letter-spacing=".5" fill="#c9c7c2">{esc(code)}</text>')
+        if code: labels.append(f'    <text x="{x+CELL/2}" y="{ty+NAME2+2:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{NAME2}" fill="#a7a5a0">{esc(code)}</text>')
     logo=''
     if logo_inner:
         inner,vx,vy,vw,vh=logo_inner; k=LOGO_H/vh
         logo=f'    <g id="logo" transform="translate({PAD} {PAD}) scale({k:.5f}) translate({-vx} {-vy})" fill="#b9bbc2">{inner}</g>'
-    # 標題：中文一行、英文一行，各 8px，齊右，整塊垂直置中對齊 logo
-    zh, en = (title.split('  ',1)+[''])[:2] if '  ' in title else (title,'')
-    lh=TITLE+3; top=PAD+(LOGO_H-(TITLE*2+3))/2
-    tt=[f'    <text x="{W-PAD}" y="{top+TITLE*0.85:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" letter-spacing=".5" fill="#b9bbc2">{esc(zh.strip())}</text>']
-    if en: tt.append(f'    <text x="{W-PAD}" y="{top+lh+TITLE*0.85:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" letter-spacing="1" fill="#b9bbc2">{esc(en.strip())}</text>')
+    # 標題：一行，齊右，基線對齊 logo 的垂直中心
+    tt=[f'    <text x="{W-PAD}" y="{PAD+LOGO_H/2+TITLE*0.36:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" font-weight="600" fill="#b9bbc2">{esc(title)}</text>']
     out.append('  <g id="燙箔_霧銀 MS-03">'); out.append(logo); out+=tt
-    out.append(f'    <text x="{W/2}" y="{H-PAD:.1f}" text-anchor="middle" font-family="{FONT}" font-size="{FOOT}" letter-spacing="2" fill="#b9bbc2">FOIL PROOF LAB</text>')
     out.append('  </g>')
     out.append('  <g id="印刷_白墨 標籤">'); out+=labels
     out.append('  </g>'); out.append('</svg>')
@@ -94,3 +90,27 @@ def make(fname, title, items, kind):
 bundle={fname: make(fname,title,items,kind) for fname,title,items,kind in CARDS}
 (OUT/'swatches.json').write_text(json.dumps(bundle, ensure_ascii=False))
 print('→',OUT/'swatches.json')
+
+# 孔版（Riso）疊色示範：三個透明墨圓形互相疊印（藍、螢光粉、黃），白紙
+def make_riso(fname='swatch-riso.svg'):
+    R=96; cx=W/2; top=PAD+LOGO_H+GAP; cy0=top+R
+    pts=[(cx-R*0.62, cy0), (cx+R*0.62, cy0), (cx, cy0+R*1.07)]
+    H=int(top+R*1.07+R*2+PAD)
+    paper='#f6f4ef'
+    out=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+         f'  <g id="刀模"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="none" stroke="#ff5511" stroke-width="1"/></g>',
+         f'  <g id="紙_道林 {paper} 0.3mm"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="{paper}"/></g>']
+    for (x,y),(name,hexv) in zip(pts,[('藍','#0078BF'),('螢光粉','#FF48B0'),('黃','#FFE800')]):
+        out.append(f'  <g id="孔版_{name} {hexv}"><circle cx="{x:.1f}" cy="{y:.1f}" r="{R}" fill="{hexv}"/></g>')
+    logo=''
+    if logo_inner:
+        inner,vx,vy,vw,vh=logo_inner; k=LOGO_H/vh
+        logo=f'    <g id="logo" transform="translate({PAD} {PAD}) scale({k:.5f}) translate({-vx} {-vy})">{inner}</g>'
+    out.append('  <g id="孔版_黑 #000000">'); out.append(logo)
+    out.append(f'    <text x="{W-PAD}" y="{PAD+LOGO_H/2+TITLE*0.36:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" font-weight="600" fill="#000">孔版疊色</text>')
+    out.append('  </g>'); out.append('</svg>')
+    s='\n'.join(out)+'\n'; (OUT/fname).write_text(s); print('→',OUT/fname,f'{W}×{H}px'); return s
+
+bundle['swatch-riso.svg']=make_riso()
+(OUT/'swatches.json').write_text(json.dumps(bundle, ensure_ascii=False))
+print('→',OUT/'swatches.json (+riso)')
