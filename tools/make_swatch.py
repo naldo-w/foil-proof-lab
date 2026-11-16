@@ -91,22 +91,46 @@ bundle={fname: make(fname,title,items,kind) for fname,title,items,kind in CARDS}
 (OUT/'swatches.json').write_text(json.dumps(bundle, ensure_ascii=False))
 print('→',OUT/'swatches.json')
 
-# 孔版（Riso）疊色示範：三個透明墨圓形互相疊印（藍、螢光粉、黃），白紙
+# 孔版（Riso）疊色示範：上＝三色透明疊印圓；中＝網點／顆粒／平滑三種模式（每種一條漸層圖片墨層）；下＝不同粗細線條與不同字級，看擴散與套印
+def grad_png(w=280, h=64):
+    import zlib, struct, base64
+    rows=b''.join(b'\x00'+bytes(int(255-235*x/(w-1)) for x in range(w)) for _ in range(h))
+    def chunk(t,d): return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+    png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,0,0,0,0))+chunk(b'IDAT',zlib.compress(rows,9))+chunk(b'IEND',b'')
+    return 'data:image/png;base64,'+base64.b64encode(png).decode()
 def make_riso(fname='swatch-riso.svg'):
     R=96; cx=W/2; top=PAD+LOGO_H+GAP; cy0=top+R
     pts=[(cx-R*0.62, cy0), (cx+R*0.62, cy0), (cx, cy0+R*1.07)]
-    H=int(top+R*1.07+R*2+PAD)
-    paper='#f6f4ef'
-    out=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+    SQH=40; LW=72; GW=W-PAD*2-LW; rows_y0=int(top+R*1.07+R*2+GAP)
+    lines_y0=rows_y0+3*SQH+2*12+GAP
+    widths=[0.25,0.5,1,2,4,8]; text_sizes=[6,8,10,14,20,28]
+    text_y0=lines_y0+len(widths)*14+GAP*0.6
+    ty=text_y0; tys=[]
+    for fs in text_sizes: ty+=fs*1.25; tys.append(ty)
+    H=int(ty+PAD)
+    paper='#fffdf5'
+    out=[f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
          f'  <g id="刀模"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="none" stroke="#ff5511" stroke-width="1"/></g>',
          f'  <g id="紙_道林 {paper} 0.3mm"><rect x="0" y="0" width="{W}" height="{H}" rx="{RADIUS}" fill="{paper}"/></g>']
     for (x,y),(name,hexv) in zip(pts,[('藍','#0078BF'),('螢光粉','#FF48B0'),('黃','#FFE800')]):
         out.append(f'  <g id="孔版_{name} {hexv}"><circle cx="{x:.1f}" cy="{y:.1f}" r="{R}" fill="{hexv}"/></g>')
+    g=grad_png(); labels=[]
+    for ri,word in enumerate(['網點','顆粒','平滑']):
+        y=rows_y0+ri*(SQH+12)
+        labels.append(f'    <text x="{PAD}" y="{y+SQH/2+5:.1f}" font-family="{FONT}" font-size="13" font-weight="600" fill="#000">{word}</text>')
+        out.append(f'  <g id="孔版_藍 #0078BF {word} 45°"><image href="{g}" x="{PAD+LW}" y="{y}" width="{GW}" height="{SQH}" preserveAspectRatio="none"/></g>')
+    blk=[]
+    for i,sw in enumerate(widths):
+        y=lines_y0+i*14
+        blk.append(f'    <line x1="{PAD+LW}" y1="{y}" x2="{W-PAD}" y2="{y}" stroke="#000" stroke-width="{sw}"/>')
+        blk.append(f'    <text x="{PAD}" y="{y+4}" font-family="{FONT}" font-size="10" fill="#000">{sw}px</text>')
+    for fs,y in zip(text_sizes,tys):
+        blk.append(f'    <text x="{PAD}" y="{y:.1f}" font-family="{FONT}" font-size="{fs}" fill="#000">{fs}px 孔版 Riso 永</text>')
     logo=''
     if logo_inner:
         inner,vx,vy,vw,vh=logo_inner; k=LOGO_H/vh
         logo=f'    <g id="logo" transform="translate({PAD} {PAD}) scale({k:.5f}) translate({-vx} {-vy})">{inner}</g>'
-    out.append('  <g id="孔版_黑 #000000">'); out.append(logo)
+    out.append('  <g id="孔版_黑 #000000">'); out.append(logo); out+=labels; out+=blk
     out.append(f'    <text x="{W-PAD}" y="{PAD+LOGO_H/2+TITLE*0.36:.1f}" text-anchor="end" font-family="{FONT}" font-size="{TITLE}" font-weight="600" fill="#000">孔版疊色</text>')
     out.append('  </g>'); out.append('</svg>')
     s='\n'.join(out)+'\n'; (OUT/fname).write_text(s); print('→',OUT/fname,f'{W}×{H}px'); return s
